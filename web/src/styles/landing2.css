@@ -1,0 +1,110 @@
+/* Landing additions reuse the warm light/dark tokens from tokens.css. */
+.l-role-views .l-lead { max-width: 760px; }
+.l-incident-timeline { list-style: none; padding: 0; margin: 32px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 12px; background: var(--surface-sunken); }
+.l-incident-timeline li { position: relative; display: grid; gap: 5px; padding: 16px 20px; border-right: 1px solid var(--border); transition: background-color 300ms var(--ease-out); }
+.l-incident-timeline li:first-child { border-radius: 11px 0 0 11px; }
+.l-incident-timeline li:last-child { border-right: 0; border-radius: 0 11px 11px 0; }
+.l-incident-timeline time { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); }
+.l-incident-timeline b { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--text); }
+.l-incident-timeline li > span { font-size: 12px; color: var(--text-2); }
+.l-incident-timeline li[data-active="true"] { background: var(--surface); box-shadow: inset 0 -2px var(--st-emergency-text); }
+.l-incident-timeline li[data-active="true"] time { color: var(--st-emergency-text); }
+.l-role-view-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 24px; align-items: stretch; }
+.l-role-view { appearance: none; text-align: left; font: inherit; color: var(--text); cursor: pointer; padding: 20px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+.landing .l-role-view:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface); }
+.l-role-view-head { display: flex; align-items: center; gap: 9px; margin-bottom: 22px; }
+.l-role-view-head .l-card-icon { width: 32px; height: 32px; border-radius: 9px; flex: none; }
+.l-role-view-head strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.l-role-view-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong); margin-left: auto; flex: none; }
+.l-role-view-line { display: block; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.l-role-view-label { display: block; margin-bottom: 5px; font-size: 10px; line-height: 1.3; font-weight: 500; text-transform: uppercase; letter-spacing: .09em; color: var(--text-3); }
+.l-role-view-action { margin-top: auto; padding-top: 18px; }
+.l-role-view-line + .l-role-view-line { margin-top: 18px; border-top: 1px solid var(--border); }
+.l-role-view[aria-pressed="true"] { transform: translateY(-4px); }
+.landing .l-role-view[aria-pressed="true"], .landing .l-role-view[aria-pressed="true"]:hover:not(:disabled) { --tilt-lift: -4px; border-color: var(--st-emergency-text); box-shadow: 0 8px 24px -14px var(--shadow-colour); background: var(--surface-raised); }
+.l-role-view[aria-pressed="true"] .l-role-view-dot { background: var(--st-emergency-text); }
+.l-role-view:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.l-run-source { margin-top: 5px; font-size: 12px; }
+.l-safety-card { display: flex; flex-direction: column; align-items: flex-start; }
+.l-safety-card h3 { line-height: 1.3; }
+.l-safety-card .l-safety-source { padding-top: 24px; margin-top: auto; color: var(--text-3); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.l-safety-source a { color: inherit; text-underline-offset: 3px; }
+.l-safety-source a:hover { color: var(--text); }
+
+/* Tilt composes with the existing hover lift; reveal retains its own entrance. */
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .landing [data-tilt-ready] { position: relative; }
+  .landing [data-tilt-ready]:not([data-reveal-pending]) { transform: perspective(900px) translateY(var(--tilt-lift, 0px)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: opacity 420ms var(--ease-out), transform 300ms var(--ease-out), border-color 160ms var(--ease-out), background-color 140ms var(--ease-out); }
+  .landing [data-tilt-ready]:hover { --tilt-lift: -2px; }
+  .landing .l-role-view[data-tilt-ready][aria-pressed="true"] { --tilt-lift: -4px; }
+  .landing [data-tilt-ready]::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--text) 5%, transparent), transparent 75%); transition: opacity 300ms var(--ease-out); }
+  .landing [data-tilt-hover]::before { opacity: 1; }
+}
+
+/* Four illustrative states stay in the top/bottom margins of the hero art. */
+.l-hero-art { position: relative; }
+.l-signal-chips { position: absolute; top: 0; bottom: 0; left: 50%; width: min(100%, 520px); transform: translateX(-50%); pointer-events: none; user-select: none; }
+.l-signal-chip { position: absolute; --signal-tone: var(--st-ok); }
+.l-signal-chip > span { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid color-mix(in srgb, var(--signal-tone) 35%, var(--border)); border-radius: var(--radius-chip); background: var(--surface); color: var(--text-2); box-shadow: 0 4px 14px -9px var(--shadow-colour); font-family: var(--font-mono); font-size: 10px; line-height: 1.5; white-space: nowrap; }
+.l-signal-chip i { width: 5px; height: 5px; border-radius: 50%; background: var(--signal-tone); flex: none; }
+.l-signal-ok { left: 8px; top: 12px; }
+.l-signal-check { --signal-tone: var(--st-check); right: 8px; top: 36px; }
+.l-signal-security { --signal-tone: var(--st-security); left: 8px; bottom: 32px; }
+.l-signal-emergency { --signal-tone: var(--st-emergency); right: 8px; bottom: 10px; }
+@media (min-width: 900px) { .l-hero-art { min-height: 480px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .l-signal-chip { animation: l-signal-enter 600ms var(--ease-out) both; }
+  .l-signal-chip > span { animation: l-signal-float 7s ease-in-out infinite; }
+  .l-signal-check { animation-delay: 140ms; }
+  .l-signal-check > span { animation-duration: 8s; animation-delay: -2s; }
+  .l-signal-security { animation-delay: 280ms; }
+  .l-signal-security > span { animation-duration: 9s; animation-delay: -4s; }
+  .l-signal-emergency { animation-delay: 420ms; }
+  .l-signal-emergency > span { animation-duration: 6s; animation-delay: -1s; }
+  .l-signal-chips[data-paused] .l-signal-chip, .l-signal-chips[data-paused] .l-signal-chip > span { animation-play-state: paused; }
+}
+@keyframes l-signal-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes l-signal-float { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(6px); } }
+
+/* Four columns, with the evidence and upstream credits kept easy to scan. */
+.l-site-footer { padding: 56px 0 0; }
+.l-footer-grid { display: grid; grid-template-columns: 1.35fr .8fr 1fr 1.2fr; gap: 40px; padding-bottom: 44px; }
+.l-site-footer .l-brand { color: var(--text); font-size: 17px; }
+.l-footer-brand p { max-width: 260px; margin: 16px 0 0; color: var(--text-2); line-height: 1.6; }
+.l-footer-brand .l-footer-team { font-size: 12px; color: var(--text-3); }
+.l-footer-grid h2 { margin: 4px 0 16px; font-size: 13px; font-weight: 600; color: var(--text); }
+.l-footer-grid ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.l-footer-grid li { min-width: 0; }
+.l-footer-grid li a { display: inline-block; padding: 4px 0; line-height: 1.5; overflow-wrap: anywhere; text-underline-offset: 4px; }
+.l-footer-grid li a:hover { text-decoration: underline; }
+.l-footer-bottom { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-top: 1px solid var(--border); padding: 22px 0; }
+.l-footer-bottom p { margin: 0; font-size: 12px; line-height: 1.6; }
+.l-footer-bottom a { min-height: 40px; flex: none; }
+.l-site-footer a:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 2px; }
+@media (max-width: 1100px) {
+  .l-role-view-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .l-footer-grid { gap: 24px; }
+}
+@media (max-width: 899px) { .l-signal-chips { display: none; } }
+@media (max-width: 760px) {
+  .l-role-view-grid { grid-template-columns: 1fr; gap: 14px; }
+  .l-role-view { padding: 22px; }
+  .l-role-view-head { margin-bottom: 16px; }
+  .l-role-view-action { padding-top: 14px; }
+  .l-role-view-line + .l-role-view-line { margin-top: 14px; }
+  .l-incident-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .l-incident-timeline li { padding: 14px; }
+  .l-incident-timeline li:nth-child(2) { border-right: 0; border-radius: 0 11px 0 0; }
+  .l-incident-timeline li:first-child { border-radius: 11px 0 0 0; }
+  .l-incident-timeline li:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .l-incident-timeline li:nth-child(3) { border-radius: 0 0 0 11px; }
+  .l-incident-timeline li:last-child { border-radius: 0 0 11px 0; }
+  .l-footer-grid { grid-template-columns: 1fr; gap: 30px; }
+  .l-footer-brand p { max-width: 100%; }
+  .l-footer-bottom { align-items: flex-start; flex-direction: column; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .l-role-view, .l-role-view:hover, .l-role-view[aria-pressed="true"] { transform: none; transition: none; }
+  .l-incident-timeline li { transition: none; }
+  .l-signal-chip, .l-signal-chip > span { animation: none; }
+}

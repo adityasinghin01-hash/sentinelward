@@ -7,6 +7,11 @@ import {BedTile} from '../components/BedTile';
 import {StateChip} from '../components/ui';
 import {Hologram, ecgPath} from '../components/landing/Hologram';
 import {useReveal} from '../lib/reveal';
+import {RoleViews} from '../components/landing/RoleViews';
+import {SafetyPrinciples} from '../components/landing/SafetyPrinciples';
+import {SignalChips} from '../components/landing/SignalChips';
+import {SiteFooter} from '../components/landing/SiteFooter';
+import '../styles/landing2.css';
 
 const REPO = 'https://github.com/adityasinghin01-hash/sentinelward';
 
@@ -88,7 +93,7 @@ export function LandingPage() {
                 <li><Lock size={14} aria-hidden="true" />TLS 1.3 · per-device accounts</li>
               </ul>
             </div>
-            <div className="l-hero-art"><Hologram /></div>
+            <div className="l-hero-art"><Hologram /><SignalChips /></div>
           </div>
         </section>
 
@@ -109,7 +114,7 @@ export function LandingPage() {
                  lead="Most monitor alarms are false: studies report 86 to 99.5 per cent. Nurses learn to tune them out, and a hacked monitor can hide a dying patient behind calm numbers.">
           <div className="l-cards three">
             {TRUTHS.map((t, i) => (
-              <article key={t.title} className={`l-card truth-${t.tone}`} data-reveal style={{transitionDelay: `${i * 50}ms`}}>
+              <article key={t.title} className={`l-card truth-${t.tone}`} data-reveal data-tilt style={{transitionDelay: `${i * 50}ms`}}>
                 <span className="l-card-icon"><t.icon size={20} aria-hidden="true" /></span>
                 <h3>{t.title}</h3>
                 <p>{t.text}</p>
@@ -144,6 +149,8 @@ export function LandingPage() {
           </div>
         </Section>
 
+        <RoleViews />
+
         <Section id="proof" eyebrow="Proof" title="Measured, not promised." lead="Every number links to the file that holds it, with its limits written down.">
           <div className="l-proof">
             {PROOF.map((p, i) => (
@@ -172,25 +179,22 @@ export function LandingPage() {
           </ul>
         </Section>
 
+        <SafetyPrinciples />
+
         <section className="l-section l-signin" id="signin">
           <div className="l-wrap">
             <h2 className="l-h2" data-reveal>See it working.</h2>
             <p className="l-lead" data-reveal>Pick a role and open the live ward. No account needed for the demo.</p>
             <div className="l-roles">
-              <Link to="/login?role=nurse" className="l-role" data-reveal><Stethoscope size={22} aria-hidden="true" /><b>Nurse</b><span>The ward, alerts and bedside checks</span><ArrowRight size={16} aria-hidden="true" /></Link>
-              <Link to="/login?role=doctor" className="l-role" data-reveal style={{transitionDelay: '50ms'}}><UserRound size={22} aria-hidden="true" /><b>Doctor</b><span>Census, trends and the evidence</span><ArrowRight size={16} aria-hidden="true" /></Link>
-              <Link to="/login?role=it" className="l-role" data-reveal style={{transitionDelay: '100ms'}}><ShieldCheck size={22} aria-hidden="true" /><b>IT security</b><span>Devices, cut-offs and incident reports</span><ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/login?role=nurse" className="l-role" data-reveal data-tilt><Stethoscope size={22} aria-hidden="true" /><b>Nurse</b><span>The ward, alerts and bedside checks</span><ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/login?role=doctor" className="l-role" data-reveal data-tilt style={{transitionDelay: '50ms'}}><UserRound size={22} aria-hidden="true" /><b>Doctor</b><span>Census, trends and the evidence</span><ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/login?role=it" className="l-role" data-reveal data-tilt style={{transitionDelay: '100ms'}}><ShieldCheck size={22} aria-hidden="true" /><b>IT security</b><span>Devices, cut-offs and incident reports</span><ArrowRight size={16} aria-hidden="true" /></Link>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="l-footer">
-        <div className="l-wrap l-footer-inner">
-          <span>SentinelWard · Team TessNova · IBM Z Datathon 2026</span>
-          <a href={REPO} target="_blank" rel="noreferrer"><Github size={15} aria-hidden="true" />Source and evidence</a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
