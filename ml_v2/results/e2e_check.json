@@ -1,0 +1,881 @@
+{
+ "sw_brain_file": "/home/linux1/ml_v2_work/repo/brain/sw_brain/__init__.py",
+ "n_records": 87,
+ "max_abs_diff": 0.009314158493885949,
+ "median_tick_ms": 23.090168950147927,
+ "max_tick_ms": 50.5627510137856,
+ "all_gbt_path": true,
+ "all_emergency": true,
+ "records": [
+  {
+   "record": "a103l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.009539079009888493,
+   "train_table": 0.009539079009888493,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a105l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.04322448303575797,
+   "train_table": 0.04322448303575797,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a165l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.0015890593474533036,
+   "train_table": 0.0015890593474533036,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a171l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.004392246483415119,
+   "train_table": 0.004392246483415119,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a203l",
+   "code": "ASYSTOLE",
+   "label": true,
+   "brain_m2": 0.05926527784153734,
+   "train_table": 0.05926527784153734,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a225l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.0011088804020054379,
+   "train_table": 0.0011088804020054379,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a267l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.02894670155656249,
+   "train_table": 0.02894670155656249,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a273l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.005134634011540581,
+   "train_table": 0.005134634011540581,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a391l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.007271373863800633,
+   "train_table": 0.007271373863800633,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a397l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.001573007979540789,
+   "train_table": 0.001573007979540789,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a429l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.010483824245504422,
+   "train_table": 0.01105918203545405,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a435l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.009385892103069426,
+   "train_table": 0.009385892103069426,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a443l",
+   "code": "ASYSTOLE",
+   "label": true,
+   "brain_m2": 0.1343046869776469,
+   "train_table": 0.1343046869776469,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a449l",
+   "code": "ASYSTOLE",
+   "label": true,
+   "brain_m2": 0.09064194809678985,
+   "train_table": 0.09064194809678985,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a461l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.050592880459013674,
+   "train_table": 0.050592880459013674,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a465l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.10186842735467877,
+   "train_table": 0.10186842735467877,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a673l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.12016525391980293,
+   "train_table": 0.12016525391980293,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "a807l",
+   "code": "ASYSTOLE",
+   "label": false,
+   "brain_m2": 0.21862475366782522,
+   "train_table": 0.21463315696787827,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b125l",
+   "code": "BRADY",
+   "label": true,
+   "brain_m2": 0.5077795994678161,
+   "train_table": 0.5077795994678161,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b187l",
+   "code": "BRADY",
+   "label": true,
+   "brain_m2": 0.10685822694234333,
+   "train_table": 0.10685822694234333,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b215l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.015219780852242301,
+   "train_table": 0.015219780852242301,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b227l",
+   "code": "BRADY",
+   "label": true,
+   "brain_m2": 0.9648703258803647,
+   "train_table": 0.9648703258803647,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b229l",
+   "code": "BRADY",
+   "label": true,
+   "brain_m2": 0.9726503306947182,
+   "train_table": 0.9726503306947182,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b269l",
+   "code": "BRADY",
+   "label": true,
+   "brain_m2": 0.8183453007841192,
+   "train_table": 0.8183453007841192,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b285l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.01945495102642724,
+   "train_table": 0.01945495102642724,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b331l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.0031205992802271305,
+   "train_table": 0.0031205992802271305,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b387l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.03743056376857612,
+   "train_table": 0.03743056376857612,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b553l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.03776007200089697,
+   "train_table": 0.03776007200089697,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b617l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.1651396146566637,
+   "train_table": 0.1651396146566637,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "b835l",
+   "code": "BRADY",
+   "label": false,
+   "brain_m2": 0.00517180745195933,
+   "train_table": 0.00517180745195933,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f121l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.6214681427825189,
+   "train_table": 0.6214681427825189,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f407l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.0032849879239731203,
+   "train_table": 0.0032849879239731203,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f415l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.11218016218204414,
+   "train_table": 0.11218016218204414,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f499l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.040711429626749514,
+   "train_table": 0.040711429626749514,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f529l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.15829167350208784,
+   "train_table": 0.15829167350208784,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f605l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.008384286969774198,
+   "train_table": 0.008384286969774198,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "f657l",
+   "code": "VFIB",
+   "label": false,
+   "brain_m2": 0.006319523273096512,
+   "train_table": 0.0061633313206055675,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t149l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9932555286398091,
+   "train_table": 0.9932555286398091,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t195l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9952338203120138,
+   "train_table": 0.9952338203120138,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t277l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9900876017901666,
+   "train_table": 0.9900876017901666,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t409l",
+   "code": "TACHY",
+   "label": false,
+   "brain_m2": 0.29516263277485943,
+   "train_table": 0.29516263277485943,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t417l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9960130281914311,
+   "train_table": 0.9960130281914311,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t447l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9966333074858047,
+   "train_table": 0.9966333074858047,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t477l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9861521525498956,
+   "train_table": 0.9861521525498956,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t507l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9942791995945683,
+   "train_table": 0.9942791995945683,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t509l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9858208348755398,
+   "train_table": 0.9858208348755398,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t521l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9930596820760313,
+   "train_table": 0.9930413803764965,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t595l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.9592364660084234,
+   "train_table": 0.9592364660084234,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "t787l",
+   "code": "TACHY",
+   "label": true,
+   "brain_m2": 0.969783519121077,
+   "train_table": 0.969783519121077,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v113l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.03232184581079783,
+   "train_table": 0.03232184581079783,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v139l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.26288377178844446,
+   "train_table": 0.26288377178844446,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v141l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.013551372164858728,
+   "train_table": 0.013551372164858728,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v147l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.0015254817181985466,
+   "train_table": 0.0015254817181985466,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v155l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.005680508107276134,
+   "train_table": 0.005680508107276134,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v169l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.002523248340201779,
+   "train_table": 0.002523248340201779,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v181l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.1507019233275526,
+   "train_table": 0.1507019233275526,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v199l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.39899989874676683,
+   "train_table": 0.39899989874676683,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v217l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.014825916224039181,
+   "train_table": 0.014825916224039181,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v221l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.27861703279735095,
+   "train_table": 0.27861703279735095,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v241l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.0016991053911035278,
+   "train_table": 0.0016991053911035278,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v275l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.4348111228182995,
+   "train_table": 0.4348111228182995,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v295l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.004032699487480532,
+   "train_table": 0.004032699487480532,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v319l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.00451739899626893,
+   "train_table": 0.00451739899626893,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v329l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.8714720867192204,
+   "train_table": 0.8714720867192204,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v355l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.012034741181383025,
+   "train_table": 0.012034741181383025,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v369l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.952130372830004,
+   "train_table": 0.952130372830004,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v373l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.10750322955062887,
+   "train_table": 0.10750322955062887,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v399l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.15713988826039732,
+   "train_table": 0.15713988826039732,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v403l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.9093344278345173,
+   "train_table": 0.9093344278345173,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v419l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.185411023166449,
+   "train_table": 0.185411023166449,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v421l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.22393017614780117,
+   "train_table": 0.22393017614780117,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v437l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.0030523431227192322,
+   "train_table": 0.0030523431227192322,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v473l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.23772679070649308,
+   "train_table": 0.23772679070649308,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v475l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.01066017490496529,
+   "train_table": 0.01066017490496529,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v481l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.012811721467697056,
+   "train_table": 0.012811721467697056,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v519l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.0022666592152705265,
+   "train_table": 0.0022666592152705265,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v531l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.03519412374118707,
+   "train_table": 0.03519412374118707,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v569l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.005354065339598491,
+   "train_table": 0.005354065339598491,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v615l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.0014875374220211838,
+   "train_table": 0.0014875374220211838,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v629l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.8566194173255761,
+   "train_table": 0.8659335758194621,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v655l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.024641504392906542,
+   "train_table": 0.024641504392906542,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v729l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.10846330165979931,
+   "train_table": 0.10846330165979931,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v761l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.9591750483853149,
+   "train_table": 0.9591750483853149,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v791l",
+   "code": "VTACH",
+   "label": false,
+   "brain_m2": 0.01639412125999994,
+   "train_table": 0.01639412125999994,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v793l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.4176340058487183,
+   "train_table": 0.4176340058487183,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v797l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.829584839640224,
+   "train_table": 0.829584839640224,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  },
+  {
+   "record": "v831l",
+   "code": "VTACH",
+   "label": true,
+   "brain_m2": 0.13738147631328448,
+   "train_table": 0.13738147631328448,
+   "model_version": "M2-gbt-2026-10-17",
+   "path": "gbt_prealarm",
+   "verdict": "EMERGENCY"
+  }
+ ]
+}

@@ -90,7 +90,7 @@ class BrainService:
                 state.prealarm_window=None
                 state.alarm_ts=message['ts']
                 if len(state.chunks)==10 and state.chunks[0]['ts']==message['ts']-10000 and state.chunks[-1]['ts']==message['ts']-1000:
-                    state.prealarm_window=assemble_window(list(state.chunks))
+                    state.prealarm_window=self._window_from_chunks(state, list(state.chunks))
             state.last_alarm_code=alarm['code']
         sequence_issue=state.last_seq is not None and (message['seq']<=state.last_seq or message['ts']<=state.last_ts)
         record={'message':message,'received_ms':now,'payload_bytes':receipt.payload_bytes,'sender_id':sender_id,'sequence_issue':sequence_issue}
@@ -109,6 +109,15 @@ class BrainService:
         verdict=self.last_verdicts.get(bed,{})
         trusted=verdict.get('verdict')=='NORMAL'
         return deepcopy(self.snapshots.get(bed) if trusted else self.last_trusted_snapshots.get(bed,self.snapshots.get(bed)))
+    @staticmethod
+    def _window_from_chunks(state,chunks):
+        data={'bed_id':state.bed_id,'device_id':chunks[0]['device_id'],'window_start':chunks[0]['ts'],'window_s':10,'sample_rate_hz':125,'monitor_alarms':[],'seq_first':chunks[0]['seq'],'seq_last':chunks[-1]['seq']}
+        for channel in ('ecg','ppg'):
+            data[channel]=[v for c in chunks for v in (c[channel] or [None]*125)]
+            data[channel+'_valid']=[v is not None for v in data[channel]]
+        # Arterial line only when present in some second; absent seconds stay missing.
+        data['abp']=[v for c in chunks for v in (c.get('abp') or [None]*125)] if any(c.get('abp') for c in chunks) else None
+        return data
     def tick(self,now_ms):
         generation=self._run_generation
         # Caller uses epoch-aligned deadlines. Negative starts are avoided during initial epoch fixtures.

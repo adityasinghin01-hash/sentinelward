@@ -70,13 +70,11 @@ class QualityDetector:
         return result(value,reason,channel=bad if value else None,channels=checks,path='live_signal_quality')
 
 class EmergencyDetector:
-    def __init__(self,model=None):
-        from .m2_model import M2Model
-        self.model=model if model is not None else M2Model()
-        self._sources={}
+    def __init__(self,gbt=None):
+        from .m2gbt import GbtM2
+        self.gbt=GbtM2() if gbt is None else gbt
     def reset(self):
-        self._sources.clear()
-        self.model.reset()
+        if self.gbt: self.gbt.reset()
     def evaluate(self,window,state,now_ms):
         bed=getattr(state,'bed_id',(window or {}).get('bed_id'))
         code=state.last_alarm_code if state.alarm_until_ms>0 and state.alarm_until_ms>=now_ms else None
@@ -84,25 +82,24 @@ class EmergencyDetector:
         if code is None and alarms and getattr(state,'patient_ok_ts',-1)<window.get('window_start',0):
             code=alarms[-1]['code']
         if code is None:
-            self._sources.pop(bed,None)
             return result(None,'No monitor alarm in or just before this window',not_applicable=True)
-        episode=(getattr(state,'alarm_ts',None),code)
-        source=getattr(state,'prealarm_window',None)
-        if source is None:
-            previous=self._sources.get(bed)
-            if previous and previous[0]==episode: source=previous[1]
-            elif window:
-                source=deepcopy(window)
-                self._sources[bed]=(episode,source)
-        if source is not None:
-            output=self.model.score(source,code)
-            if output is not None:
-                return result(output['score'],'Configured M2 model evaluated '+code,path='configured_model',alarm_code=code,
-                              **{k:v for k,v in output.items() if k!='score'})
-        fallback={'model_unavailable_reason':self.model.unavailable_reason,'path':'live_ecg_rule'}
-        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable',**fallback)
+        # Primary: trees on the exact 10 s pre-alarm window they were trained on. Explains only.
+        gbt={'status':'unavailable','extra':{'unavailable_reason':'no_full_prealarm_window'}}
+        prealarm=getattr(state,'prealarm_window',None)
+        if prealarm is not None and self.gbt:
+            gbt=self.gbt.evaluate(prealarm,code)
+            if gbt.get('status')=='active':
+                positive=gbt['positive']; p=gbt['score']; x=gbt['extra']
+                evidence=f"{p:.0%} likely real {code} (threshold {gbt['threshold']:.2f})"
+                if x.get('ecg_hr_bpm') is not None: evidence+=f"; ECG {x['ecg_hr_bpm']:.0f} bpm"
+                if x.get('pulse_hr_bpm') is not None: evidence+=f", pulse {x['pulse_hr_bpm']:.0f} bpm"
+                if confirmed_low_pressure(state,now_ms):
+                    positive=True; evidence='Low arterial pressure confirmed by cuff; '+evidence
+                from .m2gbt import MODEL_VERSION
+                return result(p,evidence,path='gbt_prealarm',model_version=MODEL_VERSION,alarm_code=code,positive=positive,threshold=gbt['threshold'],features=x,alarm_preserved=True)
+        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable',gbt=gbt)
         metrics=pulse_metrics(window)
-        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',**fallback)
+        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',gbt=gbt)
         rate=metrics['rate']; width=metrics['qrs_ms']; regularity=metrics['regularity']
         if code=='ASYSTOLE': positive=rate<20; evidence='ECG has very few beats'
         elif code=='BRADY': positive=rate<40; evidence=f'ECG rate is {rate:.0f} bpm'
@@ -115,7 +112,7 @@ class EmergencyDetector:
             evidence=f'ECG rate is {rate:.0f} bpm'
         if confirmed_low_pressure(state,now_ms):
             positive=True; evidence='Low arterial pressure confirmed by cuff'
-        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,**fallback)
+        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,gbt=gbt)
 
 
 def confirmed_low_pressure(state,now_ms):
