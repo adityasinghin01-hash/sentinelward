@@ -1,5 +1,7 @@
 # Antara Gupta (screens and alerts): work plan v3 (7 Oct, updated 10 Oct: see "Added 10 Oct")
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 ## Your data and your AI
 Your screens are where people **see the AI's decisions and the data behind them**:
 - every bed's live signals;
@@ -9,7 +11,7 @@ Your screens are where people **see the AI's decisions and the data behind them*
 - "alarms we stopped" (proof the AI cuts false alarms).
 
 ## Your job in one paragraph
-You build everything people see: a web app (judges need a link, so no phone app yet) with **13 screens** for 5 roles. The central-station nurse sees every bed; the bedside nurse gets short phone alerts and confirms "Patient OK / NOT OK"; the doctor sees who needs them and which data not to trust; biomed sees repair tickets; IT sees attacks, evidence and the CERT-In draft. **A hacked bed is never blank.** The pitch and video score (10 of the 40 points) depends on you.
+You build everything people see: a web app (judges need a link, so no phone app yet) with **13 screens** for 5 roles. The central-station nurse sees every bed; the bedside nurse gets short phone alerts and confirms "Patient OK / NOT OK"; the doctor sees who needs them and which data not to trust; biomed sees repair tickets; IT sees attacks, evidence and the CERT-In draft. **Retain available last trusted values when a bed is untrusted; screen continuity is not a measured guarantee (`../evidence/WARD-RUN.md`).** The pitch and video score (10 of the 40 points) depends on you.
 
 ## Your full spec: R8, Drive doc 06 (read it all)
 It has, for every screen: who uses it, layout sketch (desktop + tablet), every element, which backend address it reads, how often it updates, loading / empty / error / untrusted states, every button and where it goes, plus every Telegram message.
@@ -33,7 +35,7 @@ It has, for every screen: who uses it, layout sketch (desktop + tablet), every e
   - Untrusted = **grey diagonal stripes** + the words "UNTRUSTED · last good 14:02 · 3 min ago".
 - **Never colour alone:** every state has colour + icon + word.
 - **Familiar:** the ward screen looks like the central monitoring screens nurses already use (GE, Philips): bed tiles with a coloured title bar.
-- **One alert per bed per event**; every automatic action shows **Undo**.
+- **One alert per bed per event**; supported reversible actions show **Undo** (`../../agents_v2/REPORT.md`).
 - **The screen comes first, the phone second.** Central government hospitals were told in 2024 to restrict phones on duty in ICUs (DGHS advisory), and big private chains are moving staff to their own messaging apps (Kauvery, Sep 2026). So every alert must be fully usable on the central screen; Telegram is the demo stand-in for the hospital's app.
 - **Readable from 2 m:** big HR and SpO2 numbers. Dark theme.
 
@@ -67,8 +69,8 @@ Exactly the messages and addresses in **doc 00 v1**: `GET /api/ward`, `/api/beds
 | 19–22 | README + screen recordings |
 
 ## Done checklist
-- [ ] All 13 screens; each role sees only its own · [ ] every verdict looks as in R8 · [ ] never a blank patient
-- [ ] Bedside "Patient OK / NOT OK" works from screen and Telegram · [ ] ladder visible · [ ] Undo everywhere
+- [ ] All 13 screens; each role sees only its own · [ ] every verdict looks as in R8 · [ ] retain available trusted values
+- [ ] Bedside "Patient OK / NOT OK" works from screen and Telegram · [ ] ladder visible · [ ] Undo on supported reversible actions
 - [ ] Tablet layout; contrast and reduce-motion · [ ] README lets a stranger run it
 
 ## Added 10 Oct (Participant Guidebook)

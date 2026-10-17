@@ -37,10 +37,14 @@ flowchart LR
   API -- requests --> A
 ```
 
-## The five safety rules (every part obeys them)
-1. A patient is never shown blank (last trusted values stay, marked untrusted).
+The witness counts distinct broker client IDs per bed topic in 5-second windows, not cryptographic identity of each frame (`security_v2/sw_sec/features.py`). Build `4348467` fixes window expiry; N caught B12 at 17:04 after historical misses (`docs/evidence/WARD-RUN.md`).
+
+The secured systemd ward and six-container Compose stack are separate configurations. Compose omits agents and the witness and permits anonymous MQTT internally (`docs/EXPLORE.md`).
+
+## Safety behavior and limits
+1. Keep available last trusted values marked untrusted, or flagged last values if no trusted pin exists. N and F1–F3 each report 88 B07 blank-after-data API samples; nurse-visible continuity is unknown (`docs/evidence/WARD-RUN.md`).
 2. Suspected tampering never cancels an emergency (verdict BOTH = alert **and** cut-off).
-3. Every automatic action is logged and can be undone with one click.
+3. Actions are logged; monitor cut-offs and supported reversible actions have Undo. Notifications and evidence records cannot be unsent or erased by Undo.
 4. Nothing automatic touches treatment.
 5. Official reports are drafted by an agent and sent by a person.
 

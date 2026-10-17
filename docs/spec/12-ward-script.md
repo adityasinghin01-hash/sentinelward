@@ -1,5 +1,7 @@
 # 12 · Ward script v1 (9 Oct 2026): the 20-minute test ward
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 This is the written plan for test T8 and the demo video. It's the same 20 minutes every time, so the numbers can be repeated. **On paper only:** the simulator and attack scripts that run it are built on 17–18 Oct.
 
 Every bed below uses real recordings that were checked on 9 Oct (doc 11). Where a source still needs checking, it says **"confirm at H1"**.
@@ -42,7 +44,7 @@ How to pick MIMIC patients #4–#6 at H1:
 | 05:30 | B03 | Nobody answers step 1 | A1 escalates to step 2 (30 s timer in the demo) |
 | 05:50 | B03 | Nurse 2 acknowledges on Telegram (Aditya) | Alert closed, action logged |
 | 06:00 | B10 | Slow hacker drift starts, same size and shape, but sent as forged messages (Kartik) | Nothing yet |
-| 06:30 | B04 | a123l reaches its alarm: `ASYSTOLE` (false: ECG artefact, pulse and pressure continue) | M1 high, M2 low → `LOOSE_SENSOR` within 10 s: "refit the ECG lead". False alarm silenced |
+| 06:30 | B04 | a123l reaches its alarm: `ASYSTOLE` (false: ECG artefact, pulse and pressure continue) | M1 high, M2 low → `LOOSE_SENSOR` within 10 s: "refit the ECG lead". Current implementation retains EMERGENCY while this monitor alarm is held; M2 advice does not silence it (`../evidence/WARD-RUN.md`) |
 | 06:06 → 08:36 | B09 | 912's pressure slides. Cuff 64 at T+06:06, line under 65 from T+08:00, cuff **57** at T+08:36 | M6 sees the line **and** cuff falling together → **not drift**. `EMERGENCY` (high) by T+08:36 at the latest: "low blood pressure, confirmed by cuff" |
 | ~07:00 | B09 | Heart rate briefly reads 0 (a real glitch in the recording) | Must **not** turn B09's emergency into `LOOSE_SENSOR` |
 | 08:54 | B08 | Cuff reading: line ≈ 8 mmHg above the cuff | M6 score rising |
@@ -54,7 +56,7 @@ How to pick MIMIC patients #4–#6 at H1:
 | 12:00 | B11 | Port scan + flood against MON-11 (Kartik) | M5 → `DEVICE_ATTACK`: **IT only, no nurse alert**. A4 fleet hunt, A3 evidence, A5 drafts the CERT-In report and starts the 6-hour clock |
 | ~13:00 | B10 | Hacker drift now about 10 mmHg off the cuff, and the network shows forged messages | M6 drift + M5 network → `TAMPERING`, **not** `DRIFTING` |
 | 13:45 | B07 | Attack on MON-07 starts: flood, then forged loop of its own older signal (Kartik) | `TAMPERING` |
-| 14:00 | B07 | f543l reaches its alarm: `VFIB` (true) | **`BOTH`**: nurse alerted now (high) **and** device cut off. The tampering verdict never cancels the emergency. Last trusted values stay on screen |
+| 14:00 | B07 | f543l reaches its alarm: `VFIB` (true) | **`BOTH`**: nurse alerted now (high) **and** device cut off. The tampering verdict never cancels the emergency. Available last trusted values are retained; B07 nurse-visible continuity remains unknown (`../evidence/WARD-RUN.md`) |
 | 15:00 | B08 | Injector stops (the nurse "re-zeroed") | Next cuff at T+16:12 agrees → back to `NORMAL`. Ticket stays open for biomed |
 | 15:30 | B05 | IT clicks Undo on the cut-off (Kartik) | `enable_client` logged with `undoes`. B05 trusted again, `NORMAL` |
 | 16:00 | B06 | Fake flatline: forged messages with a flat ECG + `ASYSTOLE`, while the real pulse keeps coming (Kartik) | M3: heart flat but pulse present = body mismatch. M5: sender changed. M2 low → `TAMPERING` (medium) + hand-check. **This is the video's "faked flatline caught" moment** |
@@ -64,15 +66,15 @@ How to pick MIMIC patients #4–#6 at H1:
 | 20:00 | all | Stop. `POST /api/demo/reset` | |
 
 ## Pass checks (written down after every run)
-1. **No false alerts:** B01 and B02 never leave `NORMAL`.
+1. **No false nurse alerts:** B01 stays NORMAL; B02 has brief UNSURE blips but no nurse alert in N/F1–F3 (`../evidence/WARD-RUN.md`).
 2. **Right verdict, on time:**
    - Every event reaches its expected verdict within 15 s.
    - Cuff-based events (B08, B09) within 30 s of the confirming cuff reading.
 3. **Safety rules:**
    - B09 is never `DRIFTING`.
    - B07's emergency alert is never cancelled.
-   - No bed ever goes blank (B05 and B07 keep showing last trusted values).
-   - Every automatic action has an undo, and B05's undo works.
+   - Retain available last trusted values; screen continuity for B07’s 88 blank-after-data API samples remains unknown (`../evidence/WARD-RUN.md`).
+   - Supported reversible actions have Undo, including B05 cut-off (`../../agents_v2/REPORT.md`).
 4. **Numbers for the results table (T8):**
    - Time-to-safe for B05 and B07 (attack start → isolated **and** nurse told).
    - Blind Time with and without SentinelWard.

@@ -3,7 +3,7 @@
 Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM LinuxONE.
 
 > An ICU alarm goes off. Is it the patient, a failing sensor, or someone faking the monitor?
-> SentinelWard answers for every bed, every 5 seconds, on IBM LinuxONE, and never shows a patient blank.
+> SentinelWard checks a 12-bed replay every 5 seconds on IBM LinuxONE and retains available last trusted values when a monitor becomes untrusted.
 
 **For judges:** [Judge guide (criterion → proof)](docs/submission/JUDGE-GUIDE.md) · [Flowchart](docs/flowchart/flowchart.png) · [Evidence pack](docs/evidence/INDEX.md) · [Full ward run](docs/evidence/WARD-RUN.md)
 
@@ -32,7 +32,7 @@ All files below are in [docs/evidence/screens/](docs/evidence/screens/). As the 
 | [11-live-bed-B03-VTACH-ai-chip-second-opinion.png](docs/evidence/screens/11-live-bed-B03-VTACH-ai-chip-second-opinion.png) | B03 AI-chip second opinion on nnpa:0 (older UI) | Nurse, doctor, IT, operator |
 | [12-live-ward-tile-ai-chip-icon.png](docs/evidence/screens/12-live-ward-tile-ai-chip-icon.png) | AI-chip indicator on B03's ward tile (older UI) | Nurse, doctor, IT, operator |
 | [13-live-bed-B03-ai-chip-empty-state.png](docs/evidence/screens/13-live-bed-B03-ai-chip-empty-state.png) | Chip panel before a result arrives (older UI) | Nurse, doctor, IT, operator |
-| [14-landing-light.png](docs/evidence/screens/14-landing-light.png) | Full landing page, light theme | Anyone, before sign-in |
+| [14-landing-light.png](docs/evidence/screens/14-landing-light.png) | Historical landing capture before these claim corrections; current text: `web/src/pages/Landing.tsx` | Anyone, before sign-in |
 | [15-sign-in-light.png](docs/evidence/screens/15-sign-in-light.png) | One-click role sign-in | Anyone, before sign-in |
 | [16-ward-light.png](docs/evidence/screens/16-ward-light.png) | Ward in the light theme | Nurse, doctor, IT, operator |
 
@@ -58,7 +58,7 @@ These are checked-in files. Saved runs establish the results shown; starting you
 | Security live test | [15/15 raw output](docs/evidence/raw/security-live-20261017T140649Z.json), [explanation](docs/evidence/SECURITY.md) | Own-bed ACLs, rejected access, cut-off/Undo and TLS checks |
 | ML held-out results and fatigue | [ML-RESULTS.md](docs/evidence/ML-RESULTS.md), [heldout2.json](ml_v2/results/heldout2.json), [fatigue.txt](docs/evidence/raw/fatigue.txt) | Locked test sets, model comparison and advice-only false/missed alarm counts |
 | Robustness and model integrity | [ROBUSTNESS.md](docs/evidence/ROBUSTNESS.md), [raw results](ml_v2/results/robustness.json), [integrity tests](brain/tests/test_m2_integrity.py) | Damaged/forged inputs, hash checks and fallback, with failure cases |
-| Scale and resources | [SCALE.md](docs/evidence/SCALE.md), [RESOURCES.md](docs/evidence/RESOURCES.md) | 12–96-bed table; 96 was the largest test, for 3 minutes |
+| Scale and resources | [SCALE.md](docs/evidence/SCALE.md), [RESOURCES.md](docs/evidence/RESOURCES.md) | Later 12–96-bed summary (3 minutes); raw tick logs not bundled; older extra-bed run rejected by brain |
 | Containers and platform | [CONTAINERS.md](docs/evidence/CONTAINERS.md), [raw captures](docs/evidence/raw/containers/), [PLATFORM.md](docs/evidence/PLATFORM.md) | s390x build, six services, health, app hardening and container ward runs |
 | FHIR sample | [Bundle JSON](docs/evidence/raw/fhir-sample-bundle.json), [INTEROP.md](docs/evidence/INTEROP.md) | Authenticated read-only R4 subset; synthetic fixture, no tested EHR connection |
 | Incident SHA-256 evidence | [Incident screen](docs/evidence/screens/09-replay-incident-timeline-sha256-evidence.png), [N agent timeline](docs/evidence/raw/wardrun-night/timeline_agentsN.txt) | Saved evidence view and A3 file sizes/digests; incident payload files are not bundled here |
@@ -146,19 +146,19 @@ Verdicts, highest precedence first (`brain/README.md`): **BOTH** (real emergency
 |---|---|
 | A1 | Alerts to screen and Telegram, one per bed episode, 30 s escalation ladder, ack |
 | A2 | Marks the bed untrusted at once; cuts the device off at our own hub after 20 s of sustained evidence (at once on BOTH); Undo |
-| A3 | Evidence: 10-minute ring buffer per bed, timeline with SHA-256 |
+| A3 | Evidence: up to 10 minutes of buffered verdicts, scores and events at incident opening, timeline with SHA-256; no raw waveforms (`agents_v2/sw_agents/agents/a3_evidence.py`) |
 | A4 | Fleet hunt for other devices of the same kind |
 | A5 | CERT-In report draft with its 6-hour clock (a person sends it; no send code exists) |
 | A6 | Biomed tickets for drifting / repeatedly loose sensors |
 | A7 | Nurse workload (alerts per nurse in 2 h) |
-| A8 | Shift briefing written by IBM Granite on LinuxONE, every number fact-checked |
+| A8 | Shift briefing written by IBM Granite on LinuxONE, numeric checks against supplied facts |
 
 ### Safety rules (enforced in code and tested)
 - **Alarms are never suppressed.** The M2 score only explains an alarm; it never suppresses, delays or downgrades it (`brain/README.md`, tested in `brain/tests`).
 - **Tampering never cancels an emergency.** A real alarm during an attack becomes BOTH: nurse alerted **and** device cut off (`docs/evidence/WARD-RUN.md`, B07).
-- **Every automatic action has an Undo**, logged as a new action that `undoes` the original (`agents_v2/REPORT.md`, `docs/evidence/SECURITY.md`).
-- **A cut-off never hides a real alarm.** The nurse is told to hand-check at once; the cut-off waits for 20 s of sustained evidence, or happens at once when an emergency is also present (`docs/evidence/SECURITY.md`).
-- **The patient is never blank.** An untrusted or cut-off bed keeps showing its last trusted values (`docs/evidence/WARD-RUN.md`).
+- **Monitor cut-offs have an Undo**, logged as a new action that `undoes` the original (`agents_v2/REPORT.md`, `docs/evidence/SECURITY.md`).
+- **Known active emergencies remain visible during containment.** The nurse is told to hand-check; the cut-off waits for 20 s of sustained evidence, or happens at once on BOTH. A disconnected monitor cannot supply later alarms; bedside monitoring is required (`docs/evidence/SECURITY.md`).
+- **Retain available values.** An untrusted or cut-off bed uses its last trusted values, or flagged last values if no trusted snapshot exists. B07 has 88 reported blank-after-data API samples in each of N and F1–F3; whether a nurse saw a blank screen is unknown (`docs/evidence/WARD-RUN.md`).
 - SentinelWard only listens to monitors; it never sends anything back to one. Nothing automatic touches treatment.
 
 ## The data (all open, real recordings replayed)
@@ -177,13 +177,13 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest, the bu
 | Area | What we did | Evidence |
 |---|---|---|
 | Compute | IBM z17 (machine type 9175), CPU flag `nnpa` (Telum II on-chip AI), 3 vCPUs at 5,508 MHz, z/VM 7.3.0, Ubuntu 24.04 s390x | `docs/evidence/PLATFORM.md` |
-| Telum II NNPA | Live AI-chip second opinion: a 1D-CNN on the z17 NNPA (`torch_nnpa 1.5.0`, `nnpa:0`) scores every alarm the brain scores with M2 and publishes its own probability on `ward/chip/<bed>` (live run: B03 VTACH p 0.769 real, B04 ASYSTOLE p 0.166 false, B07 VFIB p 0.953 real). Shown only, never changes a decision; held-out 0.623 / 0.665, below the trees (0.862 / 0.832). At batch 1 it is not faster than one CPU core (median 2.11 vs 1.86 ms). Runs on the TEST LinuxONE guest in IBM's lab container, over TLS 8883 to the hub | `docs/evidence/ML-RESULTS.md` |
+| Telum II NNPA | Live AI-chip second opinion: a 1D-CNN on the z17 NNPA (`torch_nnpa 1.5.0`, `nnpa:0`) scores alarms it receives in time (not guaranteed for every alarm) and publishes its own probability on `ward/chip/<bed>` (N: B03 VTACH p 0.769 real, B04 ASYSTOLE p 0.166 false, B07 VFIB p 0.953 real; B06 forged ASYSTOLE received no chip score: `docs/evidence/raw/wardrun-night/chip_check.txt`). Shown only, never changes a decision; held-out 0.623 / 0.665, below the trees (0.862 / 0.832). At batch 1 it is not faster than one CPU core (median 2.11 vs 1.86 ms). Runs on the TEST LinuxONE guest in IBM's lab container, over TLS 8883 to the hub | `docs/evidence/ML-RESULTS.md` |
 | AI trained on s390x | M2 trees trained on LinuxONE (scikit-learn 1.4.1), served as numpy-only trees, SHA-256 pinned | `docs/evidence/ML-RESULTS.md` |
 | Containers | One s390x image built on LinuxONE; 6 containers (api, brain, sim, attacks, hub, db); non-root, read-only root, all capabilities dropped, no compiler in the image; two 20-minute ward runs inside: 11,790 messages each, 0 invalid | `docs/evidence/CONTAINERS.md` |
 | Security | Mosquitto dynamic security, per-device accounts (each monitor may publish only its own bed), TLS 1.3 on 8883; live test 15/15 PASS; scrypt PINs, lockout, CSRF checks | `docs/evidence/SECURITY.md`, `security_v2/SECURITY.md` |
-| Scale | One brain container (1.0 CPU) kept up with 96 beds: slowest tick 1.12 s of its 5 s budget (22.4%), 0 dropped | `docs/evidence/SCALE.md` |
+| Scale | Later 3-minute summary reports 96 beds on one brain container (1.0 CPU): slowest tick 1.12 s of 5 s (22.4%), 0 dropped; underlying tick logs not bundled. Older bundled capture rejected extra beds | `docs/evidence/SCALE.md` |
 | Resources | Whole live 12-bed ward: a few percent of 3 z17 cores (brain 2.2% CPU, 268 MiB) | `docs/evidence/RESOURCES.md` |
-| IBM Granite | A8's shift briefing written by IBM Granite (`granite-4.0-h-350m-base`) on LinuxONE in IBM's LinuxONE lab image; every number fact-checked, else the template is used; end-of-shift briefing written by Granite in all three final ward runs F1–F3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
+| IBM Granite | A8's shift briefing written by IBM Granite (`granite-4.0-h-350m-base`) on LinuxONE in IBM's LinuxONE lab image; numeric checks against supplied facts, else the template is used; end-of-shift briefing written by Granite in all three final ward runs F1–F3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
 
 ## Results (measured on LinuxONE, 17 Oct 2026)
 **M2 "is this alarm real?"**: held-out sets locked before training (188 CinC records, 482 VTaC events); Challenge 2015 score = (TP+TN)/(TP+TN+FP+5·FN), 95% bootstrap CI (`docs/evidence/ML-RESULTS.md`).
@@ -194,9 +194,11 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest, the bu
 | **M2 2-lead trees (live)** | **0.862 [0.785, 0.931]** | 0.968 | **0.832 [0.775, 0.885]** | 0.964 |
 | 1D-CNN on z17 NNPA (live second opinion, shown only) | 0.623 | 0.881 | 0.665 | 0.883 |
 
-**Alarm fatigue, advice only** (the monitor alarm still sounds; nothing is suppressed): at the live thresholds the 2-lead trees mark **85.1%** of false CinC alarms "likely false" (97/114) and miss **2.7%** of true ones (2/74); on VTaC **84.1%** (290/345) and **4.4%** (6/137). Recomputed by `ml_v2/results/fatigue.py` → `docs/evidence/raw/fatigue.txt` (per alarm type in `docs/evidence/ML-RESULTS.md`).
+**Alarm fatigue, advice only** (the monitor alarm still sounds; nothing is suppressed): at the live thresholds the 2-lead trees mark **85.1%** of false CinC 2015 held-out alarms "likely false" (97/114) and miss **2.7%** of true ones (2/74); on the VTaC test set **84.1%** (290/345) and **4.4%** (6/137). Recomputed by `ml_v2/results/fatigue.py` → `docs/evidence/raw/fatigue.txt` (per alarm type in `docs/evidence/ML-RESULTS.md`).
 
-**Final full 20-minute ward runs, agents on** (three back-to-back runs F1–F3 on build `f7fef1c`, 12 beds, scripted attacks, four human steps; `docs/evidence/WARD-RUN.md`):
+**Latest full ward run N (18 Oct, build `4348467`): 12/12 bed checks passed**, with B12 UNSURE at 17:04 after the witness fix. This is one post-fix run. Time-to-safe B05/B06/B07/B10: 21.2/1.2/21.3/21.2 s; 11 nurse alerts (`docs/evidence/raw/wardrun-night/metricsN.txt`, `judgeN.txt`; [cohort manifest](docs/evidence/RESULTS-MANIFEST.md)).
+
+**Historical full 20-minute ward runs, agents on** (three back-to-back runs F1–F3 on build `f7fef1c`, 12 beds, scripted attacks, four human steps; `docs/evidence/WARD-RUN.md`):
 
 | Measure | Result (F1 / F2 / F3) |
 |---|---|
@@ -209,10 +211,10 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest, the bu
 | Nurse alerts | 11 per 20-minute run for 12 beds |
 | B11 false hand-check pages | 0 / 1 / 1 |
 | Telegram | 22 sent, 25–26 edited, 0 failed per run |
-| IBM Granite briefing | written and fact-checked in all three runs |
+| IBM Granite briefing | written and accepted by numeric checks in all three runs |
 | Errors | every sampled API call 200 (except `/api/briefing` 503 before the first briefing); agents bus 0 invalid, 0 dropped, 0 handler errors |
 
-**Platform** (`docs/evidence/SECURITY.md`, `SCALE.md`, `CONTAINERS.md`): security live test 15/15 PASS · 96 beds per brain container at 22.4% of the tick · container ward runs 0 invalid of 11,790 messages, send lag p99 24.7 ms and 40.3 ms.
+**Platform** (`docs/evidence/SECURITY.md`, `SCALE.md`, `CONTAINERS.md`): secured systemd hub test 15/15 PASS · later scale summary reports 96 beds per brain at 22.4% of the tick (raw tick logs not bundled) · separate container ward runs: 0 invalid of 11,790 messages each, send lag p99 24.7 ms and 40.3 ms. Compose does not include the secured hub configuration, agents or witness.
 
 Screenshots of every step: `docs/evidence/screens/` (listed in `docs/evidence/INDEX.md`).
 
@@ -270,17 +272,17 @@ Abstract: our Unstop submission text of 12 Oct 2026. Each row says what we built
 |---|---|---|
 | "A trained model combines six scores into one verdict" | Changed | A fixed safety precedence (BOTH > EMERGENCY > TAMPERING > … > NORMAL) with up to 3 plain reasons (`brain/README.md`). A learned fusion could quietly let an attack score outvote a real emergency; fixed rules make "tampering never cancels an emergency" provable in tests. |
 | Five verdicts (emergency, sensor fault, tampering, both, unsure) | Built, extended | Eight verdicts: sensor fault split into LOOSE_SENSOR and DRIFTING; DEVICE_ATTACK (IT only) and NORMAL added (`brain/README.md`). |
-| Two witnesses: body (M3, M4, M6) and network ("is the right device sending?") | Built, partly | Body checks and M5 flood / sequence-repeat checks work. The per-sender count is not available on the live hub (`sender_identity_available: False` in F1–F3), so the weak second-sender attack (B12) was caught in 1 of 3 final runs (`docs/evidence/WARD-RUN.md`). |
+| Two witnesses: body (M3, M4, M6) and network ("is the right device sending?") | Built, limited provenance | Build `4348467` fixes sender-window expiry: N caught B12 at 17:04 with multiple publishers observed (`docs/evidence/raw/wardrun-night/timeline_verdictsN.txt`, `judgeN.txt`). Counts are distinct broker client IDs per bed topic, not cryptographic identity of each frame (`security_v2/sw_sec/features.py`, `brain/sw_brain/detectors.py`). F1–F3 had unavailable counts and caught B12 only in F1; N is one post-fix run. |
 | IBM Snap ML, XGBoost and PyTorch for the alarm, replay and drift models | Changed | M2 is scikit-learn 1.4.1 gradient-boosted trees trained on s390x, served as hash-pinned numpy trees (`ml_v2/README.md`). Replay (M4) and drift (M6) are explainable rules, not trained models (`brain/README.md`). PyTorch is used only for the NNPA CNN second opinion (`chip/README.md`). Neither Snap ML nor XGBoost is in the build. |
 | NeuroKit2 for ECG signal quality | Changed | M1 is our own numpy check (flat, clipped, noisy, missing; `brain/README.md`). |
 | Nine open datasets (VTaC, CinC 2015 and 2011, SecAlarmBench, MIT-BIH NST, VitalDB, CICIoMT2024, WUSTL-EHMS-2020, MIMIC-III) | Changed: 4 used | PhysioNet/CinC 2015, VTaC, MIMIC-III Waveform Matched Subset, VitalDB (`docs/OPEN-SOURCE.md`). CinC 2011, SecAlarmBench, MIT-BIH NST, CICIoMT2024 and WUSTL-EHMS-2020 are not used: we test the network checks against our own scripted attacks on the live hub (`attacks/`). |
 | Split by patient | Changed | Split by record: CinC 2015 has no patient IDs, so record = group; the held-out set was locked before training (`docs/evidence/ML-RESULTS.md`). |
-| LangGraph agents with a human approval step | Changed | Our own small engine: every action goes through one allow-list, is validated and logged append-only, and has an Undo (`agents_v2/REPORT.md`, `agents_v2/sw_agents/engine.py`). The CERT-In report is only drafted; a person sends it (no send code). The device cut-off is automatic (20 s of evidence, at once on BOTH), limited to our own hub and undoable, not pre-approved. |
-| IBM Granite 1B and 2B write alerts and shift briefings | Changed | IBM Granite `granite-4.0-h-350m-base` from IBM's LinuxONE lab image writes the shift briefing only, and every number is fact-checked, else the template is used (`agents_v2/REPORT.md`). Nurse alerts use fixed wording (`agents_v2/sw_agents/agents/a1_alerts.py`), so a model cannot change what an alert says. |
+| LangGraph agents with a human approval step | Changed | Our own small engine: every action goes through one allow-list, is validated and logged append-only, with Undo for supported reversible actions (`agents_v2/REPORT.md`, `agents_v2/sw_agents/engine.py`). The CERT-In report is only drafted; a person sends it (no send code). The device cut-off is automatic (20 s of evidence, at once on BOTH), limited to our own hub and undoable, not pre-approved. |
+| IBM Granite 1B and 2B write alerts and shift briefings | Changed | IBM Granite `granite-4.0-h-350m-base` from IBM's LinuxONE lab image writes the shift briefing only, and numeric checks reject detected mismatches to a template (`agents_v2/REPORT.md`). Nurse alerts use fixed wording (`agents_v2/sw_agents/agents/a1_alerts.py`), so a model cannot change what an alert says. |
 | Scapy for our attack scripts | Changed | The red-team sender publishes over MQTT with our shared message code (`attacks/`); no Scapy. |
 | Patient data stays on one secure server | Built, one addition | Every decision runs on the build guest. The shown-only AI-chip second opinion reads vitals over TLS 8883 on a second LinuxONE guest (`docs/evidence/ML-RESULTS.md`). |
-| Measure missed emergencies, false alarms cut, time to safe, Blind Time | Built, changed | Missed / false alarms on held-out data (`docs/evidence/raw/fatigue.txt`), as advice only, because alarms are never suppressed. Time-to-safe in every final ward run (`docs/evidence/WARD-RUN.md`). Blind Time: defined in the system tests (`tests_system/README.md`, `tests_system/results/H6_results.md`) but no measured Blind Time figure is in the evidence pack, so we make no Blind Time claim. |
-| Pre-event tests: Snap ML 6.0 s vs scikit-learn 25.1 s; hub carried 2,000 beds | Not in this repo | Those were pre-event checks and are not re-measured here. The submitted evidence is 96 beds per brain container (`docs/evidence/SCALE.md`). |
+| Measure missed emergencies, false alarms cut, time to safe, Blind Time | Built, changed | Missed / false alarms on held-out data (`docs/evidence/raw/fatigue.txt`), as advice only, because alarms are never suppressed. Time-to-safe in every final ward run (`docs/evidence/WARD-RUN.md`). Blind Time: defined in the system tests (`tests_system/README.md`, `tests_system/metrics.py`) but no measured Blind Time figure is in the evidence pack, so we make no Blind Time claim. |
+| Pre-event tests: Snap ML 6.0 s vs scikit-learn 25.1 s; hub carried 2,000 beds | Not in this repo | Those were pre-event checks and are not re-measured here. The later summary reports 96 beds per brain container, with raw tick logs not bundled (`docs/evidence/SCALE.md`). |
 | Safety rules, 8 agents, cut-off at our hub, last trusted values kept, tamper-evident evidence, Telegram, FastAPI, PostgreSQL, React | Built as promised | `docs/evidence/SECURITY.md`, `agents_v2/REPORT.md`, `docs/evidence/WARD-RUN.md`. |
 
 ## Honest limits
@@ -288,10 +290,11 @@ Abstract: our Unstop submission text of 12 Oct 2026. Each row says what we built
 - Confidence and trust are uncalibrated heuristic numbers (`brain/README.md`).
 - M2's alarm-fatigue numbers are advice only: the monitor alarm still sounds, so they show how many alarms a nurse could deprioritise, not alarms removed (`docs/evidence/raw/fatigue.txt`).
 - M2: small per-type held-out sets (VFIB has 1 true alarm), wide intervals; thresholds tuned for the Challenge's 5× cost on missed alarms, so specificity is modest; not directly comparable with the 2015 winners' hidden test set (`docs/evidence/ML-RESULTS.md`).
-- Final ward runs F1–F3: B12's weak second-sender attack surfaced in 1 of 3 runs (F1). The network witness reports no per-sender count (`sender_identity_available: False` in all three), so only the duplicate-copy count can catch it and that depends on timing. B05 returned to NORMAL at 16:59–17:06 after the 15:29 Undo (the tampering latch waits for clean data). B11 had 0 / 1 / 1 UNSURE hand-check pages, which closed on their own (`docs/evidence/WARD-RUN.md`).
+- Latest N on build `4348467`: B12 caught at 17:04 after the witness fix (one post-fix run). Historical F1–F3: B12's weak second-sender attack surfaced in 1 of 3 runs (F1). Those historical runs had no usable per-sender count (`sender_identity_available: False` in all three), leaving detection dependent on duplicate-copy timing; N now has window-level client counts, without per-frame identity. B05 returned to NORMAL at 16:59–17:06 after the 15:29 Undo (the tampering latch waits for clean data). B11 had 0 / 1 / 1 UNSURE hand-check pages, which closed on their own (`docs/evidence/WARD-RUN.md`).
 - Because alarms are never suppressed, B04's false asystole and B06's faked flatline show EMERGENCY / BOTH while their alarm is held, not the LOOSE_SENSOR / TAMPERING the script expected (`brain/README.md`).
-- Scale: 96 beds was the largest test, 3-minute runs; a 96-bed soak was not run (`docs/evidence/SCALE.md`).
+- Scale: 96 beds was the largest reported test, 3-minute runs; underlying tick logs are not bundled and a 96-bed soak was not run (`docs/evidence/SCALE.md`).
 - Security: a valid stolen device password can still forge its own bed; the demo attack account is exempt from cut-off; all services share one Unix user; no packet-level capture (`security_v2/SECURITY.md`).
+- Granite has numeric checks, not a proof of semantic accuracy: the judge reproduced unsupported status prose. Review structured incident facts; prose is advisory (`agents_v2/sw_agents/granite.py`).
 - The agents run as a systemd service, not yet as a container (`docs/evidence/CONTAINERS.md`, `docs/evidence/RESOURCES.md`).
 
 ## Team TessNova

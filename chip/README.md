@@ -1,11 +1,11 @@
 # chip/: AI-chip second opinion (IBM z17 Telum II NNPA)
 
-Written 17 Oct 2026. For each bed alarm that the live brain scores with M2, this service runs
+Updated 18 Oct 2026. For alarms it receives in time, this service runs
 the stretch 1D-CNN (`ml_v2/stretch/cnn_nnpa.py`) on the z17 on-chip AI accelerator
 (`torch_nnpa`, device `nnpa:0`). It then publishes its own "is this alarm real?" probability.
 The result is **shown only**. The service subscribes to `ward/bed/+/vitals` and publishes only
 on `ward/chip/<bed_id>`, and its hub account cannot publish anything else. It never changes a
-verdict, an alert or an action. The deployed M2 stays the gradient-boosted trees.
+verdict, an alert or an action. The deployed M2 stays the gradient-boosted trees. Coverage is not guaranteed for every alarm: night run N scored B03, B04 and B07, while B06’s forged ASYSTOLE got none despite M2 judging it (`docs/evidence/raw/wardrun-night/chip_check.txt`).
 
 ## Message (`ward/chip/<bed_id>`, QoS 1, not retained)
 ```json
@@ -23,7 +23,7 @@ verdict, an alert or an action. The deployed M2 stays the gradient-boosted trees
 ## Same window as the brain
 `sw_chip/tracker.py` copies `BrainService.receive`. When an alarm frame starts a new episode
 and the 10 one-second chunks at ts−10 s … ts−1 s are contiguous, those 1,250 samples (125 Hz ECG,
-PPG and, when present, ABP) are scored once. This is exactly when the trees score M2. Checked
+PPG and, when present, ABP) are scored once. This is the intended shared window rule, not a live coverage guarantee. Checked
 with `sw_chip.bench --brain` on the packs-v13 ward replay (11,790 vitals): the chip windows and
 the brain's M2 windows were identical (3/3). The client cannot see bedside `patient_ok` or demo
 control messages (it has no right to read them). A demo restart is detected from the seq reset.
@@ -59,4 +59,4 @@ Results: `results/` (bench, parity, MQTT end-to-end on TEST).
 - The CNN scores below the deployed trees on the held-out sets (CinC 0.623 vs 0.862, VTaC 0.665 vs 0.832).
 - With batch size 1, this small network is about 0.25 ms slower on the NNPA than on one CPU
   core (median 2.1 vs 1.9 ms). The accelerator does not make it faster here.
-- There is one message per alarm episode. The brain re-sends its M2 score every 5 s from the same window.
+- There is at most one message per received, scoreable alarm episode; some episodes have none. The brain re-sends its M2 score every 5 s from the same window.
