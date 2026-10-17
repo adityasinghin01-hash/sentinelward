@@ -220,11 +220,11 @@ export function BedPage() {
 
       <div className="bed-layout">
         <div className="bed-main">
-          <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
-                 caption={state.untrusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'Most recent samples from the monitor, about 25 per second.'}
+          <Panel title={state.untrusted ? detail.last_trusted ? 'Last trusted signals' : 'Last values received · not trusted' : 'Live signals'}
+                 caption={state.untrusted ? detail.last_trusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'No trusted recording is available; these are the last values received, flagged as not trusted.' : 'Most recent samples from the monitor, about 25 per second.'}
                  aside={<Trust bed={detail} />} className={`bed-signals ${state.untrusted ? 'untrusted-panel' : ''}`}>
             {state.untrusted && (
-              <div className="last-good big">Not trusted · showing the last good recording{frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ' (none yet: check by hand)'}</div>
+              <div className="last-good big">{detail.last_trusted ? `Not trusted · showing the last good recording${frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ''}` : 'Not trusted · showing the last values received; no trusted recording is available. Check by hand.'}</div>
             )}
             {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
             <div role="group" aria-label="Vital signs" className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
@@ -233,8 +233,8 @@ export function BedPage() {
               <Tip text="Blood pressure, systolic / diastolic in mmHg."><div className={`vital bp ${flags.sys ? 'outside-limit' : ''}`}><span>BP <small>mmHg</small></span><strong>{value(v?.systolic)}<span>/</span>{value(v?.diastolic)}{flags.sys && <i className="bed-vital-arrow" title="Outside alert limits">{flags.sys === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
               <Tip text="Breathing rate in breaths per minute, newest value in the 30-minute history."><div className="vital rr"><span>RR <small>/min</small></span><strong>{value(trend.rr)}</strong></div></Tip>
             </div>
-            <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} />
-            <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} />
+            <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
+            <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
             {state.untrusted && detail.vitals && (
               <div className="incoming" title="What the monitor is sending now. Not trusted: do not act on these numbers.">
                 <span className="eyebrow">Incoming (not trusted)</span>

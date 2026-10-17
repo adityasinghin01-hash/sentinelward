@@ -19,7 +19,7 @@ All files below are in [docs/evidence/screens/](docs/evidence/screens/). As the 
 
 | Screenshot file | What it shows | Role that can open the screen |
 |---|---|---|
-| [01-live-ward-12-beds-mid-run.png](docs/evidence/screens/01-live-ward-12-beds-mid-run.png) | Twelve-bed ward with state bands, dark theme | Nurse, doctor, IT, operator |
+| [01-live-ward-12-beds-mid-run.png](docs/evidence/screens/01-live-ward-12-beds-mid-run.png) | Twelve-bed ward with state bands, dark theme; captured before the cut-off-label fix, so B11 shows the obsolete flag-derived “MONITOR CUT OFF” label | Nurse, doctor, IT, operator |
 | [02-live-bed-B05-tampering-six-checks.png](docs/evidence/screens/02-live-bed-B05-tampering-six-checks.png) | B05 untrusted and cut off, with the six checks | Nurse, doctor, IT, operator |
 | [03-live-security-cutoffs-and-fleet-hunt.png](docs/evidence/screens/03-live-security-cutoffs-and-fleet-hunt.png) | Devices, cut-offs, incidents and fleet hunt | IT, operator |
 | [04-live-action-log-agents-with-undo.png](docs/evidence/screens/04-live-action-log-agents-with-undo.png) | Agent actions and Undo | All signed-in roles; security Undo: IT/operator |
@@ -152,7 +152,7 @@ Verdicts, highest precedence first (`brain/README.md`): **BOTH** (real emergency
 | A5 | CERT-In report draft with its 6-hour clock (a person sends it; no send code exists) |
 | A6 | Biomed tickets for drifting / repeatedly loose sensors |
 | A7 | Nurse workload (alerts per nurse in 2 h) |
-| A8 | Shift briefing written by IBM Granite on LinuxONE, numeric checks against supplied facts |
+| A8 | Shift briefing written by IBM Granite on LinuxONE, numeric and selected bed-status/trust checks against supplied facts (heuristic; review the prose) |
 
 ### Safety rules (enforced in code and tested)
 - **Alarms are never suppressed.** The M2 score only explains an alarm; it never suppresses, delays or downgrades it (`brain/README.md`, tested in `brain/tests`).
@@ -184,7 +184,7 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest, the bu
 | Security | Mosquitto dynamic security, per-device accounts (each monitor may publish only its own bed), TLS 1.3 on 8883; live test 15/15 PASS; scrypt PINs, lockout, CSRF checks | `docs/evidence/SECURITY.md`, `security_v2/SECURITY.md` |
 | Scale | Short 96-bed run on one brain container (1.0 CPU): median/max tick 640.44/1121.65 ms, 0 recorded drops/invalid; unchanged raw logs and recomputation bundled. Older capture rejected extra beds | `docs/evidence/SCALE.md` |
 | Resources | Whole live 12-bed ward: a few percent of 3 z17 cores (brain 2.2% CPU, 268 MiB) | `docs/evidence/RESOURCES.md` |
-| IBM Granite | A8's shift briefing written by IBM Granite (`granite-4.0-h-350m-base`) on LinuxONE in IBM's LinuxONE lab image; numeric checks against supplied facts, else the template is used; end-of-shift briefing written by Granite in all three final ward runs F1–F3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
+| IBM Granite | A8's shift briefing written by IBM Granite (`granite-4.0-h-350m-base`) on LinuxONE in IBM's LinuxONE lab image; numeric and selected bed-status/trust checks against supplied facts (heuristic; review the prose), else the template is used; end-of-shift briefing written by Granite in all three final ward runs F1–F3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
 
 ## Results (measured on LinuxONE, 17 Oct 2026)
 **M2 "is this alarm real?"**: held-out sets locked before training (188 CinC records, 482 VTaC events); Challenge 2015 score = (TP+TN)/(TP+TN+FP+5·FN), 95% bootstrap CI (`docs/evidence/ML-RESULTS.md`).
@@ -212,7 +212,7 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest, the bu
 | Nurse alerts | 11 per 20-minute run for 12 beds |
 | B11 false hand-check pages | 0 / 1 / 1 |
 | Telegram | 22 sent, 25–26 edited, 0 failed per run |
-| IBM Granite briefing | written and accepted by numeric checks in all three runs |
+| IBM Granite briefing | written and accepted by numeric checks in all three historical runs; those runs do not establish current status/trust-check coverage |
 | Errors | every sampled API call 200 (except `/api/briefing` 503 before the first briefing); agents bus 0 invalid, 0 dropped, 0 handler errors |
 
 **Platform** (`docs/evidence/SECURITY.md`, `SCALE.md`, `CONTAINERS.md`): secured systemd hub: TLS 1.3, per-device dynsec, agents/witness, 15/15 PASS · container hub: authenticated static service accounts + topic ACLs, anonymous refused, 137/137 auth checks (`docs/evidence/raw/containers-auth/auth.txt`), plaintext internal MQTT, four hardened apps, no agents/witness; authenticated replay is only 40 seconds · short 96-bed scale: median/max tick 640.44/1121.65 ms, 0 recorded drops/invalid, bundled originals · historical container ward runs before auth: 0 invalid of 11,790 messages each, send lag p99 24.7 ms and 40.3 ms.
@@ -279,7 +279,7 @@ Abstract: our Unstop submission text of 12 Oct 2026. Each row says what we built
 | Nine open datasets (VTaC, CinC 2015 and 2011, SecAlarmBench, MIT-BIH NST, VitalDB, CICIoMT2024, WUSTL-EHMS-2020, MIMIC-III) | Changed: 4 used | PhysioNet/CinC 2015, VTaC, MIMIC-III Waveform Matched Subset, VitalDB (`docs/OPEN-SOURCE.md`). CinC 2011, SecAlarmBench, MIT-BIH NST, CICIoMT2024 and WUSTL-EHMS-2020 are not used: we test the network checks against our own scripted attacks on the live hub (`attacks/`). |
 | Split by patient | Changed | Split by record: CinC 2015 has no patient IDs, so record = group; the held-out set was locked before training (`docs/evidence/ML-RESULTS.md`). |
 | LangGraph agents with a human approval step | Changed | Our own small engine: every action goes through one allow-list, is validated and logged append-only, with Undo for supported reversible actions (`agents_v2/REPORT.md`, `agents_v2/sw_agents/engine.py`). The CERT-In report is only drafted; a person sends it (no send code). The device cut-off is automatic (20 s of evidence, at once on BOTH), limited to our own hub and undoable, not pre-approved. |
-| IBM Granite 1B and 2B write alerts and shift briefings | Changed | IBM Granite `granite-4.0-h-350m-base` from IBM's LinuxONE lab image writes the shift briefing only, and numeric checks reject detected mismatches to a template (`agents_v2/REPORT.md`). Nurse alerts use fixed wording (`agents_v2/sw_agents/agents/a1_alerts.py`), so a model cannot change what an alert says. |
+| IBM Granite 1B and 2B write alerts and shift briefings | Changed | IBM Granite `granite-4.0-h-350m-base` from IBM's LinuxONE lab image writes the shift briefing only, and numeric plus selected bed-status/trust checks reject detected mismatches to a template; the checks are heuristic and prose needs review (`agents_v2/REPORT.md`). Nurse alerts use fixed wording (`agents_v2/sw_agents/agents/a1_alerts.py`), so a model cannot change what an alert says. |
 | Scapy for our attack scripts | Changed | The red-team sender publishes over MQTT with our shared message code (`attacks/`); no Scapy. |
 | Patient data stays on one secure server | Built, one addition | Every decision runs on the build guest. The shown-only AI-chip second opinion reads vitals over TLS 8883 on a second LinuxONE guest (`docs/evidence/ML-RESULTS.md`). |
 | Measure missed emergencies, false alarms cut, time to safe, Blind Time | Built, changed | Missed / false alarms on held-out data (`docs/evidence/raw/fatigue.txt`), as advice only, because alarms are never suppressed. Time-to-safe in every final ward run (`docs/evidence/WARD-RUN.md`). Blind Time: defined in the system tests (`tests_system/README.md`, `tests_system/metrics.py`) but no measured Blind Time figure is in the evidence pack, so we make no Blind Time claim. |
@@ -295,7 +295,7 @@ Abstract: our Unstop submission text of 12 Oct 2026. Each row says what we built
 - Because alarms are never suppressed, B04's false asystole and B06's faked flatline show EMERGENCY / BOTH while their alarm is held, not the LOOSE_SENSOR / TAMPERING the script expected (`brain/README.md`).
 - Scale: 96 beds was the largest recorded test, short 3-minute runs; unchanged tick logs are bundled with hashes and a recomputation script; a 96-bed soak was not run (`docs/evidence/SCALE.md`).
 - Security: a valid stolen device password can still forge its own bed; the demo attack account is exempt from cut-off; all services share one Unix user; no packet-level capture (`security_v2/SECURITY.md`).
-- Granite has numeric checks, not a proof of semantic accuracy: the judge reproduced unsupported status prose. Review structured incident facts; prose is advisory (`agents_v2/sw_agents/granite.py`).
+- Granite checks numbers and selected bed-status/trust claims against supplied facts. These checks are heuristic, not proof of semantic accuracy: the judge reproduced unsupported status prose. Review the text against structured incident facts; prose is advisory (`agents_v2/sw_agents/granite.py`).
 - The agents run as a systemd service, not yet as a container (`docs/evidence/CONTAINERS.md`, `docs/evidence/RESOURCES.md`).
 
 ## Team TessNova

@@ -127,8 +127,10 @@ Simulated bedside monitors → message hub on LinuxONE → six checks (M1–M6) 
 | `TAMPERING` | `medium` | bedside nurse: hand-check; IT |
 | `UNSURE` | `medium` | bedside nurse: hand-check |
 | `DRIFTING` | `medium` | bedside nurse + biomed ticket |
-| `LOOSE_SENSOR` | `low` | bedside nurse: refit; false alarm silenced |
+| `LOOSE_SENSOR` | `low` | bedside nurse: refit; advice only, alarms remain active |
 | `DEVICE_ATTACK` | `none` (for nurses) | IT only |
+
+**18 Oct implementation clarification:** this historical contract originally described a loose-sensor false alarm as "silenced". The implemented classification is advice only; monitor alarms remain active and are never suppressed.
 
 **Field rules:**
 - `trust` is 0–1: how sure we are this bed's data is genuine.

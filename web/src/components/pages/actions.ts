@@ -79,7 +79,7 @@ export function actionView(a: Action): ActionView {
       what = 'Updated the handover briefing';
       why = /rejected/i.test(raw) ? 'Granite draft failed the fact check' : /still writing/i.test(raw) ? 'Template used while Granite writes' : /template/i.test(raw) ? 'Template used from ward facts' : 'Summarise the shift for handover'; break;
     case 'silence_alarm': case 'suppress_alarm':
-      what = 'Silenced the sensor alarm'; why = /LOOSE_SENSOR|loose/i.test(raw) ? 'Loose sensor needs refitting' : 'Sensor fault detected'; break;
+      what = 'Flagged a sensor episode (advice only)'; why = 'Refit the sensor; alarms remain active'; break;
     case 'open_ticket': case 'create_ticket':
       what = 'Opened a repair ticket'; why = /DRIFT|drift/i.test(raw) ? 'Pressure sensor drifting' : /LOOSE|loose/i.test(raw) ? 'Sensor keeps coming loose' : 'Monitor needs a repair'; break;
     case 'update_ticket':

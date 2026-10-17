@@ -5,6 +5,16 @@ The service-account authentication change below is configured in source; its Lin
 acceptance results were captured on LinuxONE on 18 Oct 2026 (03:20 IST) in `raw/containers-auth/`.
 Older captures in `raw/containers/` predate it.
 
+## Authenticated capture links
+
+| Capture | What it establishes |
+|---|---|
+| [Platform](raw/containers-auth/platform.txt) | Native LinuxONE `s390x`, machine type 9175; Docker on linux/s390x. |
+| [Service status](raw/containers-auth/compose-ps.txt) · [API health](raw/containers-auth/health.json) | Six services up; API, hub and database healthy. |
+| [Hardening](raw/containers-auth/hardening.txt) | Four apps (api, brain, sim, attacks): non-root, read-only root, all capabilities dropped, no-new-privileges, CPU/memory limits. |
+| [Authentication and ACL matrix](raw/containers-auth/auth.txt) | 137/137 individual checks passed; anonymous connection refused. |
+| [Authenticated replay](raw/containers-auth/replay-check.txt) | 40-second spot check only; no authenticated full-ward or scale endurance result. |
+
 ## What the existing container evidence establishes
 
 Raw: `raw/containers/` and `raw/resources-now.txt` (2026-10-17 14:27 UTC).

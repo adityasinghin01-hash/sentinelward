@@ -2,6 +2,8 @@
 
 [Explore everything yourself: screens, setup, logs and code](../../README.md#explore-everything-yourself).
 
+[Results manifest: exact evidence files, run cohorts and limits](../evidence/RESULTS-MANIFEST.md).
+
 ## Criterion 1 — value and theme
 
 - SentinelWard checks replayed patient, sensor and attack cases. Active monitor alarms retain emergency precedence; available last trusted values are retained when data becomes untrusted. B07’s 88 legacy counts per run are a counter artefact before first data; 0 empty samples after first data in all four runs (N/F1/F2/F3). Rendered-screen continuity was not measured (`docs/evidence/WARD-RUN.md`). Design: `docs/ARCHITECTURE.md`; screens: **Ward** and **Bed** (`web/src/pages/Ward.tsx`, `web/src/pages/Bed.tsx`).
