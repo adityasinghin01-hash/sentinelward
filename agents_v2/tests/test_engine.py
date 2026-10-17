@@ -189,3 +189,44 @@ def test_env_example_parses():
             env[key.strip()] = value.strip().strip("'")
     s = Settings.from_env(env)
     assert s.ladder_step_s == 30 and s.telegram_token is None and s.a2_dry_run and s.granite_url == "http://127.0.0.1:8090"
+
+
+# ---------------------------------------------------------------- undo_id only on truly undoable actions
+UNDOABLE = {"set_bed_untrusted", "disable_client", "set_watch_level", "open_ticket", "record_ack", "warn_workload"}
+
+
+def test_only_undoable_actions_carry_undo_id(make_world):
+    """Run every agent (alerts, ladder, Telegram, IT notice, cut-off, hunt, evidence, report, ticket, workload,
+    briefing, undo) and check undo_id: present on the six undoable kinds, absent on everything else."""
+    w = make_world(telegram=True, workload_threshold=3)
+    w.demo("run", run_id="run_undo", start_at_s=0)
+    w.verdict("B03", "EMERGENCY", 1.0)
+    w.advance(31)  # escalate
+    w.request("ack_alert", w.bus.alerts()[0]["alert_id"], by="staff:tom")
+    w.verdict("B05", "TAMPERING", 0.9, n=3)
+    w.verdict("B08", "DRIFTING", 0.9, n=2)
+    for bed in ("B01", "B02", "B04"):
+        w.verdict(bed, "EMERGENCY", 1.0)
+    w.advance(61)
+    w.a["A8"].generate("test")
+    cut = w.bus.actions("disable_client")[0]
+    w.request("undo_action", cut["action_id"], by="staff:sam")
+    acts = w.bus.of("action")
+    kinds = {a["action"] for a in acts}
+    assert {"send_message", "edit_message", "escalate", "write_briefing", "enable_client", "hash_file",
+            "draft_report", "list_devices"} <= kinds and UNDOABLE <= kinds
+    for a in acts:
+        if a["action"] in UNDOABLE and a["undoes"] is None and a["result"] != "failed" and "expired" not in a["detail"]:
+            assert a["undo_id"] == a["action_id"], a
+        else:
+            assert a["undo_id"] is None, a
+
+
+def test_engine_drops_undo_on_a_non_undoable_action(world, caplog):
+    act = world.e.act("A1", "send_message", bed_id="B03", detail="x", undo=lambda o, b: True)
+    assert act["undo_id"] is None and act["action_id"] not in world.e.undo
+    assert world.e.stats["undo_refused"] == 1
+    act = world.e.act("A4", "set_watch_level", detail="back to normal", undoes="act_x", undo=lambda o, b: True)
+    assert act["undo_id"] is None
+    world.request("undo_action", act["action_id"])
+    assert any(l.get("reason") == "unknown or not undoable action" for l in world.log_lines())
