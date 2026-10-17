@@ -21,6 +21,15 @@ class BodyMismatch:
     # not a diagnosis. PPG irregularity alone never controls applicability.
     MAX_PAIRING_RR_CV = .12
     MIN_BEAT_COVERAGE = .65
+    # Pulse-detection alias (clipped PPG: every 2nd/3rd beat found). Engineering limits, from
+    # the live judged run's B11/B02/B06 windows (ECG = monitor HR, pulse ~1/2 ECG).
+    ALIAS_SCORE = .2
+    ALIAS_RATE_TOL = .10          # pulse within 10% of ECG/k, or rechecked pulse within 10% of ECG
+    ALIAS_PHASE_MS = 64           # a pulse peak is "locked" within 64 ms of the median ECG phase
+    ALIAS_MIN_LOCKED = .6         # share of pulse peaks at one phase that counts as clearly locked
+    ALIAS_USUAL_MS = 120          # once learned: median phase within 120 ms of this patient's usual
+    ALIAS_MIN_CLIPPED = .02       # clipped PPG samples that make a sub-rate pulse count unreliable
+    ALIAS_SMALL_LOCKED = .5       # small beats at the ECG rate: locked share needed (cap; 1.5x chance below)
 
     def __init__(self):
         self.baselines = {}
@@ -76,6 +85,76 @@ class BodyMismatch:
         if not history or history[-1][0] != start:
             history.append((start, pulse, heart))
         return repeats
+
+    def _phase_lock(self, pulse_peaks, heart, rr_ms, usual):
+        """Share of pulse peaks at one ECG phase, and that phase's offset from the usual arrival."""
+        heart = np.asarray(heart)
+        delays = np.array([(p-heart[np.argmin(abs(heart-p))])*8. for p in pulse_peaks
+                           if heart[0] < p < heart[-1]])
+        if len(delays) < 3:
+            return None
+        median = float(np.median(delays))
+        agreement = float(np.mean(abs(delays-median) <= self.ALIAS_PHASE_MS))
+        offset = None if usual is None else float((median-usual+rr_ms/2) % rr_ms - rr_ms/2)
+        return agreement, offset
+
+    @staticmethod
+    def _small_pulse_peaks(pulse_samples):
+        """Observed local pulse maxima at 0.10 prominence (the shared detector uses 0.35)."""
+        band = sosfiltfilt(_PPG_SOS, pulse_samples-np.nanmedian(pulse_samples))
+        spread = float(np.percentile(band, 95)-np.percentile(band, 5))
+        peaks, _ = find_peaks(band, distance=int(.33*125), prominence=max(1e-6, .10*spread), width=1)
+        return peaks
+
+    def _detection_alias(self, ecg, ppg, er, pr, peak_rate, pulse_samples, clipped,
+                         monitor, usual, coverage, replay):
+        """Alias evidence when a pulse-rate disagreement is a detection artefact, else None.
+
+        Requires: no known pulse replay; regular, well-covered ECG whose rate agrees with the
+        monitor's own HR (within 10%); and either
+        - sub_rate: pulse rate within 10% of ECG/2 or ECG/3 AND evidence that detection, not
+          the pulse, is at fault: PPG clipped >= 2% of samples, or small observed pulse peaks
+          (0.10 prominence) at the ECG rate and phase-locked (below); or
+        - recheck: unreliable pulse beats whose small observed peaks run at the ECG rate, locked
+          to one ECG phase (within 64 ms) at least 1.5x as often as chance (1.5*128 ms/RR, capped
+          at 50%), at this patient's usual arrival (within 120 ms) once learned.
+        Pulse peaks clearly locked (>= 60% within 64 ms of one ECG phase) at an arrival more
+        than 120 ms from this patient's learned usual are a shifted pulse, never an alias.
+        A clean regular half-rate pulse (no clipping, no small beats at the ECG rate), a pulse
+        at a different rate, and same-rate time-shifted or frozen pulses keep their scores.
+        """
+        if (replay or monitor is None or er < 20 or abs(er-monitor) > self.ALIAS_RATE_TOL*max(er, monitor)
+                or ecg['regularity'] is None or ecg['regularity'] > self.MAX_PAIRING_RR_CV
+                or len(ecg['peaks']) < 3 or coverage < self.MIN_BEAT_COVERAGE
+                or not np.all(np.isfinite(pulse_samples))):
+            return None
+        near = lambda a, b: a is not None and a >= 10 and abs(a-b) <= self.ALIAS_RATE_TOL*b
+        if near(pr, er):
+            return None  # rates already agree: the ordinary comparison applies
+        rr_ms = 60000/er
+        small = self._small_pulse_peaks(pulse_samples)
+        small_rate = float(7500/np.median(np.diff(small))) if len(small) >= 5 else None
+        # Small observed beats at the ECG rate, locked to this patient's ECG at the usual arrival.
+        small_lock = self._phase_lock(small, ecg['peaks'], rr_ms, usual) if near(small_rate, er) else None
+        # Locked = at least 1.5x the share expected by chance (2*64 ms / RR), capped at 50%.
+        need = min(self.ALIAS_SMALL_LOCKED, 1.5*(2*self.ALIAS_PHASE_MS/rr_ms))
+        small_locked = (small_lock is not None and small_lock[0] >= need
+                        and (small_lock[1] is None or abs(small_lock[1]) <= self.ALIAS_USUAL_MS))
+        sub_rate = next((k for k in (2, 3) if near(pr, er/k) or near(peak_rate, er/k)), None)
+        found = None
+        if sub_rate and (small_locked or clipped >= self.ALIAS_MIN_CLIPPED):
+            agreement, offset = (small_lock if small_locked else
+                                 self._phase_lock(ppg['peaks'], ecg['peaks'], rr_ms, usual) or (None, None))
+            # Detected pulses clearly locked at another arrival: a shifted pulse, not an alias.
+            if not (agreement is not None and agreement >= self.ALIAS_MIN_LOCKED and offset is not None
+                    and abs(offset) > self.ALIAS_USUAL_MS):
+                found = dict(kind='sub_rate', divisor=sub_rate, agreement=agreement, offset_ms=offset)
+        reliable = ppg['regularity'] is not None and ppg['regularity'] <= .25
+        if found is None and not reliable and small_locked:
+            found = dict(kind='recheck', divisor=None, agreement=small_lock[0], offset_ms=small_lock[1])
+        if found is not None:
+            found.update(clipped_fraction=clipped, small_peak_rate_bpm=small_rate)
+        return found
 
     def __call__(self, window, state, now_ms):
         if not window:
@@ -190,6 +269,27 @@ class BodyMismatch:
             self.observed[bed] = (start, .99)
             return result(.99, 'Heartbeat and pulse disagree: pulse has no usable beats',
                           **rates, path='live_rate_and_pat')
+        detection_alias = self._detection_alias(ecg, ppg, er, pr, peak_rate, pulse_samples,
+                                                float(channels['ppg'].get('clipped_fraction') or 0.),
+                                                monitor if monitor_ok else None, usual, coverage, replay)
+        if detection_alias is not None:
+            # Clipped or low-amplitude pulses: the shared detector counts every 2nd/3rd beat (or
+            # finds irregular peaks whose recheck matches the ECG). The pulse is phase-locked to
+            # this patient's own heartbeats, so this is a measurement alias, not a second body.
+            # Low score, no persistence credit for mismatch, and no baseline learning.
+            recent.append(self.ALIAS_SCORE)
+            self.observed[bed] = (start, self.ALIAS_SCORE)
+            rates.update(pulse_detection_alias=detection_alias['kind'],
+                         alias_divisor=detection_alias.get('divisor'),
+                         alias_phase_agreement=detection_alias['agreement'],
+                         alias_phase_offset_ms=detection_alias['offset_ms'],
+                         ppg_clipped_fraction=detection_alias['clipped_fraction'],
+                         ppg_small_peak_rate_bpm=detection_alias['small_peak_rate_bpm'])
+            return result(self.ALIAS_SCORE, 'pulse detection unreliable (clipped/half-rate); rechecking',
+                          **rates, path='live_rate_and_pat', eligible=True, beats_reliable=False,
+                          raw_score=self.ALIAS_SCORE, persistence_windows=len(recent),
+                          baseline_pat_ms=usual, baseline_samples=len(baseline),
+                          pulse_repeat_seconds=repeats)
         mismatch = min(1., max(0., abs(er-pr)/max(20., er, pr)-.05)/.1)
         # Missed or spurious pulse peaks cannot teach PAT. A conflicting pulse
         # rate against pairable ECG still remains an applicable comparison.

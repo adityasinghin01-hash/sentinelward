@@ -41,7 +41,10 @@ def test_monitor_alarm_survives_duplicate_tampering_offline_and_patient_ok(frame
     assert verdict['verdict']=='BOTH'
     assert service.tick(45000)[0]['verdict'] in {'EMERGENCY','BOTH'}
     service.receive('ward/bed/B01/bedside',json.dumps({'v':1,'type':'bedside_check','bed_id':'B01','ts':46000,'result':'patient_ok','by':'staff:nurse'}),received_ms=46000)
-    assert service.tick(50000)[0]['verdict']=='UNSURE'
+    # Still offline after patient_ok: the established tampering stays latched (no 30 s of clean live data).
+    held=service.tick(50000)[0]
+    assert held['verdict']=='TAMPERING' and held['trust']==0.
+    assert any('offline' in r and 'tampering' in r for r in held['reasons'])
     assert service.snapshots['B01']['hr']==60
 
 
@@ -76,7 +79,7 @@ def test_first_match_all_verdicts_and_numeric_trust(expected,overrides):
     result=decide('B01',0,10000,scores,alarm=alarm,offline=offline)
     assert result['verdict']==expected
     assert isinstance(result['confidence'],float) and isinstance(result['trust'],float)
-    assert result['trust']==pytest.approx(1-max(scores[m]['score'] for m in ('M3','M4','M5')))
+    assert result['trust']==pytest.approx(0. if offline else 1-max(scores[m]['score'] for m in ('M3','M4','M5')))
 
 
 def test_saved_m2_threshold_preserves_model_emergency_and_no_line_unknown():
