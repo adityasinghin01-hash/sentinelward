@@ -1,0 +1,11 @@
+# brain container, normal 12-bed ward run, docker stats every 10 s
+sentinelward-brain-1 8.42% 146.2MiB / 512MiB
+sentinelward-brain-1 0.91% 149.6MiB / 512MiB
+sentinelward-brain-1 0.95% 153MiB / 512MiB
+sentinelward-brain-1 0.93% 156.4MiB / 512MiB
+sentinelward-brain-1 1.08% 160.6MiB / 512MiB
+sentinelward-brain-1 8.38% 164.3MiB / 512MiB
+{"ok":true,"mqtt_connected":true,"db_ok":true,"storage":"postgresql","durable":true,"beds_online":11,"last_message_ts":1792239380123,"invalid_messages":0,"pending_publications":0,"db_queued_rows":0}
+               total        used        free      shared  buff/cache   available
+Mem:            8009        3527          70         239        4789        4481
+Swap:              0           0           0

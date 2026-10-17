@@ -1,0 +1,65 @@
+{
+  "utc": "20261017T140649Z",
+  "checks": [
+    {
+      "name": "Valid monitor can connect",
+      "result": "PASS"
+    },
+    {
+      "name": "Valid own-bed QoS1 publish accepted",
+      "result": "PASS"
+    },
+    {
+      "name": "Anonymous publish rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "Wrong password rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "MON-03 cannot publish B05",
+      "result": "PASS"
+    },
+    {
+      "name": "Monitor subscription rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "Connected monitor kicked on disable",
+      "result": "PASS"
+    },
+    {
+      "name": "Disconnected monitor cannot queue QoS0 publish",
+      "result": "PASS"
+    },
+    {
+      "name": "Disabled monitor reconnect rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "Disabled monitor publish blocked",
+      "result": "PASS"
+    },
+    {
+      "name": "Session wiped, still disabled",
+      "result": "PASS"
+    },
+    {
+      "name": "Re-enabled own-bed publish accepted",
+      "result": "PASS"
+    },
+    {
+      "name": "TLS handshake and CA/SAN verification",
+      "result": "PASS"
+    },
+    {
+      "name": "Authenticated MQTT over TLS",
+      "result": "PASS"
+    },
+    {
+      "name": "Plain MQTT on 8883 rejected",
+      "result": "PASS"
+    }
+  ]
+}

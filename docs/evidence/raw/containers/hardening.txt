@@ -1,0 +1,4 @@
+api: user=sw readonly=true caps_dropped=[ALL] security_opt=[no-new-privileges:true] mem=402653184 nanocpus=1000000000
+brain: user=sw readonly=true caps_dropped=[ALL] security_opt=[no-new-privileges:true] mem=805306368 nanocpus=1000000000
+sim: user=sw readonly=true caps_dropped=[ALL] security_opt=[no-new-privileges:true] mem=268435456 nanocpus=500000000
+attacks: user=sw readonly=true caps_dropped=[ALL] security_opt=[no-new-privileges:true] mem=402653184 nanocpus=250000000

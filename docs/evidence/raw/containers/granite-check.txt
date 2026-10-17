@@ -1,0 +1,8 @@
+# 2026-10-17T12:16:24Z granite container (not restarted)
+granite registry.linuxone.cloud.marist.edu/l1cc/jupyterlab-image-s390x:latest Up 24 minutes
+## GET /health
+{"status": "ok", "model": "granite-4.0-h-350m-base-be.f16.gguf"}
+http=200 total=0.001186s
+## POST /v1/completions (max_tokens 40, temperature 0)
+{"object": "text_completion", "model": "granite-4.0-h-350m-base-be.f16.gguf", "created": 1792239384, "choices": [{"index": 0, "text": "\"The patient's heart rate was too low, and the oxygen saturation was too low.\"\n\nB04: SpO2 dropped from 97 to 84 in 20 s while heart rate stayed", "finish_reason": "length"}], "usage": {"prompt_tokens": 31, "completion_tokens": 40, "total_tokens": 71}, "latency_ms": 10770}
+http=200 total=10.773172s

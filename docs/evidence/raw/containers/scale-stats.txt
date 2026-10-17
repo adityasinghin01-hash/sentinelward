@@ -1,0 +1,20 @@
+# scale run scale_20261017_121343, sim container, 87 extra beds (B13-B99) x 60 s, while the 12-bed ward ran
+# docker stats samples every ~12 s during the run:
+sentinelward-brain-1 9.18% 120MiB / 512MiB
+sentinelward-sim-1 0.37% 60.58MiB / 256MiB
+sentinelward-hub-1 0.23% 7.211MiB / 128MiB
+Mem:            8009        3455          76         237        4853        4553
+sentinelward-brain-1 10.02% 125MiB / 512MiB
+sentinelward-sim-1 0.39% 60.59MiB / 256MiB
+sentinelward-hub-1 0.23% 7.211MiB / 128MiB
+Mem:            8009        3469          71         237        4844        4539
+sentinelward-brain-1 2.55% 129.5MiB / 512MiB
+sentinelward-sim-1 0.38% 60.6MiB / 256MiB
+sentinelward-hub-1 0.17% 7.211MiB / 128MiB
+Mem:            8009        3486         111         238        4787        4522
+sentinelward-brain-1 2.64% 133.4MiB / 512MiB
+sentinelward-sim-1 0.35% 60.61MiB / 256MiB
+sentinelward-hub-1 0.21% 7.211MiB / 128MiB
+Mem:            8009        3502          94         238        4788        4506
+# brain log lines "Expected ward bed" (scale beds rejected by brain input check, B01-B12 only):
+5220
