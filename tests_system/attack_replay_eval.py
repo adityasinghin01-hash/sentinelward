@@ -92,20 +92,21 @@ class AttackBus(MemoryBus):
         return True
 
 
-def evaluate(packs_dir, order):
-    script = load_script(ROOT / 'simulator/ward_script.yaml').select(BEDS)
+def evaluate(packs_dir, order, *, live_factory=LiveInputs, tick_jitter_ms=0, beds=BEDS):
+    script = load_script(ROOT / 'simulator/ward_script.yaml').select(beds)
     packs = load_packs(packs_dir, [b.pack_name for b in script.beds])
     clock = InstantClock(ORIGIN)
     run = WardRun(script, packs, run_id='offline', runs_dir='/tmp', clock=clock, bus=None, dry_run=True)
     bus = MemoryBus()
     brain = BrainService(bus)
-    live = LiveInputs(brain)
+    live = live_factory(brain, beds=beds)
     attack_bus = AttackBus(live)
-    timelines = {bed: [] for bed in BEDS}
-    counts = {bed: Counter() for bed in BEDS}
+    timelines = {bed: [] for bed in beds}
+    counts = {bed: Counter() for bed in beds}
     monitor = Counter()
     blank = invalid = 0
     checkpoints = {}
+    sender_evidence = {}
     b07_evidence = []
     b07_monitor_alarms = []
     with tempfile.TemporaryDirectory(prefix='m4-replay-') as logs:
@@ -115,13 +116,17 @@ def evaluate(packs_dir, order):
         for sec in range(script.run_length_s+1):
             now = ORIGIN+sec*1000
             if sec and sec % 5 == 0:
-                for verdict in brain.tick(now):
+                for verdict in brain.tick(now+tick_jitter_ms):
                     bed = verdict['bed_id']; label = verdict['verdict']
                     counts[bed][label] += 1
                     if not timelines[bed] or timelines[bed][-1][1] != label:
                         timelines[bed].append([sec, label])
-                    if sec in (730, 740, 830, 835, 840, 845, 1025, 1045, 1080, 1085, 1090):
+                    if sec in (730, 740, 830, 835, 840, 845, 1025, 1030, 1045, 1080, 1085, 1090):
                         checkpoints.setdefault(sec, {})[bed] = verdict
+                        sender_evidence.setdefault(sec, {})[bed] = {
+                            model: next(m for _, m, _, _ in reversed(bus.published)
+                                        if m.get('bed_id') == bed and m.get('model') == model)
+                            for model in ('M4', 'M5')}
                     if bed == 'B07' and 825 <= sec <= 885:
                         m4 = next(m for _, m, _, _ in reversed(bus.published)
                                   if m.get('bed_id') == bed and m.get('model') == 'M4')
@@ -180,6 +185,8 @@ def evaluate(packs_dir, order):
         return dict(order=order, timelines=timelines, verdict_counts=counts, monitor_frames=monitor,
                     attack_frames=attack_bus.counts, accepted_attack_frames=attack_bus.accepted,
                     net_feature_windows=live.published, checkpoints=checkpoints,
+                    sender_evidence=sender_evidence,
+                    log_witness=getattr(live, 'diagnostics', lambda: {})(),
                     b07_evidence=b07_evidence, b07_monitor_alarms=b07_monitor_alarms,
                     blank_snapshots=blank, invalid_messages=invalid)
 

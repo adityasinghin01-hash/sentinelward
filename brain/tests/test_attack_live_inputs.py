@@ -184,3 +184,22 @@ def test_sender_count_is_used_only_for_a_recent_completed_matching_window(frame,
     else: state.network['received_ms'] = 40001
     value = ReplayDetector().evaluate(None, state, 40000)
     assert value['score'] < .5
+
+
+@pytest.mark.parametrize('first', [False, True])
+@pytest.mark.parametrize('extractor_repeats,want', [(5, 'UNSURE'), (6, 'DEVICE_ATTACK')])
+def test_completed_copy_window_uses_its_own_interval_at_late_tick(frame, first, extractor_repeats, want):
+    service, live = live_traffic(frame, 'paced', first)
+    for sec in range(40, 45):
+        topic = 'ward/bed/B01/vitals'
+        live.receive(topic, encode(topic, frame(sec)), sec*1000, 'MON-01')
+        live.publish_due(sec*1000+200)
+    source = service.beds['B01'].network
+    assert source['window_start'] == 35000
+    assert source['seq_repeats'] == 5
+    source['seq_repeats'] = extractor_repeats
+    # At 45.026 s the receipt look-back has only four copies, but all five
+    # copies in [35,40) were verified. A sixth repeat remains unexplained.
+    verdict = service.tick(45026)[0]
+    assert verdict['verdict'] == want
+    assert verdict['scores']['M5'] == (.6 if want == 'UNSURE' else .9)

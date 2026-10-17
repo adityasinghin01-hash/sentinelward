@@ -590,7 +590,10 @@ class NetworkAttack:
         senders = {r['sender_id'] for r in recent if r.get('sender_id') is not None}
         network = state.network
         source = None
-        if network and now_ms-10000 <= network['window_start'] and network['window_start']+network['window_s']*1000 <= now_ms:
+        # Keep the previous completed five-second window for the whole scoring
+        # tick, including ordinary scheduler jitter (same rule as M4).
+        end = now_ms//5000*5000
+        if network and end-10000 <= network['window_start'] and network['window_start']+network['window_s']*1000 <= now_ms:
             source = network
         device = (state.last_message or window or {}).get('device_id')
         if source is not None and device is not None and source['device_id'] != device:
