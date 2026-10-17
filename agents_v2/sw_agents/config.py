@@ -132,7 +132,10 @@ class Settings:
     briefing_every_s: float = 600.0
     briefing_demo_at_s: float = 1140.0
     granite_url: str | None = None
-    granite_timeout_s: float = 20.0
+    granite_timeout_s: float = 120.0
+    granite_max_tokens: int = 120
+    # Granite takes ~30-60 s on the LinuxONE CPU: start the T+19:00 demo briefing this many seconds early.
+    granite_lead_s: float = 60.0
 
     @property
     def a2_dry_run(self) -> bool:
@@ -224,7 +227,9 @@ class Settings:
             briefing_every_s=_num(env, "SW_A8_EVERY_S", 600, 0, 86400),
             briefing_demo_at_s=_num(env, "SW_A8_DEMO_AT_S", 1140, 0, 86400),
             granite_url=granite,
-            granite_timeout_s=_num(env, "SW_GRANITE_TIMEOUT_S", 20, 1, 120),
+            granite_timeout_s=_num(env, "SW_GRANITE_TIMEOUT_S", 120, 1, 600),
+            granite_max_tokens=int(_num(env, "SW_GRANITE_MAX_TOKENS", 120, 20, 400)),
+            granite_lead_s=_num(env, "SW_A8_GRANITE_LEAD_S", 60, 0, 3600),
         )
 
 

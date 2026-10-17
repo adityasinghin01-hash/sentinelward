@@ -165,7 +165,8 @@ class World:
 def make_world(tmp_path):
     worlds: list[World] = []
 
-    def _make(*, broker=None, granite_http=None, granite_url=None, telegram=False, state_dir=None, **overrides):
+    def _make(*, broker=None, granite_http=None, granite_url=None, telegram=False, state_dir=None,
+              granite_background=None, **overrides):
         state = state_dir or (tmp_path / "state")
         if telegram:
             overrides.setdefault("telegram_token", "123456:SECRET-TOKEN-abcdef")
@@ -179,7 +180,8 @@ def make_world(tmp_path):
         broker = None if broker == "auto" else (broker if broker is not None else FakeBroker())
         tg_http = FakeTelegramHTTP() if telegram else None
         writer = GraniteWriter(granite_url, http=granite_http) if granite_http is not None else GraniteWriter(granite_url)
-        engine = build(settings, bus.publish, clock, broker=broker, writer=writer, telegram_http=tg_http)
+        engine = build(settings, bus.publish, clock, broker=broker, writer=writer, telegram_http=tg_http,
+                       granite_background=granite_background)
         w = World(engine, bus, clock, broker, tg_http, Path(state))
         worlds.append(w)
         return w

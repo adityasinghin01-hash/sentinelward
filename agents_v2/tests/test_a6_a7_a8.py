@@ -111,14 +111,16 @@ def test_briefing_template_when_granite_not_set(world):
 
 
 def test_briefing_by_granite_when_it_answers_truthfully(make_world):
-    http = FakeGraniteHTTP(text="One incident on bed 5 (B05), which is untrusted. One drift ticket for MON-08 is open.")
+    http = FakeGraniteHTTP(text=" 1 incident on bed 5 (B05), which is untrusted. MON-08 has a drift ticket.")
     w = make_world(granite_url="http://127.0.0.1:8090", granite_http=http)
     _activity(w)
     w.a["A8"].generate("test")
     rec = w.bus.records("briefing")[-1]["data"]
-    assert rec["generated_by"] == "IBM Granite" and rec["narrative"]["text"].startswith("One incident on bed 5")
+    assert rec["generated_by"] == "IBM Granite"
+    assert rec["narrative"]["text"] == "Since 08:00 the ward had 1 incident on bed 5 (B05), which is untrusted. MON-08 has a drift ticket."
     url, body = http.prompts[-1]
-    assert url == "http://127.0.0.1:8090/v1/completions" and "Facts (JSON)" in body["prompt"]
+    assert url == "http://127.0.0.1:8090/v1/completions" and "- Incidents: 1 (B05 TAMPERING open)" in body["prompt"]
+    assert body["prompt"].endswith("Handover note: Since 08:00 the ward had")
     assert "ignore previous" not in body["prompt"]
 
 
@@ -148,7 +150,48 @@ def test_granite_cannot_trigger_actions(make_world):
     before = [a["action"] for a in w.bus.of("action")]
     w.a["A8"].generate("test")
     after = [a["action"] for a in w.bus.of("action")]
-    assert after[len(before):] == ["write_briefing"] and w.broker.calls == []
+    assert set(after[len(before):]) == {"write_briefing"} and w.broker.calls == []  # published, then rewritten
+
+
+def test_claims_must_match_the_facts():
+    from sw_agents.granite import check_claims
+    f = {"incident_count": 2, "open_ticket_count": 1, "alerts_sent": 5, "alerts_acknowledged": 1, "median_ack_s": 15.0,
+         "false_alarms_silenced": 1, "untrusted_bed_count": 2, "untrusted_beds": ["B05", "B07"],
+         "blind_time": [{"bed_id": "B03", "minutes": 0.4}, {"bed_id": "B04", "minutes": 0.1}]}
+    ok = ("Since 08:00 the ward had 2 incidents, so B05 and B07 are untrusted. There is 1 open biomed ticket. "
+          "B03 was blind for 0.4 min, B04 for 0.1 min. Staff got 5 alerts and acknowledged 1, with a median of 15.0 s. "
+          "1 false alarm was silenced.")
+    assert check_claims(ok, f) is None
+    # real Granite output from the server (17 Oct): every number exists in the facts, two claims are false
+    assert "acknowledged" in check_claims("Staff got 5 alerts and acknowledged all 5, with a median of 15.0 s.", f)
+    assert "no open biomed tickets" in check_claims("There are no open biomed tickets.", f)
+    assert "1 incidents" in check_claims("The ward had 1 incidents.", f)
+    assert "blind time" in check_claims("B04 was blind for 0.4 min.", f)
+    # real Granite output from the server (17 Oct): right for B03, wrong for B04
+    assert "bed 4's blind time" in check_claims("B03 and B04 were blind for 0.4 min, so they are untrusted.", f)
+    assert "bed 3 is untrusted" in check_claims("B03 is untrusted.", f)
+    assert "median" in check_claims("The median of 1 s.", f)
+
+
+def test_tidy_and_loops():
+    from sw_agents.granite import repeats, tidy
+    seed = "Since 08:00 the ward had"
+    assert tidy(seed, " 2 incidents. B05 is untrusted. Staff got 5 alerts, median of 15.", truncated=True) == \
+        "Since 08:00 the ward had 2 incidents. B05 is untrusted."  # cut at max_tokens: last sentence dropped
+    assert tidy(seed, " 2 incidents. B05 is untrusted.\nHandover note: x", truncated=True) == \
+        "Since 08:00 the ward had 2 incidents. B05 is untrusted."
+    assert tidy(seed, " 2 incidents. 2 incidents. 2 incidents.") == "Since 08:00 the ward had 2 incidents. 2 incidents."
+    loop = ("Since 08:00 the ward had 2 incidents. The incident was a tampering incident, and the incident was a "
+            "tampering incident.")  # real output, 17 Oct
+    assert repeats(loop) == "the incident was a tampering"
+
+
+def test_looping_granite_falls_back(make_world):
+    http = FakeGraniteHTTP(text=" 1 incident. The incident was a tampering incident, and the incident was a tampering incident.")
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=http)
+    _activity(w)
+    w.a["A8"].generate("test")
+    assert "repeats itself" in w.bus.records("briefing")[-1]["data"]["narrative"]["fallback_reason"]
 
 
 def test_check_output_rules():
@@ -174,3 +217,113 @@ def test_periodic_briefing(world):
     assert len(world.bus.records("briefing")) == 1
     world.advance(600)
     assert len(world.bus.records("briefing")) == 2
+
+
+# ---------------------------------------------------------------- Granite in the background, on time for T+19:00
+GOOD_RAW = " 1 incident: suspected tampering on B05, still open, so B05 is untrusted. MON-08 has a drift ticket.\n\nFacts"
+GOOD = "Since 08:00 the ward had 1 incident: suspected tampering on B05, still open, so B05 is untrusted. MON-08 has a drift ticket."
+
+
+def test_granite_request_is_short_with_long_timeout(make_world):
+    from sw_agents.config import Settings as S
+    assert S().granite_timeout_s == 120 and S().granite_max_tokens == 120
+    env = S.from_env({"SW_GRANITE_TIMEOUT_S": "150", "SW_GRANITE_MAX_TOKENS": "120", "SW_A8_GRANITE_LEAD_S": "90"})
+    assert (env.granite_timeout_s, env.granite_max_tokens, env.granite_lead_s) == (150, 120, 90)
+    w = make_world(granite_url="http://127.0.0.1:8090")
+    assert w.a["A8"].writer.timeout_s == 120 and w.a["A8"].writer.max_tokens == 120
+    http = FakeGraniteHTTP(text=GOOD_RAW)
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=http)
+    _activity(w)
+    w.a["A8"].generate("test")
+    body = http.prompts[-1][1]
+    assert body["max_tokens"] == 120 and "since_ts" not in body["prompt"] and "beds_mentioned" not in body["prompt"]
+    assert len(body["prompt"]) < 1500  # short prompt: prompt tokens cost time on the CPU
+
+
+def test_briefing_published_at_once_then_rewritten_in_place(make_world):
+    jobs = []
+    http = FakeGraniteHTTP(text=GOOD_RAW)
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=http, granite_background=jobs.append)
+    _activity(w)
+    w.a["A8"].generate("test")
+    first = w.bus.records("briefing")[-1]
+    assert first["data"]["generated_by"] == "template" and first["data"]["narrative"]["fallback_reason"] == "Granite still writing"
+    assert len(jobs) == 1 and http.prompts == []  # nothing waited for Granite
+    w.a["A8"].generate("test")  # Granite busy: a second briefing is not queued behind it
+    assert len(jobs) == 1 and "busy" in w.bus.records("briefing")[-1]["data"]["narrative"]["fallback_reason"]
+    jobs.pop(0)()
+    rewritten = w.bus.latest_record(first["record_id"])
+    assert rewritten["data"]["generated_by"] == "IBM Granite" and rewritten["data"]["narrative"]["text"] == GOOD
+    assert w.e.snapshot()["agents"]["A8"]["granite_ok"] == 1 and not w.a["A8"].busy
+
+
+def test_t19_briefing_is_granite_because_it_started_at_t18(make_world):
+    jobs = []
+    http = FakeGraniteHTTP(text=GOOD_RAW)
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=http, granite_background=jobs.append,
+                   briefing_every_s=0)
+    w.demo("run", start_at_s=0)
+    _activity(w)
+    w.advance(1080 - (w.clock.now_ms() - w.e.run_info["ts"]) / 1000)  # T+18:00
+    assert len(jobs) == 1 and w.bus.records("briefing") == []
+    jobs.pop(0)()  # Granite finishes within the minute
+    w.advance(60)  # T+19:00
+    rec = w.bus.records("briefing")[-1]
+    assert rec["data"]["trigger"] == "ward script T+19:00" and rec["data"]["generated_by"] == "IBM Granite"
+    assert rec["data"]["narrative"]["text"] == GOOD and rec["data"]["facts_as_of"]
+    assert len(jobs) == 1  # refresh with the T+19:00 facts
+    jobs.pop(0)()
+    assert w.bus.latest_record(rec["record_id"])["data"]["generated_by"] == "IBM Granite"
+    assert "refreshed" in w.bus.actions("write_briefing")[-1]["detail"]
+
+
+def test_t19_while_granite_still_writing_gets_the_early_text_when_ready(make_world):
+    jobs = []
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=FakeGraniteHTTP(text=GOOD_RAW),
+                   granite_background=jobs.append, briefing_every_s=0)
+    w.demo("run", start_at_s=0)
+    _activity(w)
+    w.advance(1140 - (w.clock.now_ms() - w.e.run_info["ts"]) / 1000)  # T+19:00, the T+18:00 job not done
+    rec = w.bus.records("briefing")[-1]
+    assert rec["data"]["generated_by"] == "template"  # on time, never blank
+    assert rec["data"]["narrative"]["fallback_reason"] == "Granite still writing (started early)"
+    jobs.pop(0)()
+    assert w.bus.latest_record(rec["record_id"])["data"]["generated_by"] == "IBM Granite"
+
+
+def test_granite_timeout_keeps_truthful_template(make_world):
+    w = make_world(granite_url="http://127.0.0.1:8090", granite_http=FakeGraniteHTTP(exc=TimeoutError("slow")))
+    _activity(w)
+    w.a["A8"].generate("test")
+    rec = w.bus.records("briefing")[-1]["data"]
+    assert rec["generated_by"] == "template" and rec["narrative"]["fallback_reason"] == "Granite unavailable (TimeoutError)"
+    assert rec["narrative"]["text"].startswith("Shift briefing since 08:00")
+
+
+def test_real_server_output_is_trimmed_to_its_true_part():
+    """The exact Granite reply measured on the LinuxONE server (17 Oct, 45.1 s, 331 prompt + 120 tokens)."""
+    from sw_agents.granite import GraniteWriter
+    facts = {"alerts_acknowledged": 1, "alerts_sent": 5, "blind_time": [
+        {"bed_id": "B03", "minutes": 0.4}, {"bed_id": "B04", "minutes": 0.1}, {"bed_id": "B05", "minutes": 0.4},
+        {"bed_id": "B07", "minutes": 0.3}, {"bed_id": "B08", "minutes": 0.2}], "data_from": "21:30",
+        "false_alarms_silenced": 1, "incident_count": 2, "incidents": [
+        {"bed_id": "B05", "device_id": "MON-05", "status": "open", "verdict": "TAMPERING"},
+        {"bed_id": "B07", "device_id": "MON-07", "status": "open", "verdict": "BOTH"}], "median_ack_s": 15.0,
+        "open_ticket_count": 1, "open_tickets": [{"device_id": "MON-08", "problem": "drift"}], "shift_start": "08:00",
+        "untrusted_bed_count": 2, "untrusted_beds": ["B05", "B07"], "since_ts": 1792195200000,
+        "beds_mentioned": ["B03", "B04", "B05", "B07", "B08"], "devices_mentioned": ["MON-05", "MON-07", "MON-08"]}
+    raw = ("2 incidents: suspected tampering on B05 and B07, still open, so B05 and B07 are untrusted. There is 1 open "
+           "biomed ticket, a drift on MON-08. B03 was blind for 0.4 min, B04 for 0.1 min, B05 for 0.4 min, B07 for 0.3 min, "
+           "B08 for 0.2 min. B05 and B07 were blind for 0.4 min, so they are untrusted. B03 was blind for 0.4 min")
+
+    class Http:
+        def post(self, url, json):
+            return FakeResponse({"choices": [{"text": raw, "finish_reason": "length"}]})
+
+    from conftest import FakeResponse
+    w = GraniteWriter("http://127.0.0.1:8090", http=Http())
+    text, why = w.write(facts, "")
+    assert why is None and text == ("Since 08:00 the ward had 2 incidents: suspected tampering on B05 and B07, still open, "
+                                    "so B05 and B07 are untrusted. There is 1 open biomed ticket, a drift on MON-08. B03 was "
+                                    "blind for 0.4 min, B04 for 0.1 min, B05 for 0.4 min, B07 for 0.3 min, B08 for 0.2 min.")
+    assert "bed 7's blind time" in w.last_trimmed
