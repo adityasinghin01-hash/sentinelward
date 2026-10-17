@@ -1,0 +1,41 @@
+# captured ~40 s into run run_20261017_093908 (start_at_s=600, T+10:00; 10 beds streaming: B03/B04 packs ended, B07 joined)
+
+$ ps -o pid,user,%cpu,%mem,rss,etime,args (SentinelWard + hub + db)
+    PID USER     %CPU %MEM   RSS     ELAPSED COMMAND
+ 284487 linux1    0.9  0.8 68068       04:58 /home/linux1/sw/.venv/bin/python -m sw_api
+ 284488 linux1    0.7  1.4 116300      04:58 /home/linux1/sw/.venv/bin/python -m sw_brain
+ 284492 linux1    0.5  0.5 41084       04:58 /home/linux1/sw/.venv/bin/python -m sw_attacks --runs-dir /home/linux1/sw/runs/attacks --schedule /home/linux1/sw/app/attacks/schedule.yaml
+ 285327 linux1    0.3  0.3 32156       00:41 /home/linux1/sw/.venv/bin/python /tmp/kiro_watch.py /tmp/kiro_ev12 60 600
+ 284490 linux1    0.2  0.9 74012       04:58 /home/linux1/sw/.venv/bin/python -m sw_sim listen --packs /home/linux1/sw/packs --runs /home/linux1/sw/runs/simulator --script /home/linux1/sw/app/simulator/ward_script.yaml
+ 285152 postgres  0.1  0.3 27984       02:45 postgres: 16/main: sw_api sentinelward 127.0.0.1(57030) idle
+ 279735 mosquit+  0.0  0.1  8288    02:04:18 /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
+ 278100 postgres  0.0  0.3 31460    02:06:45 /usr/lib/postgresql/16/bin/postgres -D /var/lib/postgresql/16/main -c config_file=/etc/postgresql/16/main/postgresql.conf
+ 284576 postgres  0.0  0.2 22892       04:57 postgres: 16/main: sw_api sentinelward 127.0.0.1(57244) idle
+ 285325 linux1    0.0  0.0  3656       00:41 bash -c mv /tmp/kiro_ev/ps-top-12beds.txt /tmp/kiro_ev/ps-top-11beds-T0430.txt; ~/sw/.venv/bin/python /tmp/kiro_watch.py /tmp/kiro_ev12 60 600 2>&1; ~/sw/.venv/bin/python - <<"PY" import json, urllib.request A="http://127.0.0.1:8000" def call(p,b,t=None):     r=urllib.request.Request(A+p,data=json.dumps(b).encode(),method="POST",headers={"Content-Type":"application/json","Origin":A,**({"Authorization":"Bearer "+t} if t else {})})     with urllib.request.urlopen(r) as x: return x.status, json.load(x) s,j=call("/api/session",{"role":"operator"}); print("reset", call("/api/demo/reset",{},j["token"])[0]) PY
+
+$ top -b -n 1 | head -25
+top - 09:39:48 up 6 days, 23:07,  1 user,  load average: 0.18, 0.12, 0.04
+Tasks: 137 total,   2 running, 135 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :   8009.1 total,   2438.0 free,   1629.1 used,   4181.8 buff/cache     
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   6380.0 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+      1 root      20   0   21096  13408   9316 S   0.0   0.2   0:50.94 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.09 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      7 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     11 root      20   0       0      0      0 I   0.0   0.0   0:00.95 kworker+
+     12 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     13 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     15 root      20   0       0      0      0 S   0.0   0.0   0:02.01 ksoftir+
+     16 root      20   0       0      0      0 I   0.0   0.0   0:55.66 rcu_sch+
+     17 root      rt   0       0      0      0 S   0.0   0.0   0:00.02 migrati+
+     18 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0
+     19 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/1
+     20 root      rt   0       0      0      0 S   0.0   0.0   0:00.02 migrati+

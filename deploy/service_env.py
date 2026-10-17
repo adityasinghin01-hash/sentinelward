@@ -12,6 +12,9 @@ def main():
         if source in os.environ:
             os.environ.setdefault(destination, os.environ[source])
     if sys.argv[2:] == ['-m', 'sw_api']:
+        # Server .env provides DATABASE_URL; the backend reads SW_PG_DSN (default "memory").
+        if os.environ.get('DATABASE_URL') and not os.environ.get('SW_PG_DSN', '').strip():
+            os.environ['SW_PG_DSN'] = os.environ['DATABASE_URL']
         os.environ['SW_API_HOST'] = '127.0.0.1'
         os.environ['SW_API_PORT'] = '8000'
         os.environ['SW_FRONTEND_DIST'] = '/home/linux1/sw/app/frontend/dist'

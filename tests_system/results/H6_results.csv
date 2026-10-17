@@ -1,0 +1,16 @@
+name,status,value,owner,reason
+"Vitals count, sequence, validation",PASS,60,Aditya Singh,"Expected 60 ±2: B03 source stops at T+05:30; continuous=True, valid=True; median wire bytes=2235.5; nominal about 3 KB (waveform dependent)"
+VTACH at T+05:00 ±1 s,PASS,300,Aditya Singh,Simulator event origin and vitals timestamp
+Scores M1 window-end delay median ms,PASS,12,Aditya Singhal,"15 envelopes; delays_ms=[13, 7, 19, 16, 16, 11, 17, 5, 5, 6, 17, 10, 12, 13, 3]; null/ineligible scores are envelopes, not proof of detector readiness"
+Scores M2 window-end delay median ms,PASS,13,Aditya Singhal,"15 envelopes; delays_ms=[13, 7, 19, 16, 16, 12, 18, 5, 5, 6, 18, 11, 13, 13, 3]; null/ineligible scores are envelopes, not proof of detector readiness"
+Scores M3 window-end delay median ms,PASS,13,Aditya Singhal,"15 envelopes; delays_ms=[13, 7, 20, 16, 16, 13, 18, 5, 5, 6, 18, 11, 13, 13, 4]; null/ineligible scores are envelopes, not proof of detector readiness"
+Scores M4 window-end delay median ms,PASS,13,Aditya Singhal,"15 envelopes; delays_ms=[14, 7, 20, 16, 18, 13, 18, 6, 5, 6, 18, 11, 13, 13, 4]; null/ineligible scores are envelopes, not proof of detector readiness"
+Scores M5 window-end delay median ms,PASS,13,Kartik,"15 envelopes; delays_ms=[14, 7, 20, 17, 18, 13, 18, 6, 5, 6, 18, 11, 13, 13, 4]; null/ineligible scores are envelopes, not proof of detector readiness"
+Scores M6 window-end delay median ms,PASS,13,Aditya,"15 envelopes; delays_ms=[14, 7, 20, 17, 18, 13, 19, 6, 5, 6, 20, 11, 13, 13, 4]; null/ineligible scores are envelopes, not proof of detector readiness"
+EMERGENCY within 15 s,PASS,3.019,Aditya Singhal,Seconds after actual monitor alarm
+High staff alert within 15 s,MISSING,,Aditya,Seconds after actual monitor alarm
+Backend /api/ward EMERGENCY,PASS,3.139,Aditya Singh,Depends on decision-layer EMERGENCY; saved ward_polls.jsonl
+WS EMERGENCY push delay after hub ms,PASS,1,Aditya Singh,WS/MQTT callback ordering can yield a small negative receipt difference; raw timestamps retained
+Backend telemetry HTTP + WS,PASS,,Aditya Singh,"HTTP telemetry polls=76, WS telemetry pushes=157"
+Never blank violations,PASS,0,Aditya Singh,74 bed samples; 0 failed HTTP polls
+Phone Telegram delivery,NOT RUN,,Aditya,A person must verify actual Telegram delivery

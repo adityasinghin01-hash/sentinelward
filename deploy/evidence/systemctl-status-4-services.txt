@@ -1,0 +1,67 @@
+● sw-api.service - SentinelWard API and same-origin frontend
+     Loaded: loaded (/etc/systemd/system/sw-api.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 09:34:50 UTC; 9min ago
+   Main PID: 284487 (python)
+      Tasks: 2 (limit: 9567)
+     Memory: 47.3M (peak: 47.8M)
+        CPU: 4.526s
+     CGroup: /system.slice/sw-api.service
+             └─284487 /home/linux1/sw/.venv/bin/python -m sw_api
+
+Oct 17 09:43:36 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:37 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:38 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:39 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:40 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:41 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:42 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:43 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:44 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+Oct 17 09:43:45 tessnovabuild python[284487]: INFO:     127.0.0.1:38132 - "GET /api/ward HTTP/1.1" 200 OK
+
+● sw-brain.service - SentinelWard M1-M6 and decision layer
+     Loaded: loaded (/etc/systemd/system/sw-brain.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 09:42:21 UTC; 2min 12s ago
+   Main PID: 285691 (python)
+      Tasks: 3 (limit: 9567)
+     Memory: 50.6M (peak: 51.0M)
+        CPU: 537ms
+     CGroup: /system.slice/sw-brain.service
+             └─285691 /home/linux1/sw/.venv/bin/python -m sw_brain
+
+Oct 17 09:42:21 tessnovabuild systemd[1]: Started sw-brain.service - SentinelWard M1-M6 and decision layer.
+Oct 17 09:42:21 tessnovabuild python[285691]: INFO:sw_common.bus:MQTT connected to 127.0.0.1:1883
+
+● sw-sim.service - SentinelWard simulator demo-control listener
+     Loaded: loaded (/etc/systemd/system/sw-sim.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 09:34:50 UTC; 9min ago
+   Main PID: 284490 (python)
+      Tasks: 4 (limit: 9567)
+     Memory: 54.9M (peak: 55.6M)
+        CPU: 950ms
+     CGroup: /system.slice/sw-sim.service
+             └─284490 /home/linux1/sw/.venv/bin/python -m sw_sim listen --packs /home/linux1/sw/packs --runs /home/linux1/sw/runs/simulator --script /home/linux1/sw/app/simulator/ward_script.yaml
+
+Oct 17 09:34:50 tessnovabuild systemd[1]: Started sw-sim.service - SentinelWard simulator demo-control listener.
+Oct 17 09:34:50 tessnovabuild python[284490]: 2026-10-17 09:34:50,981 INFO sw_common.bus: MQTT connected to 127.0.0.1:1883
+Oct 17 09:34:50 tessnovabuild python[284490]: 2026-10-17 09:34:50,982 INFO sw_sim: connected to MQTT hub 127.0.0.1:1883 as sw_sim
+Oct 17 09:34:50 tessnovabuild python[284490]: 2026-10-17 09:34:50,982 INFO sw_sim: listening on ward/demo/control (12 beds ready)
+Oct 17 09:37:02 tessnovabuild python[284490]: 2026-10-17 09:37:02,722 INFO sw_sim: run run_20261017_093702: 12 beds, T+04:30 to T+20:00, first second at epoch 1792229824000 ms -> /home/linux1/sw/runs/simulator/run_20261017_093702
+Oct 17 09:38:45 tessnovabuild python[284490]: 2026-10-17 09:38:45,062 INFO sw_sim: run run_20261017_093702 reset at T+06:12: 1080 sent, 0 invalid, 0 publish errors, lag p99 9.35 ms
+Oct 17 09:38:45 tessnovabuild python[284490]: 2026-10-17 09:38:45,064 INFO sw_sim.listen: reset: run stopped; seq counters start again at 1 on the next run
+Oct 17 09:39:08 tessnovabuild python[284490]: 2026-10-17 09:39:08,619 INFO sw_sim: run run_20261017_093908: 12 beds, T+10:00 to T+20:00, first second at epoch 1792229950000 ms -> /home/linux1/sw/runs/simulator/run_20261017_093908
+Oct 17 09:40:09 tessnovabuild python[284490]: 2026-10-17 09:40:09,032 INFO sw_sim: run run_20261017_093908 reset at T+11:00: 600 sent, 0 invalid, 0 publish errors, lag p99 7.54 ms
+Oct 17 09:40:09 tessnovabuild python[284490]: 2026-10-17 09:40:09,032 INFO sw_sim.listen: reset: run stopped; seq counters start again at 1 on the next run
+
+● sw-attacks.service - SentinelWard finite attack schedule demo-control listener
+     Loaded: loaded (/etc/systemd/system/sw-attacks.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 09:34:50 UTC; 9min ago
+   Main PID: 284492 (python)
+      Tasks: 2 (limit: 9567)
+     Memory: 29.4M (peak: 29.9M)
+        CPU: 2.656s
+     CGroup: /system.slice/sw-attacks.service
+             └─284492 /home/linux1/sw/.venv/bin/python -m sw_attacks --runs-dir /home/linux1/sw/runs/attacks --schedule /home/linux1/sw/app/attacks/schedule.yaml
+
+Oct 17 09:34:50 tessnovabuild systemd[1]: Started sw-attacks.service - SentinelWard finite attack schedule demo-control listener.
+Oct 17 09:34:50 tessnovabuild python[284492]: INFO:sw_common.bus:MQTT connected to 127.0.0.1:1883

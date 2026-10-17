@@ -39,12 +39,17 @@ control. Simulator events are in `~/sw/runs/simulator/<run_id>/events.jsonl`; at
 `~/sw/runs/attacks/<run_id>/events.jsonl`. `service_env.py` maps server `MQTT_*` credentials to the
 brain's `SW_MQTT_*` names, without overriding explicit brain or attack-specific settings.
 
-The inspected backend is **Phase A, memory only**. The existing PostgreSQL database and DATABASE_URL
-are preserved, but this deploy does not claim database durability or add a migration. The API's
-`/api/health` output reports actual storage/durability. If a future backend requires another DSN
-setting, configure it in the server `.env` according to that backend's current README. A1–A9 and
+The backend is Phase B (PostgreSQL). `service_env.py` sets `SW_PG_DSN` from the server's
+`DATABASE_URL` for sw-api when `SW_PG_DSN` is unset; without it the API would silently run in
+memory mode. `/api/health` reports actual storage/durability (verified on the server:
+`"storage":"postgresql","durable":true`). A1–A9 and
 Kartik's authenticated network extractor are separate owners/services; these four units do not
 start them. Smoke/T8 report their missing outputs honestly.
+
+After `POST /api/demo/reset` the brain stops scoring until the next `demo_control run` (by design in
+`sw_brain.service`). tests_system/smoke_h6.py starts its own simulator without a run control, so
+run it on a freshly (re)started sw-brain, or after a run, not after a reset:
+`sudo systemctl restart sw-brain`.
 
 Local validation covers shell syntax, offline dry-run, the isolated frontend build, Python parsing
 and synthetic metrics. SSH/rsync, sudo, systemd, native dependency compatibility and all live timing
