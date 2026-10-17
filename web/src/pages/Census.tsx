@@ -2,7 +2,10 @@ import {useNavigate} from 'react-router-dom';
 import {useWard} from '../lib/store';
 import {useNow} from '../lib/hooks';
 import {bedState, displayVitals, isOpenAlert, staff, time, trustView, value} from '../lib/domain';
-import {Badge, BedLink, Empty, PageTitle, Panel, Tip} from '../components/ui';
+import {BedLink, Empty, PageTitle, Panel, Tip} from '../components/ui';
+import {tileView} from '../components/ward/tile';
+import type {TileGroup} from '../components/ward/tile';
+const GROUP_RANK: Record<TileGroup, number> = {emergency: 0, security: 1, check: 2, nosignal: 3, maint: 4, normal: 5};
 
 const ORDER = {high: 0, medium: 1, low: 2, none: 3} as const;
 
@@ -12,8 +15,8 @@ export function CensusPage() {
   const hidden = useWard(s => s.hidden);
   const now = useNow();
   const navigate = useNavigate();
-  const rows = beds.map(b => ({b, s: bedState(b, now), v: displayVitals(b)}))
-    .sort((x, y) => ORDER[x.s.tone] - ORDER[y.s.tone] || (x.s.untrusted ? 0 : 1) - (y.s.untrusted ? 0 : 1) || (trustView(x.b).value ?? -1) - (trustView(y.b).value ?? -1));
+  const rows = beds.map(b => ({b, s: bedState(b, now), v: displayVitals(b), t: tileView(b, alerts, now)}))
+    .sort((x, y) => GROUP_RANK[x.t.group] - GROUP_RANK[y.t.group] || (x.s.untrusted ? 0 : 1) - (y.s.untrusted ? 0 : 1) || x.b.bed_id.localeCompare(y.b.bed_id));
   const untrusted = rows.filter(r => r.s.untrusted).length;
   return (
     <div className="page">
@@ -22,8 +25,8 @@ export function CensusPage() {
 
       </PageTitle>
       {untrusted > 0 && (
-        <div className="striped-banner" role="status">
-          ▨ {untrusted} bed{untrusted === 1 ? '’s' : 's’'} data can’t be trusted. Don’t act on {untrusted === 1 ? 'its' : 'their'} numbers without a bedside check.
+        <div className="notice-banner" role="status">
+          {untrusted} bed{untrusted === 1 ? '’s' : 's’'} data can’t be trusted. Don’t act on {untrusted === 1 ? 'its' : 'their'} numbers without a bedside check.
         </div>
       )}
       <Panel title={`${rows.length} beds`} caption="Select a row to open the bed. Remote viewers are the ones a hacker fools, so trust is a column.">
@@ -40,17 +43,16 @@ export function CensusPage() {
                 <th scope="col"><Tip text="Yes when an open alert for this bed has reached ladder step 3 (all nurses + doctor)."><span>Escalated to doctor</span></Tip></th>
               </tr></thead>
               <tbody>
-                {rows.map(({b, s, v}) => {
+                {rows.map(({b, s, v, t}) => {
                   const escalated = alerts.some(a => a.bed_id === b.bed_id && isOpenAlert(a) && a.ladder_step >= 3);
                   const check = b.last_bedside_check;
                   return (
-                    <tr key={b.bed_id} tabIndex={0} className={`row-${s.tone}`} onClick={() => navigate(`/bed/${b.bed_id}`)}
+                    <tr key={b.bed_id} tabIndex={0} className={`row-tone-${t.tone}`} onClick={() => navigate(`/bed/${b.bed_id}`)}
                         onKeyDown={e => { if (e.key === 'Enter') navigate(`/bed/${b.bed_id}`); }}>
                       <td><BedLink id={b.bed_id} /></td>
                       <td>{!hidden && b.patient ? `${b.patient.initials} · ${b.patient.age ?? '—'} ${b.patient.sex ?? ''}` : 'Hidden'}</td>
-                      <td><Badge tone={s.tone} icon={b.verdict === 'NORMAL' ? 'check' : b.verdict === 'DEVICE_ATTACK' ? 'shield' : 'status'}>{s.label}</Badge>
-                        {s.offline && <span className="tiny"> · no data</span>}</td>
-                      <td className={`mono ${s.untrusted || trustView(b).value === null ? 'striped-cell' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? 'Not trusted' : s.untrusted ? 'Checking' : 'Trusted'}{b.isolated && ' · CUT OFF'}</td>
+                      <td><span className={`census-state tone-${t.tone}`}>{t.word}</span>{t.reason && <span className="census-reason">{t.reason}</span>}</td>
+                      <td className={`trust-word ${s.untrusted || trustView(b).value === null ? 'is-not' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? 'Not trusted' : s.untrusted ? 'Checking' : 'Trusted'}</td>
                       <td className="mono big-cell">{value(v?.hr)}</td>
                       <td className="mono big-cell">{value(v?.spo2)}</td>
                       <td className="mono">{value(v?.systolic)}/{value(v?.diastolic)}</td>

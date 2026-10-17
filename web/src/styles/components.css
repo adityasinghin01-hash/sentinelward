@@ -226,3 +226,4 @@ button.danger-outline:hover:not(:disabled) { background: var(--surface-raised); 
 .alert-actions button { min-height: 40px; height: 40px; }
 .alert-actions .button-primary, .bed-header-actions .button-primary, .sheet-actions .button-primary { min-height: 44px; height: 44px; }
 .stat-sub, .stamp { font-size: 13px; line-height: 18px; }
+.table-wrap .table th { top: 0; }
