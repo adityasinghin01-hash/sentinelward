@@ -192,7 +192,12 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
             enabled=run_checked(['systemctl','show','sw-net.service','--property=UnitFileState','--value']).stdout.strip()=='enabled'
             private_write(state/'enabled.json',json.dumps({'sw-net':enabled}))
         secretfile=state/'credentials.json'
-        if secretfile.exists(): values=json.loads(private_read(secretfile))
+        if secretfile.exists():
+            values=json.loads(private_read(secretfile))
+            # Identities added to policy.SERVICES after the first setup (e.g. chip) get a fresh secret.
+            missing={k:v for k,v in credentials().items() if k not in values}
+            if missing:
+                values.update(missing); private_write(secretfile,json.dumps(values))
         else:
             values=credentials()
             private_write(secretfile,json.dumps(values))
