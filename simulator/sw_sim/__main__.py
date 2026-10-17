@@ -133,7 +133,7 @@ def cmd_scale(args: argparse.Namespace, env: Env) -> int:
             script, packs, n_beds=args.beds, seconds=args.seconds, run_id=default_run_id("scale"),
             runs_dir=runs_dir, clock=RealClock(), bus=bus,
             on_run=lambda run: install_stop_signals(lambda: run.request_stop(STOP_SIGNAL)),
-            first_bed=args.first_bed,
+            first_bed=args.first_bed, loop=args.loop,
         )
     finally:
         bus.close()
@@ -172,6 +172,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_scale.add_argument("--seconds", type=int, required=True, help="run length in seconds")
     p_scale.add_argument("--first-bed", type=int, default=FIRST_SCALE_BED,
                          help=f"first bed number (default {FIRST_SCALE_BED}; 1 = beds B01.. with the ward sim stopped)")
+    p_scale.add_argument("--loop", action="store_true",
+                         help="restart each pack at its end (seq/ts continue), for runs longer than a pack")
     p_scale.set_defaults(func=cmd_scale)
     return parser
 

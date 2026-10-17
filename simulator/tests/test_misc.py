@@ -116,6 +116,20 @@ def test_scale_first_bed_stays_within_two_digit_ids(script, packs, first, n):
         build_scale_script(script, packs, n, 10, first_bed=first)
 
 
+def test_scale_loop_restarts_the_pack_and_keeps_counting(script, packs, tmp_path):
+    name = build_scale_script(script, packs, 1, 10, first_bed=1).beds[0].pack
+    length = packs[name].n_seconds
+    assert not build_scale_script(script, packs, 1, 10).beds[0].loop_pack
+    bus = FakeBus()
+    report = run_scale(script, packs, n_beds=1, seconds=length + 3, run_id="scale_loop", runs_dir=tmp_path,
+                       clock=FakeClock(), bus=bus, first_bed=1, loop=True)
+    sent = bus.by_bed()["B01"]
+    assert report.messages_sent == len(sent) == length + 3 and bus.validation_errors == []
+    assert [m["seq"] for m in sent] == list(range(1, length + 4))
+    assert all(b["ts"] - a["ts"] == 1000 for a, b in zip(sent, sent[1:]))
+    assert sent[length]["ecg"] == sent[0]["ecg"] and sent[length + 2]["ppg"] == sent[2]["ppg"]
+
+
 # ---------------------------------------------------------------- CLI
 
 def test_cli_dry_run(packs_dir, tmp_path, capsys):
