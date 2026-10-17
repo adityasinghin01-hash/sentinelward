@@ -1,0 +1,57 @@
+import {cleanup, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {afterEach, beforeEach, expect, it, vi} from 'vitest';
+import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {BedPage} from '../../pages/Bed';
+import {useWard} from '../../lib/store';
+import type {BedDetail} from '../../lib/types';
+
+const now = Date.now();
+const detail: BedDetail = {
+  bed_id:'B05',device_id:'MON-05',verdict:'TAMPERING',priority:'medium',trust_score:0,is_trusted:false,
+  connected:true,isolated:true,reason:'Old sequence received',requested_action:'Check patient at bedside',acknowledged:false,
+  last_updated_at:now,vitals:{hr:190,spo2:82,systolic:80,diastolic:40},waveform:{ecg:[99,99],ppg:[99,99]},
+  last_trusted:{captured_at:now-60_000,vitals:{hr:74,spo2:97,systolic:123,diastolic:81},waveform:{ecg:[0,1,0],ppg:[0,.5,0]}},
+  display:'last_trusted',offline_since:null,manual:null,last_bedside_check:null,assignment:null,nurse_call:null,chip_opinion:null,
+  scores:{},recent_verdicts:[],open_alerts:[],device:{online:true,isolated:true,isolated_since:now-30_000,last_seen_ts:now},
+};
+let writes: {url: string; body: unknown}[];
+function open() { render(<MemoryRouter initialEntries={['/bed/B05']}><Routes><Route path="/bed/:bedId" element={<BedPage />} /></Routes></MemoryRouter>); }
+beforeEach(() => {
+  writes=[];
+  useWard.setState({session:{role:'nurse',token:'t',name:'nurse',display_name:'Nurse'},beds:[],actions:[],alerts:[]});
+  sessionStorage.clear();
+  vi.stubGlobal('fetch',vi.fn(async (url: string, init: RequestInit={}) => {
+    if (init.method === 'POST') { writes.push({url,body:JSON.parse(String(init.body))}); return new Response(JSON.stringify({command_id:'c',accepted_at:now}),{status:202}); }
+    return new Response(JSON.stringify(url.includes('/history') ? {points:[{ts:now,hr:190,spo2:82,sys:80,dia:40,rr:22,trusted:false,verdict:'TAMPERING'}]} : detail));
+  }));
+});
+afterEach(() => {cleanup(); vi.unstubAllGlobals();});
+it('keeps last-trusted values separate from incoming readings and freezes both traces', async () => {
+  open();
+  await screen.findByRole('heading',{name:'Last trusted signals'});
+  const vitals = screen.getByRole('group',{name:'Vital signs'});
+  expect(within(vitals).getByText('74')).toBeInTheDocument();
+  expect(within(vitals).queryByText('190')).not.toBeInTheDocument();
+  expect(screen.getByText(/HR 190 · SpO₂ 82 · BP 80\/40/)).toBeInTheDocument();
+  expect(screen.getAllByRole('img',{name:/Last trusted recording, held still/})).toHaveLength(2);
+  expect(writes).toEqual([]);
+});
+it.each(['Patient OK','Patient NOT OK'])('preserves the %s request', async label => {
+  open();
+  fireEvent.click(await screen.findByRole('button',{name:label}));
+  await waitFor(() => expect(writes).toHaveLength(1));
+  expect(writes[0]).toEqual({url:'/api/beds/B05/bedside-check',body:{type:'confirm_bedside',bedId:'B05',status:label==='Patient OK'?'patient_ok':'patient_not_ok'}});
+});
+it('saves manual readings to the same endpoint and clears the form only after success', async () => {
+  open();
+  const save = await screen.findByRole('button',{name:'Record hand check'});
+  const form = save.closest('form')!;
+  const fields = within(form).getAllByRole('textbox');
+  fireEvent.change(fields[0],{target:{value:'72'}});
+  fireEvent.change(fields[1],{target:{value:'98'}});
+  fireEvent.change(fields[2],{target:{value:'Portable oximeter'}});
+  fireEvent.click(save);
+  await waitFor(() => expect(writes).toHaveLength(1));
+  expect(writes[0]).toEqual({url:'/api/beds/B05/manual-reading',body:{type:'record_manual_reading',bedId:'B05',notes:'Portable oximeter',heartRate:72,spo2:98}});
+  await waitFor(() => expect(fields[0]).toHaveValue(''));
+});

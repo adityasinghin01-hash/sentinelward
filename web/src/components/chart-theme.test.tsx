@@ -9,7 +9,7 @@ const samples=[0,1,0];
 function colours(suffix:string){for(const name of ['ecg','pleth','abp','grid','frozen'])document.documentElement.style.setProperty(`--wave-${name}`,`${name}-${suffix}`)}
 beforeEach(()=>{
   strokes=[];
-  context={scale:vi.fn(),clearRect:vi.fn(),beginPath:vi.fn(),moveTo:vi.fn(),lineTo:vi.fn(),stroke:vi.fn(),set strokeStyle(value:string){strokes.push(value)}} as unknown as CanvasRenderingContext2D;
+  context={scale:vi.fn(),clearRect:vi.fn(),beginPath:vi.fn(),moveTo:vi.fn(),lineTo:vi.fn(),bezierCurveTo:vi.fn(),arc:vi.fn(),fill:vi.fn(),stroke:vi.fn(),set strokeStyle(value:string){strokes.push(value)}} as unknown as CanvasRenderingContext2D;
   vi.spyOn(HTMLCanvasElement.prototype,'getContext').mockReturnValue(context);
   colours('day');applyTheme('light');
 });

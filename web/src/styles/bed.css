@@ -21,51 +21,141 @@
 .bed-header.tone-check .bed-band { background: var(--st-check); color: var(--st-check-ink); border-color: var(--st-check); }
 .bed-header.tone-maint .bed-band { box-shadow: inset 4px 0 0 var(--st-maint); }
 .bed-header.tone-nodata { border-style: dashed; }
-/* ===== S3 Bed detail ===== */
-.bed-layout { display: grid; grid-template-columns: minmax(0, 65fr) minmax(0, 35fr); gap: 14px; align-items: start; }
-.bed-main .panel + .panel, .bed-side .panel + .panel { margin-top: 12px; }
-.bed-main .waveform + .waveform { margin-top: 6px; }
-.untrusted-panel .waveform { opacity: .7; }
-.last-good.big, .bed-main .data-age { font-size: 13px; padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; background: var(--surface-sunken); color: var(--text-2); border-left: 4px solid var(--st-nodata); }
-.big-vitals { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 10px; margin-top: 12px; }
-.big-vitals .vital strong { font-size: 56px; }
-.big-vitals .vital.bp strong { font-size: 32px; padding-top: 14px; }
-.big-vitals .vital span { font-size: 13px; }
-.big-vitals.tone-text-high .vital strong { color: var(--st-emergency); }
+/* Bed detail: quiet evidence panels beneath the unchanged clinical band. */
+.bed-layout { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.bed-main, .bed-side { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.bed-layout .panel { min-width: 0; margin: 0; padding: 20px; border-radius: 12px; }
+.bed-layout .panel-heading { margin-bottom: 16px; gap: 12px; }
+.bed-layout .panel-heading h2 { font-size: 16px; line-height: 22px; }
+.bed-layout .panel-heading p { margin-top: 4px; font-size: 13px; line-height: 18px; color: var(--text-3); }
+.bed-meta { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.bed-layout p, .bed-layout dd { overflow-wrap: anywhere; }
+.bed-layout .trust { font-size: 12px; white-space: nowrap; }
+.bed-signals .waveform + .waveform { margin-top: 8px; }
+.last-good.big, .bed-main .data-age { font-size: 13px; padding: 8px 12px; margin-bottom: 12px; border-radius: 6px; background: var(--surface-sunken); color: var(--text-2); border-left: 3px solid var(--st-nodata); }
+.bed-main .data-age { border: 0; padding: 0; background: none; color: var(--text-3); }
+.big-vitals { display: grid; grid-template-columns: 1fr 1fr 1.4fr .8fr; gap: 12px; margin: 0 0 20px; }
+.big-vitals > .tip { display: block; min-width: 0; }
+.big-vitals .vital { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.big-vitals .vital > span { font-size: 13px; color: var(--text-2); }
+.big-vitals .vital small { margin-left: 3px; font-size: 11px; color: var(--text-3); font-weight: 400; }
+.big-vitals .vital strong { font-size: clamp(36px, 3.8vw, 56px); font-weight: 500; line-height: 1; letter-spacing: -.035em; white-space: nowrap; color: var(--text); }
+.big-vitals .vital.bp strong { font-size: clamp(26px, 2.6vw, 40px); min-height: 56px; display: flex; align-items: flex-end; padding-bottom: 2px; gap: 2px; }
+.big-vitals .vital.bp strong > span { color: var(--text-3); font-size: .7em; }
+.big-vitals .vital.rr strong { font-size: clamp(32px, 3vw, 44px); min-height: 56px; display: flex; align-items: flex-end; }
+.big-vitals .vital.outside-limit strong { color: var(--st-emergency-text); }
+.bed-vital-arrow { font-size: 18px; font-style: normal; margin-left: 4px; letter-spacing: 0; align-self: center; }
+.big-vitals.greyed { padding-left: 12px; background: repeating-linear-gradient(135deg, var(--border-strong) 0 3px, transparent 3px 7px) left/4px 100% no-repeat; }
 .big-vitals.greyed .vital strong { color: var(--text-3); }
-.incoming { margin-top: 10px; display: flex; gap: 12px; align-items: center; padding: 6px 10px; border: 1px dashed var(--st-nodata); border-radius: 6px; color: var(--text-3); font-size: 12px; }
-.legend { display: flex; gap: 12px; font-size: 12px; color: var(--text-2); }
-.legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
-.trend { position: relative; background: var(--surface-sunken); border-radius: 6px; overflow: hidden; }
-.trend canvas { width: 100%; height: 100%; display: block; }
-.witness-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.witness { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-.witness h3 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 6px; color: var(--text-2); }
-.witness .fact dd { font-family: inherit; }
-.bedside-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.bedside-row > span { font-weight: 500; margin-right: 6px; }
-.manual-check { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--stripes); }
-.manual-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
-.manual-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 10px; }
-.manual-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-3); }
-.manual-form input { width: 90px; }
-.manual-form .grow { flex: 1; min-width: 180px; }
-.manual-form .grow input { width: 100%; }
-.why-verdict { display: flex; flex-direction: column; gap: 2px; }
-.why-verdict strong { font-size: 18px; }
-.reasons { margin: 10px 0; padding-left: 18px; color: var(--text-2); font-size: 13px; }
-.directive { display: flex; align-items: center; gap: 6px; margin: 0; padding: 7px 10px; border-radius: 6px; background: var(--control-hover); font-size: 13px; }
-.checks { display: flex; flex-direction: column; gap: 8px; }
-.check-row { display: grid; grid-template-columns: 28px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; }
-.check-key { color: var(--text-3); font-size: 12px; }
-.check-name { font-size: 13px; }
-.check-reason { grid-column: 2 / 4; font-size: 11px; color: var(--text-3); }
-.verdict-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-.verdict-list li { display: grid; grid-template-columns: 72px 1fr auto; gap: 8px; }
+.big-vitals.greyed .outside-limit .bed-vital-arrow { color: var(--st-emergency-text); }
+.incoming { margin-top: 12px; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: 6px; color: var(--text-3); font-size: 12px; }
+.incoming .eyebrow { font-size: 11px; letter-spacing: .02em; }
+.incoming .mono { overflow-wrap: anywhere; }
 
-/* Chip evidence is a neutral comparison next to M2, never an alarm indicator. */
-.chip-opinion { border: 1px solid var(--border); border-radius: var(--radius-card); padding: 12px; margin: 6px 0 12px; background: var(--surface-sunken); }
-.chip-opinion h3 { font-size: .85rem; margin: 0 0 8px; color: var(--text-2); }
+/* Visible clinical explanation; numerical diagnostics remain secondary. */
+.bed-verdict-sentence { margin: 0; color: var(--text); font-size: 18px; line-height: 26px; font-weight: 500; }
+.bed-reasons { margin: 12px 0; padding-left: 17px; color: var(--text-2); font-size: 13px; line-height: 20px; }
+.bed-reasons li + li { margin-top: 4px; }
+.bed-directive { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 18px; padding: 10px 12px; background: var(--surface-sunken); border-radius: 6px; color: var(--text); font-size: 13px; font-weight: 500; }
+.bed-directive svg { flex: none; margin-top: 2px; color: var(--text-2); }
+.bed-checks { display: flex; flex-direction: column; gap: 16px; }
+.bed-check-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+.bed-check-heading b { font-weight: 500; }
+.bed-check-heading > .mono { font-size: 12px; color: var(--text-2); }
+.bed-check-track { height: 5px; border-radius: 4px; background: var(--control-hover); margin-top: 7px; overflow: hidden; }
+.bed-check-track > span { display: block; height: 100%; background: var(--text-2); border-radius: inherit; }
+.bed-check-scale { margin-top: 5px; color: var(--text-3); font-size: 11px; line-height: 16px; }
+.bed-check p { margin: 3px 0 0; color: var(--text-2); font-size: 12px; line-height: 18px; }
+.bed-disclosure { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 8px; }
+.bed-disclosure > summary, .bed-record-details > summary { cursor: pointer; color: var(--text-2); font-size: 13px; min-height: 32px; padding: 6px 0; }
+.bed-disclosure > summary > span { color: var(--text-3); font-size: 12px; margin-left: 8px; }
+.bed-disclosure dl { margin: 8px 0; }
+.bed-disclosure dl > div + div { margin-top: 12px; }
+.bed-disclosure dt { color: var(--text-2); font-size: 13px; font-weight: 500; }
+.bed-disclosure dd { margin: 3px 0 0; color: var(--text-3); font-size: 12px; line-height: 18px; }
+.bed-disclosure .bed-model-key small { margin-left: 6px; font-size: 11px; color: var(--text-3); }
+.bed-trust-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px; font-size: 13px; color: var(--text-2); }
+.bed-engineering { margin-top: 12px; }
+.chip-opinion { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 16px 0 0; background: var(--surface-sunken); }
+.chip-opinion h3 { font-size: 13px; line-height: 20px; font-weight: 500; margin: 0 0 10px; color: var(--text-2); }
 .chip-opinion > .tip { display: block; }
+.chip-opinion .tiny { margin: 12px 0 0; }
 .chip-opinion .facts { margin: 0; }
-.chip-opinion .tiny { margin: 8px 0 0; }
+
+/* Recent decisions form a compact, readable timeline. */
+.verdict-list { list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 18px; }
+.verdict-list li { display: grid; grid-template-columns: 65px minmax(0, 1fr) auto; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); align-items: baseline; }
+.verdict-list li:first-child { border-top: 0; padding-top: 0; }
+.verdict-list li:last-child { padding-bottom: 0; }
+.verdict-list time { font-size: 11px; color: var(--text-3); }
+.bed-history-trust { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+
+/* Actions keep the exact audit record in a disclosure. */
+.bed-actions { list-style: none; margin: 0; padding: 0; }
+.bed-actions > li { display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid var(--border); padding: 12px 0; }
+.bed-actions > li:first-child { padding-top: 0; border-top: 0; }
+.bed-actions > li:last-child { padding-bottom: 0; }
+.bed-action-copy { min-width: 0; flex: 1; }
+.bed-action-copy > time { color: var(--text-3); font-size: 11px; line-height: 16px; }
+.bed-action-copy > p { margin: 4px 0 0; color: var(--text-2); font-size: 13px; line-height: 20px; }
+.bed-record-details > summary { padding: 3px 0; min-height: 26px; color: var(--text-3); font-size: 12px; }
+.bed-record-details dl { margin: 8px 0; padding: 10px; border-radius: 6px; background: var(--surface-sunken); font-size: 12px; }
+.bed-record-details dt { color: var(--text-3); margin-top: 8px; }
+.bed-record-details dt:first-child { margin-top: 0; }
+.bed-record-details dd { margin: 2px 0 0; overflow-wrap: anywhere; color: var(--text-2); }
+.bed-actions .undo-control { margin-top: 18px; flex: none; }
+
+/* Staff input and the two independent signal witnesses. */
+.bedside-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.bedside-row > span { font-size: 13px; margin-right: auto; }
+.manual-check { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-sunken); border-left: 3px solid var(--st-check); }
+.manual-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+.manual-head .mono { font-size: 12px; color: var(--text-2); }
+.manual-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 16px; }
+.manual-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2); }
+.manual-form label small { display: inline; color: var(--text-3); }
+.manual-form input { width: 88px; height: 40px; }
+.manual-form .grow { flex: 1; min-width: 160px; }
+.manual-form .grow input { width: 100%; }
+.bed-main .tiny { color: var(--text-3); }
+.witness-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.witness { min-width: 0; }
+.witness + .witness { border-left: 1px solid var(--border); padding-left: 20px; }
+.witness h3 { margin: 0 0 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text-2); font-weight: 500; }
+.witness .facts { gap: 12px; }
+.witness .fact dd { font-family: var(--font-sans); font-size: 13px; line-height: 20px; }
+@media (min-width: 1700px) { .bed-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } .bed-layout .panel { padding: 24px; } .wave-large { height: 124px; } }
+@media (max-width: 1100px) { .bed-layout { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; } .bed-layout .panel { padding: 16px; } .big-vitals { gap: 8px; } .big-vitals .vital strong { font-size: 36px; } .big-vitals .vital.bp strong { font-size: 26px; } .bedside-row > span { flex-basis: 100%; } }
+@media (max-width: 850px) { .bed-layout { grid-template-columns: minmax(0, 1fr); } .bed-side { grid-row: auto; } }
+@media (max-width: 520px) { .big-vitals { grid-template-columns: 1fr 1fr; row-gap: 20px; } .witness-grid { grid-template-columns: 1fr; } .witness + .witness { border-left: 0; border-top: 1px solid var(--border); padding: 16px 0 0; } .manual-head { align-items: flex-start; flex-direction: column; gap: 6px; } .bed-meta { display: none; } }
+
+/* Shared signal presentation, including dense ward strips. */
+.wave-large { height: 106px; border: 1px solid var(--border); border-radius: 8px; }
+.wave-large .wave-label { top: 6px; left: 10px; font-size: 12px; letter-spacing: .02em; color: var(--text-2); }
+.wave-large .wave-empty { padding-top: 18px; font-size: 13px; }
+
+/* Small multiples: a scale for every unit, with a shared five-minute clock. */
+.trend-multiples { --axis-left: 46px; --axis-right: 76px; position: relative; color: var(--text-2); }
+.trend-body { position: relative; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 8px; }
+.trend-plot { position: absolute; inset: 0 var(--axis-right) 0 var(--axis-left); }
+.trend-plot canvas { position: relative; width: 100%; height: 100%; display: block; }
+.trend-time-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--wave-grid); }
+.trend-untrusted { position: absolute; inset-block: 0; background: var(--wave-frozen); opacity: .12; min-width: 2px; }
+.trend-series { position: absolute; inset-inline: 0; pointer-events: none; }
+.trend-series-name { position: absolute; top: 5px; left: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.trend-series-name i { width: 7px; height: 7px; border-radius: 50%; }
+.trend-series-name b { font-weight: 600; }
+.trend-series-name > span { color: var(--text-3); }
+.trend-y { position: absolute; left: 4px; width: 33px; text-align: right; font-size: 11px; line-height: 14px; color: var(--text-3); }
+.trend-y-high { top: 23px; }
+.trend-y-low { bottom: 5px; }
+.trend-latest { position: absolute; top: 6px; right: 10px; color: var(--text-3); font-size: 10px; }
+.trend-current { position: absolute; right: 10px; top: 33px; display: flex; align-items: baseline; gap: 3px; }
+.trend-current b { font-size: 17px; font-weight: 500; color: var(--text); }
+.trend-current small { font-family: var(--font-sans); color: var(--text-3); font-size: 10px; }
+.trend-no-values { position: absolute; left: var(--axis-left); right: var(--axis-right); top: 43px; text-align: center; font-size: 12px; color: var(--text-3); }
+.trend-time-axis { position: relative; margin: 0 var(--axis-right) 0 var(--axis-left); height: 26px; font-size: 11px; color: var(--text-3); }
+.trend-time-axis time { position: absolute; top: 5px; transform: translateX(-50%); white-space: nowrap; }
+.trend-time-axis > span { display: block; text-align: center; padding-top: 4px; }
+.trend-key { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); }
+.trend-key i { width: 12px; height: 9px; background: var(--wave-frozen); opacity: .3; border-radius: 2px; }
