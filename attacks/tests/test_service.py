@@ -293,3 +293,20 @@ def test_replacing_run_cannot_forge_from_previous_run_source(tmp_path, frame):
     service.tick(1001000)
     assert any(message['bed_id'] == 'B06' for _, message, _, _ in bus.published)
     service.close(1002000)
+
+
+def test_history_is_kept_only_for_the_replay_lookback(tmp_path,frame):
+    """Only replay reads history: B05 keeps 240 s (600-360) + 60 s margin; other beds keep none."""
+    bus=MemoryBus(); service=AttackService(bus,runs_dir=tmp_path)
+    control(service)
+    for sec in range(0,601):
+        capture(service,frame(sec))
+        capture(service,frame(sec,bed='B06'))
+        if sec<600: service.tick(sec*1000)
+    history=service.history['B05']
+    assert min(history)==300000 and max(history)==600000 and len(history)==301
+    assert 'B06' not in service.history and service.latest['B06']['ts']==600000
+    assert 360000 in history  # the replay source for T+10:00 (doc 12) survives the bound
+    service.tick(600000)
+    replay=next(m for _,m,_,_ in bus.published if m['bed_id']=='B05')
+    assert replay==frame(360)
