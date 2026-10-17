@@ -19,9 +19,14 @@ def test_available_scores_align_and_fault_has_channel(frame):
     for i in range(10): service.receive('ward/bed/B01/vitals', json.dumps(frame(i,ecg=[0]*125)), received_ms=i*1000)
     service.tick(10000)
     scores=[m for t,m,q,r in bus.published if '/score/' in t]
-    assert len(scores)==4
-    assert service.invalid_outgoing==2
-    assert {s['model'] for s in scores}=={'M1','M3','M4','M5'}
+    assert len(scores)==6
+    assert service.invalid_outgoing==0
+    assert {s['model'] for s in scores}=={'M1','M2','M3','M4','M5','M6'}
+    for score in scores:
+        if score['model'] in {'M2','M6'}:
+            assert score['score'] is None
+            assert score['extra']['not_applicable'] is True
+            assert score['extra']['unavailable_reason']
     assert {s['window_start'] for s in scores}=={0}
     assert all(s['model_version']==s['model']+'-live-2026-10-17' for s in scores)
     m1=next(s for s in scores if s['model']=='M1')

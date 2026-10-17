@@ -10,7 +10,7 @@ from sw_brain.service import BrainService
 
 
 @pytest.mark.parametrize('change', [
-    {'window_start': 123}, {'extra': {'nested': float('nan')}}, {'score': None},
+    {'window_start': 123}, {'extra': {'nested': float('nan')}}, {'score': 1.1},
 ])
 def test_outgoing_invalid_scores_never_reach_memory_transport(change, caplog):
     bus = MemoryBus()
@@ -51,11 +51,16 @@ def test_unavailable_scores_do_not_hide_emergency_wire_verdict(frame, caplog):
     wire = next(data for _, data, _ in bus.published if data['type'] == 'verdict')
     assert wire['verdict'] == 'EMERGENCY' and wire['window_start'] == 0
     assert wire['last_trusted_ts'] is None
-    assert all(value is not None for value in wire['scores'].values())
-    assert wire['unavailable_scores']['M1']['score'] is None
-    assert wire['unavailable_scores']['M1']['extra']['unavailable_reason']
-    assert service.invalid_outgoing == sum(v is None for v in internal['scores'].values())
-    assert 'Rejected outgoing' in caplog.text
+    assert wire['scores'] == internal['scores']
+    scores = [data for _, data, _ in bus.published if data['type'] == 'score']
+    assert len(scores) == 6
+    assert {data['model'] for data in scores} == {'M1', 'M2', 'M3', 'M4', 'M5', 'M6'}
+    for data in scores:
+        assert data['score'] == wire['scores'][data['model']]
+        if data['score'] is None:
+            assert data['extra']['unavailable_reason']
+    assert service.invalid_outgoing == 0
+    assert 'Rejected outgoing' not in caplog.text
 
 
 def test_rejected_brain_input_is_counted(frame):

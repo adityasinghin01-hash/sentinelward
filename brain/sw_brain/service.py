@@ -124,23 +124,16 @@ class BrainService:
             offline=now_ms-state.last_received_ms>=3000
             window=next((w for w in reversed(state.windows) if w['window_start']==start),None)
             results=self.suite.evaluate(window,state,now_ms)
-            unavailable_scores={}
             for model,value in results.items():
                 envelope=make_score(bed_id=bed,model=model,model_version=model+'-live-2026-10-17',window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
                 self._publish(score_topic(bed,model),envelope)
-                if value['score'] is None:
-                    unavailable_scores[model]={'score':None,'label':envelope['label'],'reason':envelope['reason'],'extra':envelope['extra']}
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
             verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
             if verdict['verdict']=='NORMAL':
                 state.last_trusted_ts=int(now_ms)
                 self.last_trusted_snapshots[bed]=deepcopy(state.last_message)
             self.last_verdicts[bed]=verdict
-            # Keep nulls for internal decisions/display. The shared contract only
-            # permits numeric scores on the wire, with optional model keys.
-            wire_verdict={**verdict,'scores':{m:s for m,s in verdict['scores'].items() if s is not None}}
-            if unavailable_scores: wire_verdict['unavailable_scores']=unavailable_scores
-            self._publish(verdict_topic(bed),wire_verdict,retain=True)
+            self._publish(verdict_topic(bed),verdict,retain=True)
             verdicts.append(verdict)
         self.last_tick_ms=end
         return verdicts

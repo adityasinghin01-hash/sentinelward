@@ -216,23 +216,26 @@ def test_cuff_persists_to_next_tick_and_reset_rejects_old_controls(frame):
     assert service.running is False
 
 
-def test_warmup_retains_null_ineligibility_without_invalid_score_publication(frame):
+def test_warmup_publishes_all_six_scores_with_null_ineligibility_every_five_seconds(frame):
     import json
     from sw_brain.io import MemoryBus
     from sw_brain.service import BrainService
     bus=MemoryBus()
     service=BrainService(bus)
     service.receive('ward/bed/B01/vitals',json.dumps(frame(0)),received_ms=0)
-    verdict=service.tick(5000)[0]
-    assert verdict['verdict']=='UNSURE'
-    assert verdict['scores']=={'M1':None,'M2':None,'M3':None,'M4':0.,'M5':0.,'M6':None}
-    published_scores=[message for topic,message,_,_ in bus.published if '/score/' in topic]
-    assert {message['model'] for message in published_scores}=={'M4','M5'}
-    assert all(message['extra']['eligible'] for message in published_scores)
-    assert service.invalid_outgoing==4
-    wire=next(message for topic,message,_,_ in bus.published if topic.endswith('/verdict'))
-    assert set(wire['unavailable_scores'])=={'M1','M2','M3','M6'}
-    for observation in wire['unavailable_scores'].values():
-        assert observation['score'] is None
-        assert observation['extra']['eligible'] is False
-        assert observation['extra']['unavailable_reason']
+    for now_ms in (5000, 10000):
+        bus.published.clear()
+        verdict=service.tick(now_ms)[0]
+        assert verdict['verdict']=='UNSURE'
+        assert verdict['scores']=={'M1':None,'M2':None,'M3':None,'M4':0.,'M5':0.,'M6':None}
+        published_scores=[message for topic,message,_,_ in bus.published if '/score/' in topic]
+        assert len(published_scores)==6
+        assert {message['model'] for message in published_scores}=={'M1','M2','M3','M4','M5','M6'}
+        wire=next(message for topic,message,_,_ in bus.published if topic.endswith('/verdict'))
+        assert wire['scores']==verdict['scores']
+        for observation in published_scores:
+            assert observation['score']==wire['scores'][observation['model']]
+            if observation['score'] is None:
+                assert observation['extra']['eligible'] is False
+                assert observation['extra']['unavailable_reason']
+        assert service.invalid_outgoing==0
