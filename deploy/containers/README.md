@@ -112,7 +112,7 @@ mkdir -p evidence-out
 SW_EVIDENCE_OUT=./evidence-out ./evidence.sh
 ```
 
-Deployment acceptance (18 Oct 2026, LinuxONE): 138/138 auth checks pass, anonymous connect refused;
+Deployment acceptance (18 Oct 2026, LinuxONE): 137/137 auth checks pass, anonymous connect refused;
 see `docs/evidence/CONTAINERS.md` and `docs/evidence/raw/containers-auth/`.
 
 ## What is outside this stack

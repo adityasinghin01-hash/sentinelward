@@ -108,7 +108,7 @@ Do not overwrite old captures or label them as this run.
   `health.json`, `hardening.txt`, `image.txt`, `platform.txt`, `stats.txt`). First deploy found a real bug:
   the internal-only network stopped Docker publishing the API port; the API now also joins an `edge`
   network, the `ward` network stays internal.
-- Anonymous refusal and service-account ACL matrix: PASS, 138 checks, 0 failed; anonymous connect
+- Anonymous refusal and service-account ACL matrix: PASS, 137 checks, 0 failed; anonymous connect
   refused with CONNACK 135 (`raw/containers-auth/auth.txt`).
 - Authenticated container replay: 40-second spot check only. Ward script started at 9:00; 10 beds online,
   0 invalid messages, verdicts on all reporting beds incl. B10 TAMPERING, no auth errors in the logs
