@@ -1,0 +1,34 @@
+[Unit]
+Description=SentinelWard agents v2 (A1-A8, plain Python; fresh build 17 Oct 2026)
+After=network-online.target mosquitto.service
+Wants=network-online.target mosquitto.service
+# Never run next to the old agents service: both would alert the same nurses.
+Conflicts=sw-agents.service
+
+[Service]
+Type=simple
+User=linux1
+Group=linux1
+WorkingDirectory=/home/linux1/sw/app/agents_v2
+# Hub credentials written by security_v2 setup (SENTINEL_MQTT_*, SW_DYNSEC_OPTIONS, ...); optional.
+EnvironmentFile=-/home/linux1/sw/security-v2/env/agents.env
+# Our own settings (copy deploy/agents2.env.example, chmod 0600). Loaded last, so it wins.
+EnvironmentFile=/home/linux1/sw/agents2.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/linux1/sw/.venv/bin/python -m sw_agents
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/linux1/sw/agents2-data /home/linux1/sw/agents-data
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -141,7 +141,8 @@ class Settings:
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
         env = os.environ if env is None else env
-        port = int(_num(env, "SW_AGENTS_MQTT_PORT", float(_first(env, "SENTINEL_MQTT_PORT", default="1883")), 1, 65535))
+        port_name = "SW_AGENTS_MQTT_PORT" if _first(env, "SW_AGENTS_MQTT_PORT") else "SENTINEL_MQTT_PORT"
+        port = int(_num(env, port_name, 1883, 1, 65535))
         roster = _json(env, "SW_ROSTER", dict(DEFAULT_ROSTER))
         if not isinstance(roster, dict):
             raise ConfigError("SW_ROSTER must be a JSON object bed -> staff")

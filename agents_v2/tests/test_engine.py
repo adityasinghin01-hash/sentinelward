@@ -178,3 +178,14 @@ def test_redact_filter():
     rec = logging.LogRecord("x", logging.INFO, __file__, 1, "token %s here", ("tok-very-secret",), None)
     RedactFilter(("tok-very-secret",)).filter(rec)
     assert "tok-very-secret" not in rec.getMessage() and "[redacted]" in rec.getMessage()
+
+
+def test_env_example_parses():
+    from pathlib import Path
+    env = {}
+    for line in (Path(__file__).parents[2] / "deploy" / "agents2.env.example").read_text().splitlines():
+        if line.strip() and not line.lstrip().startswith("#"):
+            key, _, value = line.partition("=")
+            env[key.strip()] = value.strip().strip("'")
+    s = Settings.from_env(env)
+    assert s.ladder_step_s == 30 and s.telegram_token is None and s.a2_dry_run and s.granite_url == "http://127.0.0.1:8090"
