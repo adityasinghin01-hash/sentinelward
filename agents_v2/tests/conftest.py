@@ -172,7 +172,8 @@ def make_world(tmp_path):
             overrides.setdefault("telegram_chats", {"staff:priya": 1001, "staff:tom": 1002, "staff:dr_mehta": 1003})
             overrides.setdefault("telegram_it_chat", 2001)
         overrides.setdefault("dynsec_options", "/nonexistent/admin.conf")  # A2 'hub' mode with the fake broker
-        settings = Settings(state_dir=state, granite_url=granite_url, **{"unsure_confirm_verdicts": 2, **overrides})
+        # Older tests use 2 UNSURE verdicts and an immediate cut-off; the sustained-evidence tests set a2_confirm_s=20.
+        settings = Settings(state_dir=state, granite_url=granite_url, **{"unsure_confirm_verdicts": 2, "a2_confirm_s": 0, **overrides})
         clock = FakeClock()
         bus = FakeBus()
         broker = None if broker == "auto" else (broker if broker is not None else FakeBroker())

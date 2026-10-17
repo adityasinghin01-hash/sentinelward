@@ -101,6 +101,9 @@ class Settings:
     telegram_min_interval_s: float = 1.0
     # A2
     a2_min_confidence: float = 0.8
+    # TAMPERING/DEVICE_ATTACK must hold this long (consecutive verdicts) before the hub cut-off;
+    # BOTH cuts at once. Until then the bed is only marked untrusted, so a real alarm still gets through.
+    a2_confirm_s: float = 20.0
     a2_force_dry_run: bool = False
     dynsec_options: str | None = None
     contain_audit: str | None = None
@@ -198,6 +201,7 @@ class Settings:
             telegram_it_chat=_chat_id(it_chat, "SW_TELEGRAM_IT_CHAT") if it_chat else None,
             telegram_min_interval_s=_num(env, "SW_TELEGRAM_MIN_INTERVAL_S", 1.0, 1.0, 10),
             a2_min_confidence=_num(env, "SW_A2_MIN_CONFIDENCE", 0.8, 0, 1),
+            a2_confirm_s=_num(env, "SW_A2_CONFIRM_S", 20, 0, 600),
             a2_force_dry_run=_bool(env, "SW_A2_DRY_RUN", False),
             dynsec_options=_first(env, "SW_DYNSEC_OPTIONS"),
             contain_audit=_first(env, "SW_CONTAIN_AUDIT"),

@@ -168,3 +168,100 @@ def test_hub_broker_uses_security_v2_argument_lists(tmp_path):
     with pytest.raises(ValueError):
         hub.disable("MON-05 MON-06")
     assert "password" not in (tmp_path / "audit.jsonl").read_text().lower()
+
+
+# ---------------------------------------------------------------- sustained evidence before the hub cut-off
+def _b(w, bed):
+    return [a for a in w.bus.alerts() if a["bed_id"] == bed]
+
+
+def test_tampering_waits_for_sustained_evidence_b05_flow(make_world):
+    """doc12 B05: TAMPERING ~10:02 -> untrusted + hand-check at once, cut ~10:22, nurse OK 11:30, IT undo 15:30."""
+    w = make_world(a2_confirm_s=20)
+    t0 = w.clock.now_ms()
+    w.verdict("B05", "TAMPERING", 0.9, n=4, every_s=5)  # 0, 5, 10, 15 s: not yet
+    assert len(w.bus.actions("set_bed_untrusted", "A2")) == 1
+    assert w.bus.actions("disable_client") == [] and w.broker.calls == []
+    assert "still connected" in w.a["A2"].state_text("MON-05")
+    assert _b(w, "B05")[-1]["text"].startswith("Bed 5 — monitor can't be trusted.")  # nurse told at once
+    w.verdict("B05", "TAMPERING", 0.9, n=2, every_s=5)  # 20 s held (the 2nd one is at +20 s) -> cut
+    cut = w.bus.actions("disable_client")
+    assert len(cut) == 1 and w.broker.calls == [("disable", "MON-05")]
+    assert cut[0]["ts"] - t0 == 20_000 and "held 20 s" in cut[0]["detail"]
+    assert cut[0]["undo_id"] == cut[0]["action_id"]
+    assert any("after MON-05 was cut off" in a["detail"] for a in w.bus.actions("list_devices"))
+    w.verdict("B05", "TAMPERING", 0.9, n=3)
+    assert len(w.bus.actions("disable_client")) == 1
+    w.bedside("B05", "patient_ok")
+    assert "MON-05" in w.a["A2"].contained
+    w.request("undo_action", cut[0]["action_id"], by="staff:sam")
+    assert "MON-05" not in w.a["A2"].contained and w.broker.calls[-1] == ("enable", "MON-05")
+
+
+def test_both_after_tampering_cuts_at_once_and_high_alert_stays_b07(make_world):
+    """doc12 B07: TAMPERING 13:47, real VFIB alarm reaches the brain at 14:00, BOTH 14:02 -> high alert + cut."""
+    w = make_world(a2_confirm_s=20)
+    w.verdict("B07", "TAMPERING", 0.95, n=3, every_s=5)  # 13:47, 13:52, 13:57 (10 s held)
+    assert w.broker.calls == [] and "MON-07" in w.a["A2"].contained  # untrusted, still connected
+    w.advance(5)
+    w.verdict("B07", "BOTH", 0.95, reasons=["Monitor alarm remains active", "Forged loop"])  # 14:02
+    assert w.broker.calls == [("disable", "MON-07")]
+    assert "BOTH" in w.bus.actions("disable_client")[0]["detail"]
+    high = _b(w, "B07")[-1]
+    assert high["priority"] == "high" and high["verdict"] == "BOTH"
+    w.verdict("B07", "UNSURE", 0.6, reasons=["Monitor offline"], n=6)  # cut off: brain sees silence
+    w.verdict("B07", "TAMPERING", 0.95, n=4)
+    last = _b(w, "B07")[-1]
+    assert last["alert_id"] == high["alert_id"] and last["priority"] == "high" and last["status"] != "closed"
+    assert len(w.bus.actions("disable_client")) == 1
+
+
+def test_both_first_cuts_at_once(make_world):
+    w = make_world(a2_confirm_s=20)
+    w.verdict("B06", "BOTH", 0.95)
+    assert len(w.bus.actions("set_bed_untrusted")) == 1 and w.broker.calls == [("disable", "MON-06")]
+
+
+def test_tampering_blip_shorter_than_confirm_never_cuts(make_world):
+    w = make_world(a2_confirm_s=20)
+    w.verdict("B05", "TAMPERING", 0.9, n=4, every_s=5)  # 15 s
+    w.advance(5)
+    w.verdict("B05", "NORMAL", 1.0)  # run broken
+    w.advance(5)
+    w.verdict("B05", "TAMPERING", 0.9, n=4, every_s=5)  # another 15 s: the count restarted
+    w.advance(5)
+    w.verdict("B05", "UNSURE", 0.6)  # a non-attack verdict also breaks the run
+    w.advance(5)
+    w.verdict("B05", "TAMPERING", 0.9, n=2, every_s=5)
+    w.verdict("B05", "TAMPERING", 0.5, n=4, every_s=5)  # below the confidence threshold: not evidence
+    assert w.broker.calls == [] and w.bus.actions("disable_client") == []
+    assert len(w.bus.actions("set_bed_untrusted")) == 1  # bed stays untrusted until a person decides
+    untrusted = w.bus.actions("set_bed_untrusted")[0]
+    w.request("undo_action", untrusted["action_id"], by="staff:sam")
+    en = w.bus.actions("enable_client")
+    assert len(en) == 1 and "had not been cut off" in en[0]["detail"] and w.broker.calls == []
+    w.verdict("B05", "TAMPERING", 0.9, n=6)  # IT trusted it again: A2 does not override them
+    assert w.broker.calls == []
+
+
+def test_person_isolate_cuts_a_waiting_device_now(make_world):
+    w = make_world(a2_confirm_s=20)
+    w.verdict("B05", "TAMPERING", 0.9)
+    w.request("isolate_device", "MON-05", by="staff:sam", bed="B05")
+    cut = w.bus.actions("disable_client")
+    assert len(cut) == 1 and cut[0]["approved_by"] == "staff:sam" and w.broker.calls == [("disable", "MON-05")]
+    assert len(w.bus.actions("set_bed_untrusted")) == 1
+
+
+def test_reset_releases_a_waiting_bed_and_forgets_the_run(make_world):
+    w = make_world(a2_confirm_s=20)
+    w.verdict("B05", "TAMPERING", 0.9, n=3)
+    w.demo("reset")
+    assert w.a["A2"].contained == {} and w.broker.calls == []
+    w.verdict("B05", "TAMPERING", 0.9, n=4)  # 15 s since reset: not 25
+    assert w.broker.calls == []
+
+
+def test_confirm_setting_from_env():
+    assert Settings.from_env({}).a2_confirm_s == 20
+    assert Settings.from_env({"SW_A2_CONFIRM_S": "0"}).a2_confirm_s == 0

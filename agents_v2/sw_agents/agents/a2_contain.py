@@ -1,7 +1,10 @@
 """A2 containment: cut off a device at our own hub, mark the bed untrusted; one-click undo.
 
 Triggers: TAMPERING, BOTH or DEVICE_ATTACK with confidence >= SW_A2_MIN_CONFIDENCE, or an
-isolate_device / contain_incident request from a person. Broker control goes through
+isolate_device / contain_incident request from a person. The bed is marked untrusted at once; the
+hub cut-off waits until TAMPERING/DEVICE_ATTACK has held SW_A2_CONFIRM_S (default 20 s) of
+consecutive verdicts, so a real alarm from the monitor still reaches the brain. BOTH (an
+emergency on an attacked monitor) and a person's request cut off at once. Broker control goes through
 security_v2's Containment helper (mosquitto_ctrl dynsec disableClient/enableClient, argument
 lists only, MON-01..12 validated, state confirmed). Without SW_DYNSEC_OPTIONS it is a dry run.
 A2 never alerts nurses (A1 does; BOTH keeps the nurse alert) and never touches treatment.
@@ -84,6 +87,7 @@ class A2Contain(Agent):
         self.path = Path(engine.s.state_dir) / "a2_containment.json"
         self.contained: dict[str, dict] = {}
         self.released_by_person: set[str] = set()
+        self.attack_since: dict[str, int] = {}  # device -> ts of the first of the current consecutive attack verdicts
         self._load()
 
     # ------------------------------------------------------------------ persistence
@@ -128,22 +132,52 @@ class A2Contain(Agent):
             return f"Device cut off {when}; bed marked untrusted."
         if c.get("disable_result") == "failed":
             return f"Cut-off FAILED at the hub ({when}); bed marked untrusted."
+        if c.get("disable_result") == "waiting":
+            return (f"Bed marked untrusted ({when}); device still connected so a real alarm gets through "
+                    f"(cut-off if the attack holds {self.e.s.a2_confirm_s:g} s, at once on BOTH).")
         return f"Cutting off device ({when}); bed marked untrusted."
 
     # ------------------------------------------------------------------ contain
-    def contain(self, bed_id: str, why: str, approved_by: str | None = None) -> bool:
+    def contain(self, bed_id: str, why: str, approved_by: str | None = None, cut_now: bool = True) -> bool:
+        """Mark the bed untrusted; cut the device off at the hub now (cut_now) or later via cut().
+
+        A person's request (approved_by) and BOTH cut at once. A plain TAMPERING only marks the bed
+        untrusted and waits for SW_A2_CONFIRM_S of sustained evidence, so the real monitor's alarm
+        can still reach the brain (doc12 B07: an emergency on an attacked monitor must not be hidden).
+        """
         device = valid_device(device_for_bed(bed_id))
-        if device in self.contained:
+        c = self.contained.get(device)
+        if c is not None:
+            if cut_now and c.get("disable_result") == "waiting" and not c.get("releasing"):
+                self.cut(device, why, approved_by)
+                return True
             return False
         now = self.e.now()
         set_act = self.e.act("A2", "set_bed_untrusted", bed_id=bed_id, device_id=device, approved_by=approved_by,
-                             detail=f"Bed {bed_id} marked UNTRUSTED ({why}); last trusted values stay on screen",
+                             detail=f"Bed {bed_id} marked UNTRUSTED ({why}); last trusted values stay on screen"
+                                    + ("" if cut_now else f"; device stays connected until the attack holds "
+                                       f"{self.e.s.a2_confirm_s:g} s (at once on BOTH)"),
                              undo=self._undo)
         if set_act is None:
             return False
         c = {"bed_id": bed_id, "since": now, "set_id": set_act["action_id"], "disable_id": None,
-             "disable_result": "pending", "why": why, "releasing": False}
+             "disable_result": "waiting", "why": why, "releasing": False}
         self.contained[device] = c
+        self._save()
+        if cut_now:
+            self.cut(device, why, approved_by)
+        else:
+            self.e.emit("containment", {"bed_id": bed_id, "device_id": device, "result": "waiting",
+                                        "text": self.state_text(device), "action": set_act})
+        return True
+
+    def cut(self, device: str, why: str, approved_by: str | None = None) -> None:
+        """The hub cut-off (disable_client) for a device already marked untrusted."""
+        c = self.contained[device]
+        if c.get("disable_result") != "waiting" or c.get("releasing"):
+            return
+        c["disable_result"] = "pending"
+        bed_id = c["bed_id"]
         self._save()
 
         def work() -> None:
@@ -169,7 +203,6 @@ class A2Contain(Agent):
                                             "text": self.state_text(device), "action": act})
 
         self.e.background(work)
-        return True
 
     def _undo(self, original: dict, by: str | None) -> bool:
         device = original.get("device_id")
@@ -236,12 +269,25 @@ class A2Contain(Agent):
         device = device_for_bed(bed)
         if verdict == "NORMAL":
             self.released_by_person.discard(device)
+            self.attack_since.pop(device, None)
             return
-        if verdict not in TRIGGERS or v["confidence"] < self.e.s.a2_min_confidence or device in self.contained:
+        if verdict not in TRIGGERS or v["confidence"] < self.e.s.a2_min_confidence:
+            self.attack_since.pop(device, None)  # the run of consecutive attack verdicts is broken
             return
         if device in self.released_by_person:
             return  # a person released it in this episode; don't override them
-        self.contain(bed, f"{verdict} (conf {v['confidence']:.2f})")
+        since = self.attack_since.setdefault(device, v["ts"])
+        held_s = max(0.0, (v["ts"] - since) / 1000)
+        conf = f"conf {v['confidence']:.2f}"
+        if verdict == "BOTH":
+            why, now = f"BOTH ({conf}): possible emergency on an attacked monitor, cut off at once", True
+        else:
+            why, now = f"{verdict} ({conf}, held {held_s:.0f} s)", held_s >= self.e.s.a2_confirm_s
+        c = self.contained.get(device)
+        if c is None:
+            self.contain(bed, why if now else f"{verdict} ({conf})", cut_now=now)
+        elif now and c.get("disable_result") == "waiting" and not c.get("releasing"):
+            self.cut(device, why)
 
     def isolate_request(self, req: dict) -> None:
         try:
@@ -250,13 +296,14 @@ class A2Contain(Agent):
             return self.e.refuse(req, "target is not MON-01..MON-12")
         if req.get("bed_id") and req["bed_id"] != bed_for_device(device):
             return self.e.refuse(req, "bed and device do not belong together")
-        if device in self.contained:
+        if device in self.contained and self.contained[device].get("disable_result") != "waiting":
             return self.e.refuse(req, "device already cut off")
         self.released_by_person.discard(device)
         self.contain(bed_for_device(device), f"isolate request by {req['by']}", approved_by=req["by"])
 
     def reset(self) -> None:
         self.released_by_person = set()
+        self.attack_since = {}
         if not self.e.s.a2_reset_releases:
             return
         for device, c in list(self.contained.items()):
