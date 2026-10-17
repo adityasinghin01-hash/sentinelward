@@ -387,6 +387,11 @@ class PressureDrift:
     GROWTH_MMHG = 2.        # "growing": at least this much further from usual than the last cuff
     CUFF_STABLE_MMHG = 5.   # the cuff itself must stay roughly level (both falling is not drift)
     CLEAR_MMHG = 3.         # back within this of 0 or of the usual gap = re-zeroed
+    # A steady offset is not drift. Without growth confirmed across cuffs M6 stays below
+    # the 0.5 line (watching); only one very large gap asks for a re-level on its own.
+    STEADY_CAP = .45
+    LARGE_GAP_MMHG = 15.
+    LARGE_GAP_SCORE = .6
 
     def __init__(self):
         self.baselines = {}
@@ -435,16 +440,24 @@ class PressureDrift:
             growing = (prev_dev*deviation >= 0 and abs(deviation) >= abs(prev_dev)+self.GROWTH_MMHG
                        and abs(cuff_map-prev_map) <= self.CUFF_STABLE_MMHG)
             if growing: self.drifting[bed] = sign
+        kind = 'plain'
         if self.drifting.get(bed) == sign and abs(deviation) >= self.MARGIN_MMHG:
             # Gap kept growing past a clear margin and is still out there: drift, not one noisy cuff.
             score = max(score, min(1., .8+(abs(deviation)-self.MARGIN_MMHG)/30.))
+            kind = 'growing'
         else:
             self.drifting.pop(bed, None)
+            if abs(deviation) >= self.LARGE_GAP_MMHG:
+                score, kind = self.LARGE_GAP_SCORE, 'large'
+            else:
+                # No growth confirmed across cuffs: a steady offset is watched, not paged.
+                score = min(score, self.STEADY_CAP)
+                if abs(deviation) >= self.MARGIN_MMHG: kind = 'steady'
         if min(abs(gap-self.PRIOR_GAP_MMHG), abs(deviation)) <= self.CLEAR_MMHG:
             # Re-zeroed / re-levelled: line and cuff agree again, clear at once.
             self.drifting.pop(bed, None)
-            score = min(score, min(abs(deviation), abs(gap))/self.SCALE_MMHG)
-        return score, deviation
+            score, kind = min(score, min(abs(deviation), abs(gap))/self.SCALE_MMHG), 'plain'
+        return score, deviation, kind
 
     def __call__(self, window, state, now_ms):
         bed = (window or {}).get('bed_id', getattr(state,'bed_id','unknown'))
@@ -472,12 +485,12 @@ class PressureDrift:
             gap = float(np.mean(arterial)-cuff['map'])
             usual, source = self._usual(bed, cuff['ts'])
             if usual is None:
-                score, deviation = 0., 0.
+                score, deviation, kind = 0., 0., 'plain'
             else:
-                score, deviation = self._score(bed, gap, usual, cuff['map'])
+                score, deviation, kind = self._score(bed, gap, usual, cuff['map'])
             self.current[bed] = dict(score=score, gap_mmhg=gap, baseline_gap_mmhg=usual, baseline_source=source,
                                      deviation_mmhg=abs(deviation), cuff_ts=cuff['ts'], cuff_map=cuff['map'],
-                                     drift_growing=bed in self.drifting)
+                                     drift_growing=bed in self.drifting, gap_kind=kind)
             # Only early, plausible, mutually consistent pairs define this patient's usual gap.
             early = (cuff['ts'] <= self.first_ts[bed]+self.EARLY_MS and len(baseline) < self.EARLY_PAIRS
                      and abs(gap) <= self.PLAUSIBLE_MMHG)
@@ -498,10 +511,14 @@ class PressureDrift:
         elif current['drift_growing'] and current['score'] >= .8:
             reason = (f"Line/cuff gap {gap:+.0f} mmHg vs usual {usual:+.0f} and growing; "
                       "re-level and re-zero the transducer")
+        elif current['gap_kind'] == 'large':
+            reason = f"Line/cuff gap {gap:+.0f} mmHg vs usual {usual:+.0f}: large gap: re-level and re-check"
+        elif current['gap_kind'] == 'steady':
+            reason = f"Steady line/cuff offset {gap-usual:+.0f} mmHg; watching"
         else:
             reason = (f"Line/cuff gap {gap:.0f} mmHg; this patient's usual is {usual:.0f} mmHg"
                       + (' (no early cuff: line and cuff should agree)' if current['baseline_source'] == 'clinical_prior' else ''))
-        return result(current['score'], reason, **{k:v for k,v in current.items() if k!='score'},
+        return result(current['score'], reason, **{k:v for k,v in current.items() if k not in ('score', 'gap_kind')},
                       baseline_samples=len(baseline), baseline_warming=usual is None, eligible=usual is not None,
                       # No cuff baseline yet = no drift evidence either way; it must not block NORMAL.
                       not_applicable=usual is None, path='live_patient_gap')

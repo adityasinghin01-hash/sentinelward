@@ -57,7 +57,8 @@ def test_m6_relative_gap_and_only_new_cuffs_update_baseline():
     assert sample(10000, 100)['extra']['baseline_samples'] == 1
     normal = sample(20000, 100)
     assert normal['score'] is None  # two observations establish the baseline for the next cuff
-    assert sample(30000, 115)['score'] >= .9
+    # One cuff 15 mmHg from the usual gap, no growth yet: positive (re-level), not drift >= .8.
+    assert sample(30000, 115)['score'] == PressureDrift.LARGE_GAP_SCORE
     assert sample(40000, 100)['score'] < .1
     assert sample(50000, 115, 'B09')['score'] is None  # no cross-patient baseline
 
