@@ -1,0 +1,114 @@
+[
+  {
+    "actor": "A2",
+    "action_code": "disable_client",
+    "action": "Cut off MON-10 at the hub after TAMPERING (conf 0.98, held 20 s); session wiped",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A5",
+    "action_code": "draft_report",
+    "action": "CERT-In draft rp_cic3cy02240 for incident inc_cic3cy02234; 8 fields need a person; never sent automatically",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A1",
+    "action_code": "edit_message",
+    "action": "IT message updated: Device cut off 02:08:45; bed marked untrusted.; telegram IT group queued",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A2",
+    "action_code": "enable_client",
+    "action": "act_cic3cy02232 undone together with act_cic3cy02245 (same release, no second hub change)",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A1",
+    "action_code": "escalate",
+    "action": "Alert al_cic3cy02279: no acknowledgement for 30 s; step 2 -> staff:priya; telegram queued",
+    "bed_id": "B09",
+    "device_id": null,
+    "mode": "automatic"
+  },
+  {
+    "actor": "A3",
+    "action_code": "hash_file",
+    "action": "inc_cic3cy02234/timeline.json: 607 bytes, sha256 dbd522b4fd3c6a9c1fb6eb3717597e81c81042ab059a74c2a30981c55402c8de",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A4",
+    "action_code": "list_devices",
+    "action": "Fleet hunt after MON-10 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (no verdict yet), MON-04 (no verdict yet)",
+    "bed_id": null,
+    "device_id": null,
+    "mode": "automatic"
+  },
+  {
+    "actor": "A1",
+    "action_code": "send_message",
+    "action": "Alert al_cic3cy02243 (TAMPERING, medium) step 1 -> staff:tom; telegram queued",
+    "bed_id": "B10",
+    "device_id": null,
+    "mode": "automatic"
+  },
+  {
+    "actor": "A2",
+    "action_code": "set_bed_untrusted",
+    "action": "Bed B10 marked UNTRUSTED (TAMPERING (conf 0.98)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once on BOTH)",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A4",
+    "action_code": "set_watch_level",
+    "action": "Watch level HIGH for 11 'demo-monitor' devices until 03:09 (bookkeeping; IT decides any cut-off)",
+    "bed_id": null,
+    "device_id": null,
+    "mode": "automatic"
+  },
+  {
+    "actor": "A3",
+    "action_code": "snapshot_files",
+    "action": "Incident inc_cic3cy02234: froze 9 messages (last 10 min) of B10 into 3 files",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A5",
+    "action_code": "start_clock",
+    "action": "CERT-In 6 h clock for rp_cic3cy02240: deadline 08:08 (2026-10-18T02:38:45.015Z)",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  },
+  {
+    "actor": "A8",
+    "action_code": "write_briefing",
+    "action": "Briefing br_cic3cy02249 (periodic) kept by template; template because: Granite output rejected: mentions MON-11 which is not in the facts",
+    "bed_id": null,
+    "device_id": null,
+    "mode": "automatic"
+  },
+  {
+    "actor": "A3",
+    "action_code": "write_timeline",
+    "action": "Incident inc_cic3cy02234 timeline started with 4 events",
+    "bed_id": "B10",
+    "device_id": "MON-10",
+    "mode": "automatic"
+  }
+]

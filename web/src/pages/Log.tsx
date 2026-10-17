@@ -1,65 +1,57 @@
-import {useMemo, useState} from 'react';
-import {Search, Bot, User} from 'lucide-react';
+import {Fragment, useMemo, useState} from 'react';
+import {Search} from 'lucide-react';
 import {useWard} from '../lib/store';
-import {dateTime, staff} from '../lib/domain';
-import {Empty, PageTitle, Panel, Tip, Undo, humanText, humanName} from '../components/ui';
-import {Tabs} from '../components/extra';
+import {time} from '../lib/domain';
+import {Button, Empty, Panel, ResourceState, SegmentedControl} from '../components/ui';
+import {PageHeader} from '../components/pages/PageHeader';
+import {ActorIcon, UndoAction} from '../components/pages/ActionRecord';
+import {actionView} from '../components/pages/actions';
+import type {ActorKind} from '../components/pages/actions';
 
-const AGENTS: Record<string, string> = {
-  A1: 'Alert agent', A2: 'Network cut-off agent', A3: 'Evidence agent', A4: 'Fleet agent',
-  A5: 'Report agent', A6: 'Ticket agent', A7: 'Workload agent', A8: 'Briefing agent',
-};
-
+type Filter = 'all' | ActorKind;
 export function LogPage() {
   const actions = useWard(s => s.actions);
-  const [mode, setMode] = useState<'all' | 'automatic' | 'person'>('all');
+  const error = useWard(s => s.error);
+  const receivedAt = useWard(s => s.receivedAt);
+  const [mode, setMode] = useState<Filter>('all');
   const [q, setQ] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const loading = !receivedAt && !actions.length && !error;
+  const rows = useMemo(() => actions.map(a => ({a, v: actionView(a)})).sort((a, b) => b.a.occurred_at - a.a.occurred_at), [actions]);
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return actions.filter(a => (mode === 'all' || a.mode === mode) &&
-      (!needle || [a.action, a.actor, a.action_code, a.bed_id, a.device_id, a.approved_by].some(x => x?.toLowerCase().includes(needle))));
-  }, [actions, mode, q]);
-  return (
-    <div className="page">
-      <PageTitle eyebrow="S11 · Audit" title="Action log"
-                 description="Every automatic and staff action, who or what did it, and its undo. Newest first, last 200 actions.">
-        <Tabs label="Who acted" value={mode} onChange={setMode} options={[
-          {value: 'all', label: 'All', hint: 'Agents and people.', count: actions.length},
-          {value: 'automatic', label: 'Automatic', hint: 'Actions taken by an agent on its own.', count: actions.filter(a => a.mode === 'automatic').length},
-          {value: 'person', label: 'Staff', hint: 'Actions taken by a signed-in person.', count: actions.filter(a => a.mode === 'person').length},
-        ]} />
-      </PageTitle>
-      <Panel title={`${shown.length} action${shown.length === 1 ? '' : 's'}`} caption="Undo asks the responsible agent to reverse the action; the reversal is logged too."
-             aside={<label className="search"><Search size={14} aria-hidden="true" /><span className="sr-only">Search actions</span>
-               <input type="search" placeholder="Search bed, device, agent, action" value={q} onChange={e => setQ(e.target.value)} /></label>}>
-        {shown.length === 0 ? <Empty title="No matching actions" detail={actions.length ? 'Try a different search or filter.' : 'Actions appear here as soon as agents or staff act.'} /> : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr>
-                <th scope="col">Time</th>
-                <th scope="col"><Tip text="The agent (A1–A8) or the person who acted."><span>Agent or person</span></Tip></th>
-                <th scope="col">Action</th><th scope="col">Bed / device</th>
-                <th scope="col"><Tip text="Person who approved the action, when approval was needed."><span>Approved by</span></Tip></th>
-                <th scope="col"><Tip text="Shown only on actions the API marks as reversible (e.g. a cut-off). IT security can undo."><span>Undo</span></Tip></th>
-              </tr></thead>
-              <tbody>
-                {shown.map(a => (
-                  <tr key={a.id}>
-                    <td className="mono nowrap">{dateTime(a.occurred_at)}</td>
-                    <td className="nowrap">{a.mode === 'automatic' ? <Bot size={13} aria-hidden="true" /> : <User size={13} aria-hidden="true" />}{' '}
-                      {AGENTS[a.actor] ? <Tip text={AGENTS[a.actor]}><span>{AGENTS[a.actor]}</span></Tip> : humanName(a.actor)}</td>
-                    <td><span className="what" title={a.action}>{humanText(a.action)}</span><Tip text={`Audit code: ${a.action_code}`}><span className="sr-only">Audit code</span><Search size={12} aria-hidden="true"/></Tip>
-                      {a.references_action_id && <Tip text={`Reverses action ${a.references_action_id}`}><span className="tiny"> · reverses earlier action</span></Tip>}</td>
-                    <td className="mono">{a.bed_id ?? a.device_id ?? 'Ward'}</td>
-                    <td>{a.approved_by ? staff(a.approved_by) : '—'}</td>
-                    <td>{a.mode === 'automatic' && a.undoable ? <Undo action={a} /> : <Tip text={a.mode === 'automatic' ? 'This automatic action has no reversal (e.g. a message sent, a briefing written).' : 'Staff actions are not undone from here.'}><span className="tiny">—</span></Tip>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Panel>
-    </div>
-  );
+    return rows.filter(({a, v}) => (mode === 'all' || v.kind === mode) &&
+      (!needle || [...Object.values(v), a.action, a.actor, a.action_code, a.bed_id, a.device_id, a.approved_by].some(x => x?.toLowerCase().includes(needle))));
+  }, [rows, mode, q]);
+  return <div className="page pages-page log-page">
+    <PageHeader title="Action log" description="Who acted, what changed, and why. Newest first · up to 200 actions.">
+      <SegmentedControl label="Who acted" value={mode} onChange={setMode} options={[
+        {value: 'all', label: 'All'}, {value: 'people', label: 'People'}, {value: 'agents', label: 'Agents'}, {value: 'it', label: 'IT'},
+      ]} />
+    </PageHeader>
+    <ResourceState loading={loading} error={error || ''} />
+    <Panel title={!receivedAt && !actions.length ? 'Actions' : `${shown.length} action${shown.length === 1 ? '' : 's'}`} caption="Every row has an original record in Details. IT can undo reversible actions."
+      aside={<label className="search pages-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search actions</span>
+        <input type="search" placeholder="Search actions, names or beds" value={q} onChange={e => setQ(e.target.value)} /></label>}>
+      {!shown.length && !loading ? <Empty title={q || mode !== 'all' ? 'No matching actions' : 'No actions recorded yet'} detail={q || mode !== 'all' ? 'Try another name, bed or filter.' : 'Actions appear when agents or staff respond to the ward.'} /> : shown.length > 0 ?
+        <div className="table-wrap log-table-wrap"><table className="table log-table">
+          <thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">Did what</th><th scope="col">Bed</th><th scope="col">Why</th><th scope="col">Record</th><th scope="col"><span className="sr-only">Undo</span></th></tr></thead>
+          <tbody>{shown.map(({a, v}, i) => {
+            const minute = Math.floor(a.occurred_at / 60_000);
+            const group = i === 0 || Math.floor(shown[i - 1].a.occurred_at / 60_000) !== minute;
+            return <Fragment key={a.id}>
+              {group && <tr className="log-minute"><th colSpan={7} scope="rowgroup"><time dateTime={new Date(a.occurred_at).toISOString()}>{new Date(a.occurred_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})} · {time(a.occurred_at)}</time></th></tr>}
+              <tr><td className="mono log-time"><time dateTime={new Date(a.occurred_at).toISOString()}>{time(a.occurred_at, true)}</time></td>
+                <td><span className="log-actor"><ActorIcon kind={v.kind} />{v.who}</span></td>
+                <td className="log-what">{v.what}{a.references_action_id && <span className="tiny muted"> · reversal</span>}</td>
+                <td className="mono nowrap">{v.bed}</td><td className="log-why">{v.why}</td>
+                <td><Button size={36} variant="ghost" aria-expanded={expanded.has(a.id)} aria-controls={expanded.has(a.id) ? `record-${a.id}` : undefined} onClick={() => setExpanded(old => {const next = new Set(old); if (next.has(a.id)) next.delete(a.id); else next.add(a.id); return next;})}>Details</Button></td>
+                <td>{a.mode === 'automatic' && a.undoable && <UndoAction action={a} />}</td>
+              </tr>
+              {expanded.has(a.id) && <tr className="log-details" id={`record-${a.id}`}><td colSpan={7}><div className="record-original"><p>Original audit record</p><pre>{JSON.stringify(a, null, 2)}</pre></div></td></tr>}
+            </Fragment>;
+          })}</tbody>
+        </table></div> : null}
+    </Panel>
+  </div>;
 }

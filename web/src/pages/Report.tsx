@@ -5,7 +5,12 @@ import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {bytes, can, certDeadline, certFields, countdown, dateTime, evidenceView, longFields, reportReady, reportValue, staff} from '../lib/domain';
 import type {AgentRecord, ReportField} from '../lib/types';
-import {Empty, Feedback, PageTitle, Panel, Tip} from '../components/ui';
+import {Button, Empty, Feedback, Panel, ResourceState, Tip} from '../components/ui';
+import {PageHeader} from '../components/pages/PageHeader';
+import {EvidenceRecord} from '../components/pages/EvidenceRecord';
+import {plainText} from '../components/pages/actions';
+import {reportText} from '../components/pages/reportText';
+import {ReportTextInput} from '../components/pages/ReportTextInput';
 import {Chip, Dialog} from '../components/extra';
 
 const SENT = ['sent', 'human_marked_sent'];
@@ -69,7 +74,7 @@ export function ReportPage() {
   // Read the report list and match by report ID or incident ID (no 404 noise while A5 has not drafted yet).
   const reports = useResource<AgentRecord[]>('/api/reports', 8000);
   const found = reports.data?.find(r => r.record_id === incidentId || r.data.incident_id === incidentId) ?? null;
-  const rep = {data: found, loading: reports.loading, error: reports.error || (reports.data && !found ? `The report agent (A5) has not drafted a report for ${incidentId} yet.` : '')};
+  const rep = {data: found, loading: reports.loading, error: reports.error || (reports.data && !found ? 'The report agent has not drafted a report for this incident yet.' : '')};
   const save = useCommand();
   const sent = useCommand();
   const review = useCommand();
@@ -86,21 +91,21 @@ export function ReportPage() {
 
   if (!rec || !draft) {
     if (rep.error && !rep.loading) return (
-      <div className="page">
-        <PageTitle eyebrow="S8 · CERT-In report draft" title="No report draft yet" description="The report agent (A5) drafts the CERT-In report once an incident is confirmed." />
+      <div className="page pages-page report-page">
+        <PageHeader title="No report draft yet" description="The report agent prepares a draft after an incident is confirmed." />
         <Empty title="No draft for this incident" detail={rep.error}>
           <div className="row-actions center">
-            <button disabled={!can(role, 'report') || review.pending} title="Ask the report agent (A5) to draft or re-check the report for this incident."
+            <Button disabled={!can(role, 'report') || review.pending} title="Ask the report agent (A5) to draft or re-check the report for this incident."
                     onClick={() => void review.run(`/api/incidents/${encodeURIComponent(incidentId)}/report/review`, {type: 'review_report', incidentId})}>
-              <Sparkles size={14} aria-hidden="true" /> Ask A5 to draft
-            </button>
+              <Sparkles size={14} aria-hidden="true" /> Request a draft
+            </Button>
             <Link className="button-link ghost" to={`/incident/${encodeURIComponent(incidentId)}`}>Back to incident</Link>
           </div>
           <Feedback message={review.feedback} failed={review.failed} />
         </Empty>
       </div>
     );
-    return <div className="page"><div className="skeleton-block" aria-busy="true">Loading report draft…</div></div>;
+    return <div className="page pages-page report-page"><div className="skeleton-block" aria-busy="true">Loading report draft…</div></div>;
   }
 
   const d = rec.data;
@@ -137,31 +142,32 @@ export function ReportPage() {
   };
 
   return (
-    <div className="page">
-      <PageTitle eyebrow={`S8 · CERT-In report · ${rec.record_id} v${rec.version}`} title="CERT-In report draft"
-                 description="The report agent (A5) drafted this. A person checks every field and sends it; SentinelWard never sends it automatically.">
+    <div className="page pages-page report-page">
+      <PageHeader title="CERT-In report draft" description="Review the facts, complete the missing information, and record when you have sent the report.">
         <Link className="button-link ghost" to={`/incident/${encodeURIComponent(String(d.incident_id ?? incidentId))}`} title="Back to the incident timeline and evidence.">
           <ArrowLeft size={14} aria-hidden="true" /> Incident
         </Link>
-      </PageTitle>
+      </PageHeader>
+      <ResourceState loading={false} error={reports.error} retry={() => void reports.reload()} />
       {isSent && <p className="notice" role="status"><FileCheck2 size={15} aria-hidden="true" /> Marked as sent by {staff(d.sent_by)} at {dateTime(Number(d.sent_at))}. The draft is now read-only.</p>}
       <div className="report-layout">
-        <div className="report-main">
-          {certFields.map(g => (
-            <Panel key={g.group} title={g.group}>
+        <div className="report-main report-document">
+          <div className="report-document-head"><span className="report-draft-label"><FileCheck2 size={16} aria-hidden="true" />Draft for human review</span><h2>Cybersecurity incident report</h2><p>Prepared for CERT-In · {dateTime(rec.ts)}</p><p className="tiny">Review every section against the incident timeline and evidence. This document is not sent automatically.</p></div>
+          {certFields.map((g, index) => (
+            <Panel key={g.group} title={`${index + 1}. ${g.group}`}>
               <div className="form-grid">
                 {g.fields.map(([k, label]) => {
                   const f = fields[k];
                   const fromAgent = !f ? reportValue(d, k) : '';
                   const st = draft.fields[k]?.trim() ? (f?.status && f.status !== 'missing' ? f.status : fromAgent && draft.fields[k] === fromAgent ? 'observed' : 'attested') : 'missing';
-                  const Input = longFields.has(k) ? 'textarea' : 'input';
                   return (
-                    <label key={k} className={`field ${longFields.has(k) ? 'span-2' : ''}`}>
+                    <label key={k} className={`field report-field ${st === 'missing' ? 'report-field-missing' : 'report-field-filled'} ${longFields.has(k) ? 'span-2' : ''}`}>
                       <span className="field-label">{label}
-                        <Chip kind={st === 'missing' ? 'striped' : 'neutral'} hint={`${STATUS_HINT[st]}${f?.source && f.source !== 'unavailable' ? ` Source: ${f.source}.` : st === 'observed' && !f ? ' Source: the A5 draft.' : ''}`}>{st}</Chip>
+                        <Chip hint={`${STATUS_HINT[st]}${f?.source && f.source !== 'unavailable' ? ` Source: ${f.source}.` : ''}`}>{st === 'missing' ? 'Needs information' : st === 'observed' ? 'From ward record' : st === 'profile' ? 'From profile' : 'Checked by a person'}</Chip>
                       </span>
-                      <Input value={draft.fields[k]} disabled={!editor} maxLength={2000} {...(Input === 'textarea' ? {rows: 3} : {})}
-                             onChange={(e: {target: {value: string}}) => set({fields: {...draft.fields, [k]: e.target.value}})} />
+                      <ReportTextInput label={label} value={draft.fields[k]} disabled={!editor} placeholder="Not provided" multiline={longFields.has(k)}
+                        format={['symptoms', 'actions_taken', 'incident_type', 'evidence_summary'].includes(k) ? text => reportText(text, String(d.bed_id ?? ''), String(d.device_id ?? '')) : undefined}
+                        onChange={text => set({fields: {...draft.fields, [k]: text}})} />
                     </label>
                   );
                 })}
@@ -170,26 +176,23 @@ export function ReportPage() {
           ))}
           <Panel title="Description" caption={`Plain account of what happened${(d.narrative as {generator?: string} | undefined)?.generator ? `, first written by ${(d.narrative as {generator: string}).generator === 'granite' ? 'IBM Granite' : 'the template writer'}` : ''}.`}>
             <label className="field"><span className="sr-only">Description</span>
-              <textarea rows={7} value={draft.description} disabled={!editor} maxLength={12000} onChange={e => set({description: e.target.value})} />
+              <ReportTextInput label="Description" multiline rows={7} value={draft.description} format={text => reportText(text, String(d.bed_id ?? ''), String(d.device_id ?? ''))} disabled={!editor} maxLength={12000} onChange={text => set({description: text})} />
             </label>
           </Panel>
           <Panel title="Evidence list" caption="Files attached to this report, with their SHA-256 fingerprints.">
             {evidence.length === 0 ? <p className="tiny">No evidence files listed in this draft.</p> : (
               <ul className="evidence-list compact">
-                {evidence.map((e, i) => (
-                  <li key={i} className="evidence"><strong>{evidenceView(e).title}</strong>
-                    {evidenceView(e).size !== null && <span className="tiny"> · {bytes(evidenceView(e).size)}</span>}
-                    <Tip text="SHA-256 fingerprint; proves the file has not changed."><code className="sha">{String(e.sha256 ?? 'no fingerprint').slice(0, 24)}…</code></Tip></li>
-                ))}
+                {evidence.map((e, i) => <EvidenceRecord key={i} e={e} incidentId={incidentId} download={false} />)}
               </ul>
             )}
           </Panel>
+          <div className="report-record"><details className="record-details"><summary>Original report record</summary><div className="record-original"><pre>{JSON.stringify(rec, null, 2)}</pre></div></details></div>
         </div>
         <aside className="report-side">
-          <Panel title="Report within 6 hours" caption="CERT-In asks for incident reports within 6 hours of noticing them.">
+          <Panel title="Reporting deadline" caption="The 6-hour clock starts when the incident is noticed.">
             <Tip text={`Due ${dateTime(due)}. Counts down in real time.`}><div className={`countdown mono ${due - now <= 0 ? 'overdue' : ''}`}>{countdown(due, now)}</div></Tip>
             <p className="tiny">{due - now > 0 ? 'left' : 'overdue: send as soon as possible'} · noticed {dateTime(Number(d.noticed_ts) || rec.ts)}</p>
-            {d.provisional_notice === true && <p className="tiny">Notice time is provisional: {String(d.notice_provenance ?? 'see incident')}.</p>}
+            {d.provisional_notice === true && <p className="tiny">Notice time is provisional: {plainText(String(d.notice_provenance ?? 'see incident'))}.</p>}
           </Panel>
           <Panel title="Checklist" caption="All three are needed before anyone can mark the report as sent.">
             <label className="check"><input type="checkbox" checked={draft.factsChecked} disabled={!editor} onChange={e => set({factsChecked: e.target.checked})} />Facts checked against the incident timeline</label>
@@ -197,21 +200,21 @@ export function ReportPage() {
             <label className="field">Approver (name)
               <input value={draft.approver} disabled={!editor} maxLength={120} onChange={e => set({approver: e.target.value})} placeholder="Person approving this report" />
             </label>
-            <p className="tiny">{missing} field{missing === 1 ? '' : 's'} still empty · status {String(d.status ?? 'draft').replace(/_/g, ' ')}</p>
+            <p className="tiny">{missing} field{missing === 1 ? '' : 's'} need information · {String(d.status ?? 'draft').replace(/_/g, ' ')}</p>
           </Panel>
           <div className="report-actions">
-            <button disabled={!editor || !dirty || save.pending} onClick={() => void onSave()}
+            <Button pending={save.pending} disabled={!editor || !dirty} onClick={() => void onSave()}
                     title={!editor ? (isSent ? 'Already sent: the draft is read-only.' : 'Only IT security edits the report.') : dirty ? 'Save your changes to the draft (audited).' : 'No unsaved changes.'}>
               <Save size={14} aria-hidden="true" /> Save draft
-            </button>
-            <button className="ghost" onClick={() => void downloadPdf(rec, draft, due)} title="Download this draft as a PDF to attach or print. Generated on this computer.">
+            </Button>
+            <Button variant="ghost" onClick={() => void downloadPdf(rec, draft, due)} title="Download this draft as a PDF to attach or print. Generated on this computer.">
               <Download size={14} aria-hidden="true" /> Download PDF
-            </button>
-            <button disabled={!editor || blockers.length > 0 || sent.pending} onClick={() => setConfirm(true)}
+            </Button>
+            <Button pending={sent.pending} disabled={!editor || blockers.length > 0} onClick={() => setConfirm(true)}
                     aria-describedby="send-why"
                     title={blockers.length ? `To enable: ${blockers.join(', ')}.` : 'Record that you sent this report to CERT-In yourself.'}>
               <Send size={14} aria-hidden="true" /> Mark as sent by me
-            </button>
+            </Button>
             <p id="send-why" className="tiny">{isSent ? 'Already marked as sent.' : blockers.length ? `To mark as sent: ${blockers.join(', ')}.` : 'Ready. This records your name and the time; it does not send anything.'}</p>
           </div>
           <Feedback message={save.feedback || sent.feedback} failed={save.failed || sent.failed} />
@@ -219,9 +222,9 @@ export function ReportPage() {
         </aside>
       </div>
       <Dialog open={confirm} title="Mark this report as sent by you?" onClose={() => setConfirm(false)} actions={<>
-        <button className="ghost" onClick={() => setConfirm(false)}>Cancel</button>
-        <button onClick={() => { setConfirm(false); void sent.run(`/api/reports/${encodeURIComponent(rec.record_id)}/mark-sent`, {type: 'mark_report_sent', incidentId: String(d.incident_id ?? incidentId)}); }}>
-          Yes, I sent it</button></>}>
+        <Button variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button>
+        <Button onClick={() => { setConfirm(false); void sent.run(`/api/reports/${encodeURIComponent(rec.record_id)}/mark-sent`, {type: 'mark_report_sent', incidentId: String(d.incident_id ?? incidentId)}); }}>
+          Yes, I sent it</Button></>}>
         <p>Only confirm after you have sent the report to CERT-In yourself (email or portal). SentinelWard records your name and the time; it sends nothing.</p>
       </Dialog>
     </div>

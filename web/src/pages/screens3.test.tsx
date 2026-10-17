@@ -54,10 +54,10 @@ describe('S7 incident (#8)', () => {
   it('shows the A3 timeline text and agent, and named evidence with its size', async () => {
     as('it'); useWard.setState({actions: []});
     at('/incident/inc_1', '/incident/:incidentId', <IncidentPage />);
-    expect(await screen.findByText('Cut off MON-11 at the hub after TAMPERING')).toBeInTheDocument();
-    expect(screen.getByText('Detected: TAMPERING (conf 0.95)')).toBeInTheDocument();
-    expect(screen.getByText(/ATTACK STARTS/)).toBeInTheDocument();
-    expect(screen.getByText('messages.jsonl')).toBeInTheDocument();
+    expect(await screen.findByText('Cut off MON-11 at the hub')).toBeInTheDocument();
+    expect(screen.getByText('Detected a hacked monitor')).toBeInTheDocument();
+    expect(screen.getByText(/Attack starts/)).toBeInTheDocument();
+    expect(screen.getByText('Signal record')).toBeInTheDocument();
     expect(screen.getByText(/208\.4 KB/)).toBeInTheDocument();
     expect(screen.queryByText('Event')).toBeNull();
   });
@@ -74,8 +74,8 @@ describe('S4 acknowledged count (#10)', () => {
       {...base, alert_id: 'd', status: 'closed', acked_by: null},
     ]});
     at('/alerts', '/alerts', <AlertsPage />);
-    expect(screen.getByRole('button', {name: /^Acknowledged/})).toHaveTextContent('1');
-    expect(screen.getByRole('button', {name: /^Auto-closed/})).toHaveTextContent('2');
+    expect(screen.getByRole('radio', {name: /^Acknowledged/})).toHaveTextContent('1');
+    expect(screen.getByRole('radio', {name: /^Auto-closed/})).toHaveTextContent('2');
   });
 });
 
