@@ -9,19 +9,67 @@ from .detectors import confirmed_low_pressure, pulse_metrics, result
 
 
 class BodyMismatch:
-    # A rate/timing disagreement must persist (median of the last 3 windows, i.e. 2 of 3) before it
-    # counts as a body mismatch; one jittery window of beat detection must not raise an alert.
+    """Compare reliable beat trains; never confuse an estimator alias with two bodies.
+
+    Helpers shared with M2 remain untouched. Timing is a phase on the RR cycle,
+    rather than the first pulse in an arbitrary 80--700 ms search interval.
+    """
     PERSIST = 3
 
     def __init__(self):
         self.baselines = {}
         self.seen = {}
         self.recent = {}
+        self.pulse_history = {}
+        self.pulse_hold = {}
+        self.cycles = {}
+        self.observed = {}
+        self.timing_track = {}
 
     def reset(self):
         self.baselines.clear()
         self.seen.clear()
         self.recent.clear()
+        self.pulse_history.clear()
+        self.pulse_hold.clear()
+        self.cycles.clear()
+        self.observed.clear()
+        self.timing_track.clear()
+
+    def _pulse_repeats(self, window, bed):
+        # Search exact observed pulse subsequences at sample resolution. Reusing a
+        # pulse at the same time is normal overlap; repeating BOTH channels belongs
+        # to M4. Require three distinct non-flat pulse seconds so periodic signals cannot
+        # manufacture source timestamps. Never infer times for unmatched samples.
+        history = self.pulse_history.setdefault(bed, deque(maxlen=12))
+        start = window.get('window_start', 0)
+        pulse = np.asarray(window['ppg'], dtype=float).tobytes()
+        heart = np.asarray(window['ecg'], dtype=float).tobytes()
+        offsets = {}
+        for i in range(0, len(pulse)-999, 1000):
+            chunk = pulse[i:i+1000]
+            x = np.frombuffer(chunk, dtype=float)
+            if not np.all(np.isfinite(x)) or np.ptp(x) < 1e-4:
+                continue
+            matches = {}
+            for old_start, old_pulse, old_heart in history:
+                if not start-60000 <= old_start < start:
+                    continue
+                pos = old_pulse.find(chunk)
+                while pos >= 0:
+                    if pos % 8 == 0:
+                        matches[old_start+pos] = old_heart[pos:pos+1000]
+                    pos = old_pulse.find(chunk, pos+8)
+            at = start+i
+            if at in matches:
+                continue  # normal overlap is not evidence of a shifted source
+            for previous, old_ecg in matches.items():
+                if old_ecg != heart[i:i+1000]:
+                    offsets.setdefault(at-previous, set()).add(chunk)
+        repeats = max((len(v) for v in offsets.values()), default=0)
+        if not history or history[-1][0] != start:
+            history.append((start, pulse, heart))
+        return repeats
 
     def __call__(self, window, state, now_ms):
         if not window:
@@ -29,55 +77,124 @@ class BodyMismatch:
         ecg, ppg = pulse_metrics(window), pulse_metrics(window, 'ppg')
         if ecg is None or ppg is None:
             return result(None, 'Not enough observed ECG and pulse samples', eligible=False, path='live_rate_and_pat')
-        rates = {'ecg_rate_bpm':ecg['rate'], 'ppg_rate_bpm':ppg['rate']}
         bed = window['bed_id']
-        recent = self.recent.setdefault(bed, deque(maxlen=self.PERSIST))
-        if (ecg['rate'] < 20) != (ppg['rate'] < 20):
-            # One signal flat while the other beats (fake flatline or a lead off): strong, immediate evidence.
-            recent.append(.99)
-            return result(.99, 'Heartbeat and pulse disagree: one signal has no usable beats', **rates, path='live_rate_and_pat')
-        mismatch = min(1., abs(ecg['rate']-ppg['rate']) / max(20., .25 * max(ecg['rate'],ppg['rate'])))
-        pats = []
-        for beat in ecg['peaks']:
-            after = (ppg['peaks'] - beat) * 8
-            after = after[(after >= 80) & (after <= 700)]
-            if len(after): pats.append(float(after[0]))
+        recent = self.recent.setdefault(bed, deque([0., 0.], maxlen=self.PERSIST))
         baseline = self.baselines.setdefault(bed, deque(maxlen=60))
         usual = float(np.median(baseline)) if len(baseline) >= 3 else None
+        start = window.get('window_start', 0)
+        previous = self.observed.get(bed)
+        if previous is not None and start-previous[0] > 15000:
+            recent.clear()
+            recent.extend([0., 0.])
+        # Plausible rates cannot prove that a known source-time violation ended.
+        # Only the existing bedside confirmation or reset clears that integrity
+        # evidence; no inferred timestamps or automatic learning can erase it.
+        if getattr(state, 'patient_ok_ts', -1) > self.pulse_hold.get(bed, float('inf')):
+            self.pulse_hold.pop(bed, None)
+            self.pulse_history.pop(bed, None)
+            recent.clear()
+            recent.extend([0., 0.])
+        repeats = self._pulse_repeats(window, bed)
+        if repeats >= 3:
+            self.pulse_hold.setdefault(bed, now_ms)
+        replay = bed in self.pulse_hold
+        rates = {'ecg_rate_bpm': ecg['rate'], 'ppg_rate_bpm': ppg['rate']}
+        if (len(ecg['peaks']) < 2) != (len(ppg['peaks']) < 2):
+            recent.append(.99)
+            self.observed[bed] = (start, .99)
+            return result(.99, 'Heartbeat and pulse disagree: one signal has no usable beats', **rates, path='live_rate_and_pat')
+
+        er, pr = ecg['rate'], ppg['rate']
+        peak_rate = float(7500/np.median(np.diff(ppg['peaks']))) if len(ppg['peaks']) >= 2 else 0.
+        monitor = (getattr(state, 'last_message', None) or {}).get('hr')
+        monitor_ok = monitor is not None and np.isfinite(monitor) and monitor >= 20
+        agrees = lambda a, b: a >= 20 and b >= 20 and abs(a-b) <= .1*max(a,b)
+        alias = False
+        # Autocorrelation sometimes chooses two beats while peak timing sees each one.
+        # A harmonic alone is NOT clearance: an unrelated half-rate pulse must still fail.
+        if agrees(peak_rate, er) and not agrees(pr, er):
+            harmonic = agrees(2*pr, peak_rate) or agrees(pr, 2*peak_rate)
+            if harmonic or (monitor_ok and agrees(er, monitor)):
+                pr = peak_rate
+                alias = True
+        rates.update(ppg_rate_bpm=pr, ppg_rhythm_rate_bpm=ppg['rate'], ppg_peak_rate_bpm=peak_rate,
+                     monitor_hr_bpm=monitor if monitor_ok else None, rate_alias=alias)
+        mismatch = min(1., max(0., abs(er-pr)/max(20., er, pr)-.05)/.1)
+        # Missed or spurious peaks in an aperiodic/noisy waveform are not a measured
+        # physiological rate. Do not let that estimate train PAT or establish tampering.
+        reliable = (ecg['regularity'] is not None and ppg['regularity'] is not None and
+                    ecg['regularity'] <= .25 and ppg['regularity'] <= .25 and er >= 20 and pr >= 20)
+        rr_ms = 60000/er if er >= 20 else None
+        pats = []
+        if rr_ms:
+            for beat in ecg['peaks'][1:-1]:
+                delays = (ppg['peaks']-beat)*8
+                if len(delays):
+                    nearest = float(delays[np.argmin(np.abs(delays))])
+                    if abs(nearest) <= rr_ms/2:
+                        pats.append(nearest)
         pat = float(np.median(pats)) if len(pats) >= 3 else None
-        # When the pulse takes longer than one beat to reach the finger, it can be paired with the
-        # previous or next heartbeat; a difference of exactly one beat interval is the same timing.
-        rr_ms = 60000/ecg['rate'] if ecg['rate'] >= 20 else None
-        def timing_gap(a, b):
-            d = abs(a-b)
-            return min(d, abs(a-b-rr_ms), abs(a-b+rr_ms)) if rr_ms else d
-        timing_score = min(1., timing_gap(pat, usual)/200) if pat is not None and usual is not None else 0.
-        raw = max(mismatch, timing_score)
-        recent.append(raw)
+        # During warmup, compare plausible physical arrivals across changing RR.
+        # Pick the most stable plausible arrival, then keep that physical baseline:
+        # historic +/-RR alternatives must not hide a real change in arrival time.
+        tracks = self.cycles.setdefault(bed, [deque(maxlen=60) for _ in range(3)])
+        candidates = [pat+k*rr_ms for k in (0,-1,1)] if pat is not None else []
+        normals = [float(np.median(t)) if len(t) >= 3 else None for t in tracks]
+        timing_score = 0.
+        if candidates and all(v is not None for v in normals):
+            if bed not in self.timing_track:
+                plausible = [i for i,v in enumerate(normals) if -80 <= v <= 1000]
+                self.timing_track[bed] = min(plausible or range(3),
+                    key=lambda i: (float(np.std(tracks[i])), i))
+            reference = self.timing_track[bed]
+            usual = normals[reference]
+            pat = min(candidates, key=lambda value: abs(value-usual))
+            timing_score = min(1., max(0., abs(pat-usual)-60)/160)
+        # Unreliable peak timing cannot support PAT evidence, but irregularity is
+        # never clearance for a persistent measured rate disagreement.
+        raw = max(mismatch, timing_score if reliable else 0.)
+        jitter = float(np.median(np.abs(np.asarray(pats)-np.median(pats)))) if len(pats) >= 3 else None
+        if replay:
+            raw = .99
+        if previous != (start, raw):
+            recent.append(raw)
+        self.observed[bed] = (start, raw)
         score = float(np.median(recent))
-        # Rate agreement is real evidence from the first window; only the timing comparison waits for
-        # this patient's baseline, so a learning bed with agreeing rates is checked, not "unknown".
         extra = dict(**rates, path='live_rate_and_pat', pat_ms=pat, baseline_pat_ms=usual,
                      baseline_samples=len(baseline), baseline_warming=usual is None, eligible=True,
-                     raw_score=raw, persistence_windows=len(recent))
-        # Admit only non-overlapping, mutually consistent observations; anomalies cannot train themselves away.
+                     raw_score=raw, persistence_windows=len(recent), beats_reliable=reliable,
+                     pulse_repeat_seconds=repeats, pulse_replay_since_ms=self.pulse_hold.get(bed), pat_jitter_ms=jitter)
+        if not reliable and mismatch >= .5 and not alias and not replay:
+            recent.clear()
+            recent.extend([0., 0.])
+            return result(None, 'Pulse beat timing is unreliable; body match is not established',
+                          **{**extra, 'eligible':False}, unavailable_reason='unreliable_beat_estimates')
         start = window.get('window_start', 0)
-        if (getattr(state,'baseline_admission_allowed',True) and pat is not None and
-                mismatch < .2 and timing_score < .2 and start >= self.seen.get(bed, -10000)+10000):
-            baseline.append(pat)
+        admission = getattr(state, 'baseline_admission_allowed', True)
+        if admission and reliable and candidates and mismatch < .2 and timing_score < .2 and not replay and start >= self.seen.get(bed, -10000)+10000:
+            for i, (track, normal) in enumerate(zip(tracks, normals)):
+                if bed in self.timing_track and i != self.timing_track[bed]:
+                    continue
+                candidate = candidates[i] if normal is None else min(candidates, key=lambda value: abs(value-normal))
+                if normal is None or abs(candidate-normal) < 100:
+                    track.append(candidate if normal is None else normal+float(np.clip(candidate-normal,-20,20)))
+            baseline.append(candidates[0])
             self.seen[bed] = start
-        if score < .5:
-            reason = 'Heartbeat and pulse agree' + ('; learning this patient’s pulse timing' if usual is None else '')
-        elif timing_score >= .5:
-            reason = f"Pulse arrives {pat:.0f} ms after the heartbeat; this patient's usual is {usual:.0f} ms"
-        elif mismatch >= .5:
-            reason = f"ECG rate {ecg['rate']:.0f} bpm differs from pulse rate {ppg['rate']:.0f} bpm"
+        if replay:
+            reason = 'Pulse repeated at a different time from ECG; bedside confirmation required'
+        elif alias:
+            reason = 'Pulse rate alias, rechecking heartbeat and pulse timing'
+        elif not reliable and score < .5:
+            reason = 'Beat timing is irregular; the observed heartbeat and pulse rates agree'
+        elif score >= .5 and timing_score >= .5:
+            reason = f"Pulse timing {pat:.0f} ms from ECG; this patient's usual is {usual:.0f} ms"
+        elif score >= .5 and mismatch >= .5:
+            reason = f'ECG rate {er:.0f} bpm differs from pulse rate {pr:.0f} bpm'
         else:
             reason = 'Heartbeat and pulse agree' + ('; learning this patient’s pulse timing' if usual is None else '')
         return result(score, reason, **extra)
 
     evaluate = __call__
-
 
 class PressureDrift:
     """Arterial line vs cuff: is the line moving away from this patient's usual gap?
