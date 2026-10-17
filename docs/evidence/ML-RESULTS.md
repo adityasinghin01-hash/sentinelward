@@ -29,5 +29,20 @@ Artifact pins: 1-lead SHA-256 `cc59fc61…2348` (97 features, 200 trees); 2-lead
 - The score only explains an alarm: it never suppresses, delays or downgrades a monitor alarm (tested in `brain/tests`).
 - The 2015 Challenge winners (81.39) used a hidden test set, 2 leads at 250 Hz and 5 minutes of data: not directly comparable.
 
-## IBM Z: Telum II on-chip AI
-The 1D-CNN ran on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 1.5.0`, device `nnpa:0`): 670 held-out windows in 0.41 s, max |NNPA − CPU| difference 0.0018 (fp16). It scored below the trees, so the trees are deployed; the NNPA path is proven and ready for a larger model. Source: `.work/kiro-ml-REPORT.md`, `ml_v2/results/cnn_result.json`.
+## IBM Z: Telum II on-chip AI (live second opinion)
+The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 1.5.0`, device `nnpa:0`) as a second opinion. For every bed alarm the live brain scores with M2, it scores the same 10 s window (125 Hz ECG + PPG, + ABP when present) and publishes its own "is this alarm real?" probability on `ward/chip/<bed>`. It is shown only: it never changes a verdict, an alert or an action, and its hub account may only read vitals and publish on `ward/chip/+`. The deployed M2 stays the trees.
+
+- Model: `chip/model/cnn_state.pt`, SHA-256 `c7ad2efe8dfb475619e336d437e1d4df4aaa3290470bec777f9a4894a571f1c6`, retrained on LinuxONE with the unchanged `ml_v2/stretch/cnn_nnpa.py`: best epoch 7, same thresholds, all 670 held-out scores identical to `cnn_result.json` (max |diff| 0.0).
+- Held-out: CinC 2015 score 0.623, VTaC 0.665, below the live trees (0.862 / 0.832). That is why it is a second opinion, not M2.
+- Live code path, 670 held-out windows one at a time: max |NNPA − CPU training| 0.0018, labels agree 670/670. Ward replay: chip windows = brain M2 windows (3/3: B03 VTACH, B04 ASYSTOLE, B07 VFIB).
+- Live proof (demo run `run_20261017_172415`, start 270, `mosquitto_sub ward/chip/+` on the hub): B03 VTACH p 0.769 real, B04 ASYSTOLE p 0.166 false, B07 VFIB p 0.953 real, all `nnpa:0`; 0 hub denials. Acceptance 7/7 with the chip connected; security live test 15/15 (default `--tls-host 127.0.0.1`).
+
+| Per-alarm CNN (scaling + forward, batch 1, 1 thread, z17) | n | median ms | p95 ms |
+|---|---|---|---|
+| nnpa:0, 670 held-out windows | 670 | 2.11 | 2.46 |
+| cpu, 670 held-out windows | 670 | 1.86 | 2.18 |
+| nnpa:0, ward alarm windows ×20 | 60 | 2.21 | 2.46 |
+| cpu, ward alarm windows ×20 | 60 | 1.98 | 2.30 |
+| nnpa:0, live over TLS (3 alarms) | 3 | 8.13 | 29.96 (max) |
+
+Honest: at batch 1 this small CNN is not faster on the NNPA than on one CPU core (about 0.25 ms slower); both are about 0.05% of the 5 s tick. Where it runs: the TEST LinuxONE z17 guest, inside IBM's lab container (`notebook`, torch 2.11 + torch_nnpa 1.5.0) as `sw-chip.service` (Restart=always), connected to the hub on the BUILD guest over TLS 8883 as hub user `chip`. One message per alarm episode. Sources: `chip/README.md`, `chip/results/` (bench, parity, `live/chip-live-proof.txt`, `live/acceptance.md`), `ml_v2/results/cnn_result.json`.
