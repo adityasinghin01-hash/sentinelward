@@ -2,7 +2,7 @@ import {useMemo, useState} from 'react';
 import {Search, Bot, User} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {dateTime, staff} from '../lib/domain';
-import {Empty, PageTitle, Panel, Tip, Undo} from '../components/ui';
+import {Empty, PageTitle, Panel, Tip, Undo, humanText, humanName} from '../components/ui';
 import {Tabs} from '../components/extra';
 
 const AGENTS: Record<string, string> = {
@@ -47,9 +47,9 @@ export function LogPage() {
                   <tr key={a.id}>
                     <td className="mono nowrap">{dateTime(a.occurred_at)}</td>
                     <td className="nowrap">{a.mode === 'automatic' ? <Bot size={13} aria-hidden="true" /> : <User size={13} aria-hidden="true" />}{' '}
-                      {AGENTS[a.actor] ? <Tip text={AGENTS[a.actor]}><span>{a.actor}</span></Tip> : staff(a.actor)}</td>
-                    <td><span className="what">{a.action}</span><span className="tiny mono"> · {a.action_code}</span>
-                      {a.references_action_id && <span className="tiny"> · reverses {a.references_action_id.slice(0, 12)}</span>}</td>
+                      {AGENTS[a.actor] ? <Tip text={AGENTS[a.actor]}><span>{AGENTS[a.actor]}</span></Tip> : humanName(a.actor)}</td>
+                    <td><span className="what" title={a.action}>{humanText(a.action)}</span><Tip text={`Audit code: ${a.action_code}`}><span className="sr-only">Audit code</span><Search size={12} aria-hidden="true"/></Tip>
+                      {a.references_action_id && <Tip text={`Reverses action ${a.references_action_id}`}><span className="tiny"> · reverses earlier action</span></Tip>}</td>
                     <td className="mono">{a.bed_id ?? a.device_id ?? 'Ward'}</td>
                     <td>{a.approved_by ? staff(a.approved_by) : '—'}</td>
                     <td>{a.mode === 'automatic' && a.undoable ? <Undo action={a} /> : <Tip text={a.mode === 'automatic' ? 'This automatic action has no reversal (e.g. a message sent, a briefing written).' : 'Staff actions are not undone from here.'}><span className="tiny">—</span></Tip>}</td>

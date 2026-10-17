@@ -62,7 +62,7 @@ export function DemoPage() {
               <button disabled={!allowed || run.pending} title="Start the chosen scenario at the chosen speed."
                       onClick={() => void run.run('/api/demo/run', {scenario, speed: Number(speed)})}><Play size={14} aria-hidden="true" /> Run</button>
               <Tip text="The backend has no pause command yet; Reset stops the run."><button disabled><Pause size={14} aria-hidden="true" /> Pause</button></Tip>
-              <button disabled={!allowed || reset.pending} title="Stop the run and clear its data (beds and users are kept). Asks first."
+              <button className="danger-outline" disabled={!allowed || reset.pending} title="Stop the run and clear its data (beds and users are kept). Asks first."
                       onClick={() => setConfirm(true)}><RotateCcw size={14} aria-hidden="true" /> Reset ward</button>
             </div>
             <Feedback message={run.feedback || reset.feedback} failed={run.failed || reset.failed} />
@@ -79,7 +79,7 @@ export function DemoPage() {
       </div>
       <Dialog open={confirm} title="Reset the ward?" onClose={() => setConfirm(false)} actions={<>
         <button className="ghost" onClick={() => setConfirm(false)}>Cancel</button>
-        <button onClick={() => { setConfirm(false); void reset.run('/api/demo/reset', {}); }}>Yes, reset</button></>}>
+        <button className="danger" onClick={() => { setConfirm(false); void reset.run('/api/demo/reset', {}); }}>Yes, reset</button></>}>
         <p>This stops the current run and clears its alerts, actions, incidents, reports and tickets. Beds, users and the list of past runs are kept. It cannot be undone.</p>
       </Dialog>
     </div>

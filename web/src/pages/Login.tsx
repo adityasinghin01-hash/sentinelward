@@ -1,6 +1,7 @@
 import {useState} from 'react';
-import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
-import {Activity, ShieldCheck, Stethoscope, Wrench, MonitorPlay, HeartPulse} from 'lucide-react';
+import {ThemeToggle} from '../components/ThemeToggle';
+import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
+import {Activity, ShieldCheck, Stethoscope, Wrench, MonitorPlay, HeartPulse, ArrowRight, ArrowLeft, Lock} from 'lucide-react';
 import type {Role, Session} from '../lib/types';
 import {api} from '../lib/api';
 import {roleHomes, roleNames} from '../lib/domain';
@@ -42,31 +43,40 @@ export function LoginPage() {
     }
   };
 
+  const card = ({role, icon: Icon, does}: typeof ROLES[number], big: boolean) => (
+    <button key={role} className={`role-card ${big ? 'role-big' : 'role-small'} ${preset === role ? 'is-preset' : ''}`} autoFocus={preset === role}
+            onClick={() => void signIn(role)} disabled={pending !== null} aria-busy={pending === role}>
+      <span className="role-icon"><Icon size={big ? 20 : 16} aria-hidden="true" /></span>
+      <span className="role-text"><strong>{roleNames[role]}</strong><span>{does}</span></span>
+      {pending === role ? <em>Signing in…</em> : <ArrowRight className="role-go" size={16} aria-hidden="true" />}
+    </button>
+  );
   return (
     <main className="login" id="main">
-      <section className="login-card" aria-labelledby="login-title">
-        <div className="brand brand-large"><Activity size={22} aria-hidden="true" />SentinelWard</div>
-        <h1 id="login-title">Choose your role</h1>
-        <p className="login-lead">
-          Patient, sensor, or hacker: every reading on this station comes with the evidence behind it.
-          Each role sees only the screens and buttons it needs.
-        </p>
-        <div className="role-grid">
-          {ROLES.map(({role, icon: Icon, does}) => (
-            <button key={role} className={`role-card ${preset === role ? 'is-preset' : ''}`} autoFocus={preset === role} onClick={() => void signIn(role)} disabled={pending !== null}
-                    aria-busy={pending === role}>
-              <Icon size={20} aria-hidden="true" />
-              <strong>{roleNames[role]}</strong>
-              <span>{does}</span>
-              {pending === role && <em>Signing in…</em>}
-            </button>
-          ))}
+      <aside className="login-side" aria-hidden="false">
+        <Link to="/" className="login-home"><ArrowLeft size={15} aria-hidden="true" />SentinelWard home</Link>
+        <div className="login-side-body">
+          <div className="login-mark"><Activity size={22} aria-hidden="true" /></div>
+          <p className="login-quote">Patient, sensor,<br />or hacker?</p>
+          <p className="login-side-text">Every reading on this station comes with the evidence behind it, and every action can be undone.</p>
         </div>
-        {error && <p className="login-error" role="alert">{error}</p>}
-        <p className="login-foot">
-          Demo mode: one-click role sign-in is on for judges. Real password sign-in (hashed passwords,
-          lockout, session expiry) is built in and can replace it.
-        </p>
+        <ul className="login-facts">
+          <li><span>12</span>beds watched live</li>
+          <li><span>6</span>independent checks per bed</li>
+          <li><span>5 s</span>from signal to verdict</li>
+        </ul>
+      </aside>
+      <section className="login-main" aria-labelledby="login-title">
+        <div className="login-top"><ThemeToggle scope="landing" /></div>
+        <div className="login-panel">
+          <h1 id="login-title">Sign in to SentinelWard</h1>
+          <p className="login-lead">Choose your role. Each role sees only the screens and buttons it needs.</p>
+          <div className="role-list">{ROLES.slice(0, 3).map(r => card(r, true))}</div>
+          <p className="role-more">Other roles</p>
+          <div className="role-row">{ROLES.slice(3).map(r => card(r, false))}</div>
+          {error && <p className="login-error" role="alert">{error}</p>}
+          <p className="login-foot"><Lock size={13} aria-hidden="true" />Demo environment: one-click sign-in for judges, synthetic patients. Hashed-password sign-in with lockout and session expiry is built in and can replace it.</p>
+        </div>
       </section>
     </main>
   );

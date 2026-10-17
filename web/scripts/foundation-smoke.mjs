@@ -1,0 +1,11 @@
+import {chromium} from 'playwright';
+import fs from 'node:fs/promises';
+const browser=await chromium.launch({headless:true,executablePath:'/Users/aditya/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell'});
+const page=await browser.newPage({viewport:{width:1440,height:900}});
+page.on('pageerror',e=>console.log('PAGEERROR',e.message));
+page.on('console',m=>{if(m.type()==='error')console.log('CONSOLE',m.text())});
+await page.goto('http://127.0.0.1:5181/dev/ui');
+await page.getByRole('heading',{name:'SentinelWard UI'}).waitFor();
+await page.screenshot({path:'/Users/aditya/Desktop/sentinelward/.work/shots/codex-fefound/dev-ui-initial.png',fullPage:true});
+console.log(await page.evaluate(()=>({width:innerWidth,body:document.body.scrollWidth,theme:document.documentElement.dataset.theme,buttons:[...document.querySelectorAll('.ui-gallery-row')].map(e=>({width:e.scrollWidth,client:e.clientWidth})).filter(e=>e.width>e.client),chips:[...document.querySelectorAll('.state-chip')].map(e=>({text:e.textContent,bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}))})));
+await browser.close();

@@ -1,4 +1,5 @@
 import {useEffect, useRef} from 'react';
+import {useThemeTokens, seriesColour} from '../lib/theme';
 
 export interface Series {label: string; color: string; values: (number | null)[]; unit?: string}
 
@@ -10,6 +11,7 @@ export interface Series {label: string; color: string; values: (number | null)[]
 export function TrendChart({ts, series, untrusted, height = 150, label}: {
   ts: number[]; series: Series[]; untrusted?: boolean[]; height?: number; label: string;
 }) {
+  const tokens = useThemeTokens();
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -21,7 +23,7 @@ export function TrendChart({ts, series, untrusted, height = 150, label}: {
       if (!c) return;
       c.scale(dpr, dpr);
       c.clearRect(0, 0, width, h);
-      c.strokeStyle = 'rgba(125,147,178,.12)';
+      c.strokeStyle = tokens['--wave-grid'];
       c.lineWidth = 1;
       for (let y = 0; y <= 4; y++) { c.beginPath(); c.moveTo(0, 8 + y * (h - 16) / 4); c.lineTo(width, 8 + y * (h - 16) / 4); c.stroke(); }
       if (ts.length < 2) return;
@@ -32,7 +34,7 @@ export function TrendChart({ts, series, untrusted, height = 150, label}: {
         pattern.width = pattern.height = 10;
         const p = pattern.getContext('2d');
         if (p) {
-          p.strokeStyle = 'rgba(138,148,166,.45)'; p.lineWidth = 3;
+          p.strokeStyle = tokens['--wave-frozen']; p.lineWidth = 3;
           p.beginPath(); p.moveTo(0, 10); p.lineTo(10, 0); p.stroke();
           const fill = c.createPattern(pattern, 'repeat');
           if (fill) {
@@ -54,7 +56,7 @@ export function TrendChart({ts, series, untrusted, height = 150, label}: {
         let lo = Math.min(...nums), hi = Math.max(...nums);
         if (hi - lo < 10) { const mid = (hi + lo) / 2; lo = mid - 5; hi = mid + 5; }
         const y = (v: number) => h - 10 - (v - lo) / (hi - lo) * (h - 20);
-        c.strokeStyle = s.color; c.lineWidth = 1.6; c.beginPath();
+        c.strokeStyle = seriesColour(s.label,tokens); c.lineWidth = 1.6; c.beginPath();
         let pen = false;
         s.values.forEach((v, i) => {
           if (typeof v !== 'number') { pen = false; return; }
@@ -67,7 +69,7 @@ export function TrendChart({ts, series, untrusted, height = 150, label}: {
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [ts, series, untrusted]);
+  }, [ts, series, untrusted, tokens]);
   return (
     <div className="trend" style={{height}}>
       <canvas ref={ref} role="img" aria-label={label} />

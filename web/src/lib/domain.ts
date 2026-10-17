@@ -21,7 +21,7 @@ export const certFields:{group:string;fields:[string,string][]}[]=[
 ];
 export const longFields=new Set(['address','symptoms','actions_taken','evidence_summary']);
 export function dateTime(ts:number|null|undefined){return ts?new Date(ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'Not recorded';}
-export function staff(id:unknown){return typeof id==='string'?id.replace(/^staff:/,'').replace(/^./,c=>c.toUpperCase()):'—';}
+export function staff(id:unknown){return typeof id==='string'?id.replace(/^staff:/,'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()):'—';}
 export function bytes(n:unknown){return typeof n==='number'?n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`:'—';}
 export function score01(n:unknown){return typeof n==='number'&&Number.isFinite(n)?n.toFixed(2):'—';}
 export function downloadName(...parts:string[]){return parts.join('_').replace(/[^\w.-]+/g,'_').replace(/(\.json)?$/,'.json');}

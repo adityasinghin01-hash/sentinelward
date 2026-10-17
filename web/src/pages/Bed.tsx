@@ -1,12 +1,14 @@
 import {Fragment, useMemo, useState} from 'react';
 import type {FormEvent} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, ClipboardCheck, X, Eye, EyeOff} from 'lucide-react';
+import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, ClipboardCheck, X} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {age, bedState, can, displayVitals, modelChecks, score01, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
 import type {BedDetail, HistoryPoint, Score} from '../lib/types';
 import {ActionList, Badge, Empty, Feedback, Panel, ResourceState, Tip, Trust} from '../components/ui';
+import {tileView} from '../components/ward/tile';
+import {AlertTriangle as BandAlert, ShieldAlert as BandShield, Activity as BandActivity, Unplug as BandUnplug, Circle as BandCircle} from 'lucide-react';
 import {Chip, Fact, Meter} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
@@ -41,6 +43,7 @@ function WhyPanel({detail, now}: {detail: BedDetail; now: number}) {
       <p className="directive" title="What the system asks staff to do for this bed now.">
         <ClipboardCheck size={14} aria-hidden="true" /> {detail.requested_action || 'Continue monitoring'}
       </p>
+      <details className="engineering-details"><summary>Engineering details</summary>
       <h3 className="sub-heading">The six checks <span className="muted">(0 = no concern, 1 = strong concern)</span></h3>
       <div className="checks">
         {Object.entries(modelChecks).map(([key, meta]) => {
@@ -49,7 +52,7 @@ function WhyPanel({detail, now}: {detail: BedDetail; now: number}) {
           return (
             <Fragment key={key}>
               <div className="check-row">
-                <span className="check-key mono">{key}</span>
+                <span className="check-key mono" title="Engineering check identifier">{key}</span>
                 <span className="check-name">{meta.label}</span>
                 <Meter value={s?.score} hint={`${meta.meaning} ${na ? 'Not applicable in this window.' : ''}`} />
                 <span className="check-reason">{s?.reason || (s ? '' : 'No score received yet')}</span>
@@ -59,6 +62,7 @@ function WhyPanel({detail, now}: {detail: BedDetail; now: number}) {
           );
         })}
       </div>
+      </details>
     </Panel>
   );
 }
@@ -130,7 +134,7 @@ function BedsidePanel({detail, untrusted}: {detail: BedDetail; untrusted: boolea
                 onClick={() => void check.run(`/api/beds/${encodeURIComponent(bed)}/bedside-check`, {type: 'confirm_bedside', bedId: bed, status: 'patient_ok'})}>
           <Check size={14} aria-hidden="true" /> Patient OK
         </button>
-        <button disabled={!allowed || check.pending} title={allowed ? 'Record that the patient is NOT fine: escalate care now.' : 'Only nurses and doctors record bedside checks.'}
+        <button className="danger" disabled={!allowed || check.pending} title={allowed ? 'Record that the patient is NOT fine: escalate care now.' : 'Only nurses and doctors record bedside checks.'}
                 onClick={() => void check.run(`/api/beds/${encodeURIComponent(bed)}/bedside-check`, {type: 'confirm_bedside', bedId: bed, status: 'patient_not_ok'})}>
           <X size={14} aria-hidden="true" /> Patient NOT OK
         </button>
@@ -172,7 +176,6 @@ export function BedPage() {
   const actions = useWard(s => s.actions);
   const alerts = useWard(s => s.alerts);
   const hidden = useWard(s => s.hidden);
-  const toggleHidden = useWard(s => s.setHidden);
   const now = useNow();
   const res = useResource<BedDetail>(`/api/beds/${encodeURIComponent(bedId)}`, 3000);
   const hist = useResource<{points: HistoryPoint[]}>(`/api/beds/${encodeURIComponent(bedId)}/history?minutes=30`, 15000);
@@ -186,9 +189,9 @@ export function BedPage() {
     return {
       ts: p.map(x => x.ts), untrusted: p.map(x => !x.trusted),
       series: [
-        {label: 'HR', unit: 'bpm', color: '#7FD1A8', values: p.map(x => x.hr)},
-        {label: 'SpO₂', unit: '%', color: '#B8C9E0', values: p.map(x => x.spo2)},
-        {label: 'BP sys', unit: 'mmHg', color: '#80AEE5', values: p.map(x => x.sys ?? x.abp_mean ?? null)},
+        {label: 'HR', unit: 'bpm', color: 'var(--wave-ecg)', values: p.map(x => x.hr)},
+        {label: 'SpO₂', unit: '%', color: 'var(--wave-pleth)', values: p.map(x => x.spo2)},
+        {label: 'BP sys', unit: 'mmHg', color: 'var(--wave-abp)', values: p.map(x => x.sys ?? x.abp_mean ?? null)},
       ],
       rr: [...p].reverse().find(x => typeof x.rr === 'number')?.rr ?? null,
     };
@@ -215,20 +218,25 @@ export function BedPage() {
   const clinical = can(role, 'clinical');
   const bedActions = actions.filter(a => a.bed_id === bedId || a.device_id === detail.device_id).slice(0, 10);
   const frozenAt = detail.last_trusted?.captured_at;
+  const tv = tileView(detail, alerts, now);
+  const vv = verdictView(detail);
+  const cause = tv.key === 'ALARM_OPEN' ? 'An emergency alert is open on this bed. Go now and check the patient by hand.'
+    : tv.group === 'emergency' ? vv.headline.replace(' — ', '. ').replace(/^./, c => c.toUpperCase())
+    : tv.key === 'UNSURE' ? `The checks disagree, so the patient must be checked by hand.${vv.why ? ' ' + vv.why.replace(/^Blocked by: /, 'Reason: ') : ''}`
+    : tv.reason || 'All checks agree. Keep monitoring.';
+  const BandIcon = tv.tone === 'ok' ? BandCircle : tv.tone === 'security' || tv.tone === 'both' ? BandShield : tv.tone === 'maint' ? BandActivity : tv.tone === 'nodata' ? BandUnplug : BandAlert;
 
   return (
     <div className="page bed-page">
-      <div className={`bed-header alarm-bar-${state.tone} ${state.untrusted ? 'untrusted' : ''}`}>
+      <div className={`bed-header tone-${tv.tone}`}>
+        <div className="bed-head-row">
         <Link to="/ward" className="back" title="Back to all beds"><ArrowLeft size={16} aria-hidden="true" /> Ward</Link>
         <h1>Bed {detail.bed_id.replace(/^B0?/, '')}</h1>
-        <span className="patient">{!hidden && detail.patient ? `${detail.patient.initials} · ${detail.patient.age ?? '—'} ${detail.patient.sex ?? ''}` : 'Identity hidden'}</span>
-        <Badge tone={state.tone} icon={detail.verdict === 'NORMAL' ? 'check' : detail.verdict === 'DEVICE_ATTACK' ? 'shield' : 'status'}>{state.label}</Badge>
+        <span className="patient">{!hidden && detail.patient ? `${detail.patient.initials} · ${detail.patient.age ?? '—'} ${detail.patient.sex ?? ''}` : ''}</span>
         <Tip text="Monitor ID, as the IT security screen shows it."><span className="mono muted">{detail.device_id}</span></Tip>
         <div className="bed-header-actions">
-          <button className="toggle" onClick={toggleHidden} aria-pressed={!hidden} title="Show or hide patient initials, age and sex.">
-            {hidden ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}{hidden ? 'Hidden' : 'Shown'}
-          </button>
-          <button disabled={!clinical || !openAlert || alertCmd.pending}
+
+          <button className="button-primary" disabled={!clinical || !openAlert || alertCmd.pending}
                   title={!clinical ? 'Only nurses and doctors acknowledge alerts.' : !openAlert ? 'No open alert on this bed.' : 'I am on it: stops the escalation ladder.'}
                   onClick={() => openAlert && void alertCmd.run(`/api/alerts/${encodeURIComponent(openAlert.alert_id)}/ack`, {})}>
             <Check size={14} aria-hidden="true" /> Acknowledge
@@ -245,20 +253,26 @@ export function BedPage() {
             </button>
           )}
         </div>
+        </div>
+        <div className="bed-band" role={tv.group === 'emergency' ? 'alert' : undefined}>
+          <BandIcon size={18} aria-hidden="true" />
+          <b>{tv.word}</b>
+          <span className="bed-cause">{cause}</span>
+          {tv.footer && !/cut off/i.test(tv.reason) && <span className="bed-band-foot">{tv.footer}</span>}
+        </div>
       </div>
       <Feedback message={alertCmd.feedback || callCmd.feedback} failed={alertCmd.failed || callCmd.failed} />
       <ResourceState loading={false} error={res.error} retry={() => void res.reload()} />
-      {(detail.verdict === 'BOTH' || (detail.verdict === 'EMERGENCY' && detail.isolated)) && <p className="go-now" role="alert">{verdictView(detail).headline}</p>}
 
       <div className="bed-layout">
         <div className="bed-main">
           <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
                  caption={state.untrusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'Most recent samples from the monitor, about 25 per second.'}
-                 aside={<Trust bed={detail} />} className={state.untrusted ? 'striped-panel' : ''}>
+                 aside={<Trust bed={detail} />} className={state.untrusted ? 'untrusted-panel' : ''}>
             {state.untrusted && (
-              <div className="last-good big">▨ UNTRUSTED · {frozenAt ? `last good ${time(frozenAt, true)} · ${age(frozenAt, now)} ago` : 'no trusted reading yet · check by hand'}</div>
+              <div className="last-good big">Not trusted · showing the last good recording{frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ' (none yet: check by hand)'}</div>
             )}
-            {state.offline && <div className="data-age">◷ NO DATA · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'not yet received'}</div>}
+            {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
             <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} />
             <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} />
             <div className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>

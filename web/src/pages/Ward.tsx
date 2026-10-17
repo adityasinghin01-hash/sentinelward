@@ -1,90 +1,96 @@
-import {useMemo, useRef} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import type {KeyboardEvent} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {Eye, EyeOff, Bell, Check, ExternalLink} from 'lucide-react';
+import {Link, useNavigate} from 'react-router-dom';
+import {Check, ExternalLink} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow, useCommand} from '../lib/hooks';
-import {bedState, time, age, staff, openAlerts, trustView} from '../lib/domain';
+import {age, staff, openAlerts} from '../lib/domain';
 import type {Alert, Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
-import {Stats, Panel, Badge, ActionList, Empty, Feedback, BedLink} from '../components/ui';
+import {ActionList, Feedback, Button, StateChip} from '../components/ui';
+import {alertLine, orderBeds, tileView} from '../components/ward/tile';
+import type {TileGroup, TileView} from '../components/ward/tile';
 
 const PRIORITY_ORDER = {high: 0, medium: 1, low: 2, none: 3} as const;
 
-function AlertRail({alerts, beds}: {alerts: Alert[]; beds: Bed[]}) {
+function AlertRail({alerts}: {alerts: Alert[]}) {
   const role = useWard(s => s.session?.role);
   const now = useNow();
   const navigate = useNavigate();
   const cmd = useCommand();
-  const open = openAlerts(alerts)
-    .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] || b.ts - a.ts);
+  const open = openAlerts(alerts).sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] || b.ts - a.ts);
   const canAck = role === 'nurse' || role === 'doctor'; // matches the backend: nurses and doctors acknowledge
   return (
-    <Panel title="Active alerts" caption="One alert per bed per event; repeats update it, never stack."
-           aside={<Badge tone={open.some(a => a.priority === 'high') ? 'high' : 'none'}>{open.length} open</Badge>}>
+    <section className="rail-card" aria-label="Open alerts">
+      <div className="rail-head"><h2>Open alerts</h2><span className="rail-count">{open.length}</span></div>
       {open.length === 0 ? (
-        <Empty title="No open alerts" detail="When the AI raises an alert it appears here and on the nurse's phone." />
+        <p className="rail-empty">No open alerts. New alerts appear here and on the nurse's phone.</p>
       ) : (
         <ul className="alert-list">
-          {open.map(a => {
-            const bed = beds.find(b => b.bed_id === a.bed_id);
-            return (
-              <li key={a.alert_id} className={`alert-item alarm-edge-${a.priority}`}>
-                <div className="alert-head">
-                  <Badge tone={a.priority}>{a.verdict.replace('_', ' ')}</Badge>
-                  <BedLink id={a.bed_id} />
-                  <span className="alert-age" title="Time since this alert was raised">{age(a.ts, now)}</span>
-                </div>
-                <p className="alert-text">{a.text}</p>
-                <p className="alert-ladder" title="Escalation ladder: 1 = assigned nurse, 2 = next nurse, 3 = all nurses + doctor. Each step waits 30 s in the demo.">
-                  <Bell size={12} aria-hidden="true" /> Ladder step {a.ladder_step} of 3 · sent to {a.to.map(staff).join(', ') || 'ward'}
-                  {bed && !bed.is_trusted && ' · do not trust screen numbers'}
-                </p>
-                <div className="alert-actions">
-                  <button className="button-small" disabled={!canAck || cmd.pending}
-                          title={canAck ? 'I am on it: stops the escalation ladder for this alert.' : 'Only nurses and doctors acknowledge alerts.'}
-                          onClick={() => void cmd.run(`/api/beds/${encodeURIComponent(a.bed_id)}/acknowledge`, {type: 'acknowledge_alert', bedId: a.bed_id, alertId: a.alert_id})}>
-                    <Check size={13} aria-hidden="true" /> Acknowledge
-                  </button>
-                  <button className="button-small ghost" onClick={() => navigate(`/bed/${a.bed_id}`)}
-                          title="Open this bed's readings, the six AI checks and the evidence.">
-                    <ExternalLink size={13} aria-hidden="true" /> Open bed
-                  </button>
-                </div>
-              </li>
-            );
-          })}
+          {open.map(a => (
+            <li key={a.alert_id} className={`alert-item p-${a.priority}`}>
+              <div className="alert-head">
+                <Link className="alert-bed" to={`/bed/${a.bed_id}`}>{a.bed_id}</Link>
+                <span className="alert-age" title="Time since this alert was raised">{age(a.ts, now)}</span>
+              </div>
+              <StateChip state={a.verdict} className="alert-chip" />
+              <p className="alert-text" title={a.text}>{alertLine(a)}</p>
+              <p className="alert-ladder" title="Escalation: 1 = assigned nurse, 2 = next nurse, 3 = all nurses + doctor. Each step waits 30 s in the demo.">
+                <span className="ladder-dots" aria-hidden="true">{[1, 2, 3].map(i => <i key={i} className={i <= a.ladder_step ? 'on' : ''} />)}</span>
+                Step {a.ladder_step} of 3 · {a.to.map(staff).join(', ') || 'ward'}
+              </p>
+              <div className="alert-actions">
+                <Button variant="primary" size={40} disabled={!canAck || cmd.pending}
+                        hint={canAck ? 'I am on it: stops the escalation for this alert.' : 'Only nurses and doctors acknowledge alerts.'}
+                        onClick={() => void cmd.run(`/api/beds/${encodeURIComponent(a.bed_id)}/acknowledge`, {type: 'acknowledge_alert', bedId: a.bed_id, alertId: a.alert_id})}>
+                  <Check size={15} aria-hidden="true" /> Acknowledge
+                </Button>
+                <Button variant="secondary" size={40} onClick={() => navigate(`/bed/${a.bed_id}`)} hint="Open this bed: readings, the checks and the evidence.">
+                  <ExternalLink size={14} aria-hidden="true" /> Open
+                </Button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
       <Feedback message={cmd.feedback} failed={cmd.failed} />
-    </Panel>
+    </section>
   );
 }
+
+const FILTERS: {key: TileGroup | 'all'; label: string; dot: string}[] = [
+  {key: 'all', label: 'All beds', dot: ''},
+  {key: 'emergency', label: 'Emergency', dot: 'emergency'},
+  {key: 'security', label: 'Monitor hacked', dot: 'security'},
+  {key: 'check', label: 'Check by hand', dot: 'check'},
+  {key: 'nosignal', label: 'No signal', dot: 'nodata'},
+  {key: 'normal', label: 'Normal', dot: 'ok'},
+];
 
 export function WardPage() {
   const beds = useWard(s => s.beds);
   const alerts = useWard(s => s.alerts);
   const actions = useWard(s => s.actions);
   const hidden = useWard(s => s.hidden);
-  const toggleHidden = useWard(s => s.setHidden);
   const error = useWard(s => s.error);
   const now = useNow();
   const navigate = useNavigate();
   const grid = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState<TileGroup | 'all'>('all');
 
-  const summary = useMemo(() => {
-    const states = beds.map(b => bedState(b, now));
-    const open = openAlerts(alerts);
-    const untrusted = states.filter(s => s.untrusted).length;
-    const trusts = beds.map(b => trustView(b).value).filter((t): t is number => t !== null);
-    const avg = trusts.length ? trusts.reduce((x, y) => x + y, 0) / trusts.length : null;
-    return {open: open.length, high: open.filter(a => a.priority === 'high').length, untrusted, avg,
-            notTrusted: beds.length - trusts.length, offline: states.filter(s => s.offline).length};
-  }, [beds, alerts, now]);
+  const views = useMemo(() => new Map<string, TileView>(beds.map(b => [b.bed_id, tileView(b, alerts, now)])), [beds, alerts, now]);
+  const ordered = useMemo<Bed[]>(() => orderBeds(beds, views), [beds, views]);
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {all: beds.length};
+    for (const v of views.values()) c[v.group] = (c[v.group] || 0) + 1;
+    c.check = (c.check || 0) + (c.maint || 0);
+    return c;
+  }, [views, beds.length]);
+  const matches = (g: TileGroup) => filter === 'all' || g === filter || (filter === 'check' && g === 'maint');
 
   // Arrow keys move between tiles in reading order; Enter opens the bed (links handle Enter).
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const tiles = Array.from(grid.current?.querySelectorAll<HTMLAnchorElement>('.bed-title') ?? []);
+    const tiles = Array.from(grid.current?.querySelectorAll<HTMLAnchorElement>('.tile-link') ?? []);
     const i = tiles.indexOf(document.activeElement as HTMLAnchorElement);
     if (i < 0) return;
     const cols = getComputedStyle(grid.current!).gridTemplateColumns.split(' ').length;
@@ -96,40 +102,34 @@ export function WardPage() {
 
   return (
     <div className="page ward-page">
-      <div className="ward-summary">
-        <Stats items={[
-          {label: 'Beds', value: beds.length, hint: 'Beds this station is watching.', sub: summary.offline ? `${summary.offline} with no data now` : 'all reporting'},
-          {label: 'Open alerts', value: summary.open, hint: 'Alerts nobody has acknowledged and the agents have not closed: the same list as Active alerts on the right and the Open tab on Alerts.', sub: summary.high ? `${summary.high} high priority` : 'none high'},
-          {label: 'Untrusted', value: summary.untrusted, hint: 'Beds whose incoming data is not trusted; the screen shows their last trusted values instead.'},
-          {label: 'Average trust', value: summary.avg === null ? '—' : summary.avg.toFixed(2), hint: 'Mean data-trust score, 0 to 1, over beds with a live checked monitor. Cut-off, offline and not-yet-checked monitors are left out: their data is not trusted.', sub: summary.notTrusted ? `${summary.notTrusted} bed${summary.notTrusted === 1 ? '' : 's'} not scored` : undefined},
-        ]} />
-        <button className="toggle" onClick={toggleHidden} aria-pressed={!hidden}
-                title={hidden ? 'Show patient initials, age and sex on the tiles.' : 'Hide patient details (privacy default).'}>
-          {hidden ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
-          {hidden ? 'Names hidden' : 'Names shown'}
-        </button>
+      <div className="ward-strip" role="toolbar" aria-label="Filter beds by state">
+        <span className="strip-title">Ward</span>
+        {FILTERS.map(f => (
+          <button key={f.key} className="strip-btn" aria-pressed={filter === f.key} onClick={() => setFilter(filter === f.key && f.key !== 'all' ? 'all' : f.key)}>
+            {f.dot && <span className={`dot ${f.dot}`} aria-hidden="true" />}{f.label}<b>{counts[f.key] || 0}</b>
+          </button>
+        ))}
+        <span className="strip-meta">Problem beds first · click a bed to open it</span>
       </div>
       {error && <p className="notice" role="status">{error} The last received information stays on screen.</p>}
       <div className="ward-layout">
         {beds.length === 0 ? (
-          <div className="bed-grid skeleton-grid" aria-busy="true">
-            {Array.from({length: 12}, (_, i) => <div key={i} className="bed-tile skeleton-tile" />)}
-          </div>
+          <div className="bed-grid" aria-busy="true">{Array.from({length: 12}, (_, i) => <div key={i} className="skeleton-tile" />)}</div>
         ) : (
-          <div className="bed-grid" ref={grid} onKeyDown={onKey} aria-label="Bed tiles. Use arrow keys to move, Enter to open.">
-            {beds.map(b => <BedTile key={b.bed_id} bed={b} hidden={hidden} now={now} />)}
+          <div className={`bed-grid ${filter !== 'all' ? 'filtered' : ''}`} ref={grid} onKeyDown={onKey} aria-label="Beds. Use arrow keys to move, Enter to open.">
+            {ordered.map(b => (
+              <div key={b.bed_id} className={`tile-slot ${matches(views.get(b.bed_id)!.group) ? 'match' : ''}`} style={{display: 'contents'}}>
+                <BedTile bed={b} hidden={hidden} now={now} alerts={alerts} />
+              </div>
+            ))}
           </div>
         )}
         <aside className="ward-rail">
-          <AlertRail alerts={alerts} beds={beds} />
-          <Panel title="Recent events" caption={`Automatic and staff actions · updated ${time(now)}`}>
-            <ActionList actions={actions.slice(0, 8)} />
-            {actions.length > 8 && (
-              <button className="button-small ghost" onClick={() => navigate('/log')} title="See all actions with undo.">
-                Full action log
-              </button>
-            )}
-          </Panel>
+          <AlertRail alerts={alerts} />
+          <section className="rail-card" aria-label="Recent events">
+            <div className="rail-head"><h2>Recent events</h2><button className="strip-btn" onClick={() => navigate('/log')}>Full log</button></div>
+            <ActionList actions={actions.slice(0, 6)} />
+          </section>
         </aside>
       </div>
     </div>

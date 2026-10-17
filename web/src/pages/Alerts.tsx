@@ -50,7 +50,7 @@ function AlertSheet({alert, onClose}: {alert: Alert; onClose: () => void}) {
       <h3 className="sub-heading">Message as sent</h3>
       <blockquote className="message">{alert.text}</blockquote>
       <div className="sheet-actions">
-        <button disabled={!clinical || !isOpen(alert) || cmd.pending} title={clinical ? 'I am on it: stops the escalation ladder.' : 'Only nurses and doctors acknowledge alerts.'}
+        <button className="button-primary" disabled={!clinical || !isOpen(alert) || cmd.pending} title={clinical ? 'I am on it: stops the escalation ladder.' : 'Only nurses and doctors acknowledge alerts.'}
                 onClick={() => void cmd.run(`/api/alerts/${encodeURIComponent(alert.alert_id)}/ack`, {})}>
           <Check size={14} aria-hidden="true" /> Acknowledge
         </button>
