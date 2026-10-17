@@ -183,8 +183,6 @@ All boxes except the monitors' sources, the phones and the screens' browsers run
 | `deploy/` | Server deploy, systemd units, containers |
 | `docs/` | Architecture, specs, evidence pack, video script |
 
-`agents/`, `frontend/`, `ml/`, `security/` are the teammates' first versions, kept for history (see the end of this file).
-
 ## Honest limits
 - Lab ward with replayed recordings, not a clinical device; not approved for clinical use.
 - Confidence and trust are uncalibrated heuristic numbers (`brain/README.md`).
@@ -204,16 +202,44 @@ All boxes except the monitors' sources, the phones and the screens' browsers run
 
 Built during the event with AI coding assistants (Claude Code, Codex, Kiro).
 
-## Open source
-Full list with versions and links: [`docs/OPEN-SOURCE.md`](docs/OPEN-SOURCE.md). Main parts: [Ubuntu s390x](https://ubuntu.com/download/server/s390x) · [Eclipse Mosquitto](https://mosquitto.org/) · [PostgreSQL](https://www.postgresql.org/) · [Docker](https://www.docker.com/) · [IBM Granite](https://github.com/ibm-granite) · [llama.cpp](https://github.com/ggml-org/llama.cpp) · [IBM LinuxONE lab image](https://github.com/linuxone-community-cloud/jupyter-lab-ml) · [scikit-learn](https://scikit-learn.org/) · [NumPy](https://numpy.org/) · [SciPy](https://scipy.org/) · [FastAPI](https://fastapi.tiangolo.com/) · [React](https://react.dev/). Data: [PhysioNet/CinC 2015](https://physionet.org/content/challenge-2015/1.0.0/) · [VTaC](https://physionet.org/content/vtac/1.0/) · [MIMIC-III Waveform Matched Subset](https://physionet.org/content/mimic3wdb-matched/1.0/) · [VitalDB](https://vitaldb.net/).
+## Sources / open-source
 
-## Where each folder came from
+SentinelWard uses third-party software, models and datasets. Component uses and
+version-manifest locations are documented in [docs/OPEN-SOURCE.md](docs/OPEN-SOURCE.md);
+server and web dependencies are recorded in `deploy/requirements-server.txt`, the
+Python packages' `pyproject.toml` files, and `web/package.json` / `web/package-lock.json`.
+These upstream works are credited separately from the team's application code.
 
-Each teammate built their part in their own repo. This repo copies them in, one commit per part, authored by that teammate:
+- **Data:** [PhysioNet/CinC Challenge 2015](https://physionet.org/content/challenge-2015/1.0.0/)
+  and [VTaC](https://physionet.org/content/vtac/1.0/) for M2 alarm training/evaluation;
+  [MIMIC-III Waveform Database Matched Subset](https://physionet.org/content/mimic3wdb-matched/1.0/)
+  for background ward recordings; [VitalDB](https://vitaldb.net/) for arterial-line/cuff recordings.
+- **Platform and model:** [Ubuntu s390x](https://ubuntu.com/download/server/s390x),
+  [Eclipse Mosquitto](https://mosquitto.org/) (EPL-2.0 / EDL-1.0), [PostgreSQL](https://www.postgresql.org/) (PostgreSQL License),
+  [Docker](https://www.docker.com/) and [Compose](https://docs.docker.com/compose/) (Apache-2.0),
+  [OpenSSL](https://www.openssl.org/) (Apache-2.0), and [systemd](https://systemd.io/) (LGPL-2.1+).
+  Shift briefings use [IBM Granite](https://github.com/ibm-granite) (Apache-2.0 weights) through
+  [llama.cpp](https://github.com/ggml-org/llama.cpp) /
+  [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) (MIT) in
+  [IBM's LinuxONE lab image](https://github.com/linuxone-community-cloud/jupyter-lab-ml).
+  The AI-chip second opinion (a 1D-CNN run live on the z17 NNPA, shown only, never used in decisions) uses
+  [PyTorch](https://pytorch.org/) (BSD-3-Clause) with IBM's `torch_nnpa` from the same lab image.
+- **Python libraries:** [NumPy](https://numpy.org/), [SciPy](https://scipy.org/),
+  [scikit-learn](https://scikit-learn.org/) (all BSD-3-Clause),
+  [WFDB](https://github.com/MIT-LCP/wfdb-python) (MIT), [vitaldb](https://github.com/vitaldb/vitaldb-python),
+  [FastAPI](https://fastapi.tiangolo.com/) and [Pydantic](https://docs.pydantic.dev/) (MIT),
+  [Uvicorn](https://www.uvicorn.org/) and [websockets](https://websockets.readthedocs.io/) (BSD-3-Clause),
+  [Paho MQTT](https://github.com/eclipse-paho/paho.mqtt.python) (EPL-2.0 / EDL-1.0),
+  [psycopg](https://www.psycopg.org/) (LGPL-3.0), [HTTPX](https://www.python-httpx.org/) (BSD-3-Clause),
+  [PyYAML](https://pyyaml.org/) and [pytest](https://pytest.org/) (MIT).
+- **Web libraries and tools:** [React](https://react.dev/), [React Router](https://reactrouter.com/),
+  [Vite](https://vite.dev/), [Zustand](https://github.com/pmndrs/zustand), [uPlot](https://github.com/leeoniya/uPlot),
+  [jsPDF](https://github.com/parallax/jsPDF), [Vitest](https://vitest.dev/) (all MIT),
+  [TypeScript](https://www.typescriptlang.org/) (Apache-2.0), [Lucide](https://lucide.dev/) (ISC),
+  [IBM Plex fonts via Fontsource](https://fontsource.org/fonts/ibm-plex-sans) (OFL-1.1),
+  [Testing Library](https://testing-library.com/), [jsdom](https://github.com/jsdom/jsdom) (MIT),
+  [Playwright](https://playwright.dev/) (Apache-2.0) and [axe-core](https://github.com/dequelabs/axe-core) (MPL-2.0).
 
-| Folder | Source repo | Commit copied |
-|---|---|---|
-| `agents/` | github.com/adityavijay3659-sketch/SentinelWard, branch `phase/6-verification` | `4ac8c8b` |
-| `frontend/` | github.com/aragupta1225/sentinelward-frontend | `3de7377` |
-| `ml/` | github.com/ADI238IND/sentinelward-ml, plus `components/` and the extra files from its `SentinelWard_M1-M4_M6_D_M5-review_20261017.zip` | `79e1ad1` |
-| `security/` | github.com/kartikDevS/IBM_Datathon | `a6291f0` |
+Demo phone alerts use the [Telegram Bot API](https://core.telegram.org/bots/api).
+Dataset access and reuse remain subject to each provider's terms; this credit list
+makes no claim that upstream software, model weights or recordings are team-authored.
