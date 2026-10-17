@@ -3,21 +3,32 @@ from __future__ import annotations
 from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass,field
+import json
 import logging
+import os
+import time
 from sw_common import make_score
 from sw_common.topics import BEDSIDE_SUB, DEMO_CONTROL_TOPIC, NET_SUB, VITALS_SUB, score_topic, verdict_topic
-from .io import decode,publish_checked
+from .io import BEDS,decode,publish_checked
 from .windows import VitalsWindowAssembler,assemble_window
 from .detectors import DetectorSuite,LABELS,confirmed_low_pressure
 from .decision import decide
 
 log=logging.getLogger(__name__)
 
+# Longest look-back any check makes into state.messages: M6 pressure drift and the cuff low-pressure
+# safety check both use received_ms within 300 s; M4/M5 use 10 s. Older records are never read.
+HISTORY_LOOKBACK_MS=300000
+HISTORY_MARGIN_MS=30000
+HISTORY_MAX_RECORDS=4096  # hard cap kept from before (bounds a flood inside the time window)
+# tick() uses only the window that starts 10 s before the tick; 6 windows = 30 s of slack.
+WINDOWS_KEPT=6
+
 @dataclass
 class BedState:
     bed_id: str
-    messages: deque=field(default_factory=lambda:deque(maxlen=4096))
-    windows: deque=field(default_factory=lambda:deque(maxlen=120))
+    messages: deque=field(default_factory=lambda:deque(maxlen=HISTORY_MAX_RECORDS))
+    windows: deque=field(default_factory=lambda:deque(maxlen=WINDOWS_KEPT))
     chunks: deque=field(default_factory=lambda:deque(maxlen=10))
     network: dict | None=None
     last_message: dict | None=None
@@ -33,6 +44,11 @@ class BedState:
     prealarm_window: dict | None=None
     last_trusted_ts: int | None=None
 
+def _prune_history(messages,now_ms):
+    """Drop receipts older than every reader's look-back (plus margin); memory stays flat per bed."""
+    cutoff=now_ms-HISTORY_LOOKBACK_MS-HISTORY_MARGIN_MS
+    while messages and messages[0]['received_ms']<cutoff: messages.popleft()
+
 class BrainService:
     def __init__(self,bus,*,suite=None):
         self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite()
@@ -41,11 +57,14 @@ class BrainService:
         self.last_tick_ms=None
         self.invalid_incoming=0; self.invalid_outgoing=0
         self.last_control_ts=-1; self.run_started_ms=None; self.active_run_id=None
+        # Per-tick load figures (scale test); logged at INFO only with SW_BRAIN_TICK_STATS=1.
+        self.received_since_tick=0; self.tick_stats=None
+        self.log_tick_stats=os.environ.get('SW_BRAIN_TICK_STATS')=='1'
         for topic,qos in [(VITALS_SUB,0),(NET_SUB,1),(BEDSIDE_SUB,1),(DEMO_CONTROL_TOPIC,1)]: bus.subscribe(topic,self.receive,qos=qos)
     def reset(self):
         self._run_generation+=1
         # Old retained verdicts would show a bed that has not joined this run as UNSURE, or replay an old alarm to a fresh subscriber.
-        stale=set(self.beds)|set(self.last_verdicts)|{f'B{i:02d}' for i in range(1,13)}
+        stale=set(self.beds)|set(self.last_verdicts)|set(BEDS)
         clear=getattr(self.bus,'clear_retained',None)
         for bed in sorted(stale if clear else ()):
             try: clear(verdict_topic(bed))
@@ -53,6 +72,7 @@ class BrainService:
         self.beds.clear(); self.assembler.reset(); self.suite.reset(); self.last_tick_ms=None
         self.last_verdicts.clear(); self.active_run_id=None; self.run_started_ms=None
     def receive(self,topic,payload,received_ms=None,sender_id=None,received_mono_ms=None):
+        self.received_since_tick+=1
         try: receipt=decode(topic,payload,received_ms,sender_id,received_mono_ms)
         except ValueError as exc:
             self.invalid_incoming+=1
@@ -103,6 +123,7 @@ class BrainService:
         record={'message':message,'received_ms':now,'payload_bytes':receipt.payload_bytes,'sender_id':sender_id,'sequence_issue':sequence_issue}
         if receipt.received_mono_ms is not None: record['received_mono_ms']=receipt.received_mono_ms
         state.messages.append(record)
+        _prune_history(state.messages,now)
         state.last_received_ms=now
         if sequence_issue: return False
         if state.last_seq is not None and (message['seq']!=state.last_seq+1 or message['ts']!=state.last_ts+1000): state.chunks.clear()
@@ -129,6 +150,17 @@ class BrainService:
         data['ecg_leads']=next((list(c['ecg_leads']) for c in reversed(chunks) if c.get('ecg2') and c.get('ecg_leads')),None)
         return data
     def tick(self,now_ms):
+        started=time.perf_counter(); received=self.received_since_tick; self.received_since_tick=0
+        verdicts=self._tick(now_ms)
+        queue=getattr(self.bus,'queue',None)
+        self.tick_stats={'tick_ms':round((time.perf_counter()-started)*1000,2),'now_ms':int(now_ms),
+                         'beds':len(self.beds),'verdicts':len(verdicts),'msgs_in':received,
+                         'invalid_in_total':self.invalid_incoming+getattr(self.bus,'invalid_incoming',0),
+                         'dropped_total':getattr(self.bus,'dropped',0),
+                         'queue_depth':queue.qsize() if hasattr(queue,'qsize') else None}
+        if self.log_tick_stats: log.info('tick_stats %s',json.dumps(self.tick_stats,sort_keys=True))
+        return verdicts
+    def _tick(self,now_ms):
         generation=self._run_generation
         # Caller uses epoch-aligned deadlines. Negative starts are avoided during initial epoch fixtures.
         end=(int(now_ms)//5000)*5000; start=max(0,end-10000); verdicts=[]
