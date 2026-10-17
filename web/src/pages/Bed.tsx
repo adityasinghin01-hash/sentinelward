@@ -1,71 +1,24 @@
-import {Fragment, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import type {FormEvent} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, ClipboardCheck, X} from 'lucide-react';
+import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, X} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
-import {age, bedState, can, displayVitals, modelChecks, score01, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
-import type {BedDetail, HistoryPoint, Score} from '../lib/types';
-import {ActionList, Badge, Empty, Feedback, Panel, ResourceState, Tip, Trust} from '../components/ui';
-import {tileView} from '../components/ward/tile';
+import {age, bedState, can, displayVitals, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
+import type {BedDetail, HistoryPoint} from '../lib/types';
+import {Button, Empty, Feedback, Panel, ResourceState, Tip, Trust} from '../components/ui';
+import {tileView, vitalFlags} from '../components/ward/tile';
 import {AlertTriangle as BandAlert, ShieldAlert as BandShield, Activity as BandActivity, Unplug as BandUnplug, Circle as BandCircle} from 'lucide-react';
-import {Chip, Fact, Meter} from '../components/extra';
+import {Chip, Fact} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
-import {ChipOpinionPanel} from '../components/ChipOpinion';
+import {WhyPanel} from '../components/bed/WhyPanel';
+import {BedActions} from '../components/bed/BedActions';
+import {plainEvidence} from '../components/bed/copy';
 
 const CHECK_EVERY_MS = 5 * 60_000; // suggested hand-check interval for an untrusted bed (R8 S3)
 
 function num(v: unknown) { return typeof v === 'number' && Number.isFinite(v) ? v : null; }
-
-function WhyPanel({detail, now}: {detail: BedDetail; now: number}) {
-  const latest = detail.recent_verdicts[0];
-  const reasons = latest?.reasons?.length ? latest.reasons : [detail.reason || 'No reason recorded'];
-  const view = verdictView(detail);
-  const lines = [view.alarm, view.aiCheck, view.why].filter(Boolean) as string[];
-  return (
-    <Panel title="Why the AI thinks so" caption="The decision layer combines six checks into one verdict.">
-      <div className="why-verdict">
-        <span className="eyebrow">Verdict</span>
-        <strong>{view.headline}</strong>
-        {view.showConfidence && (
-          <Tip text="Confidence of the decision layer in this verdict, 0 to 1. It is not a diagnosis.">
-            <span className="mono muted">confidence {score01(latest?.confidence)}</span>
-          </Tip>
-        )}
-      </div>
-      {lines.length > 0 && (
-        <ul className="verdict-lines" aria-label="What the verdict rests on">
-          {lines.map(l => <li key={l}>{l}</li>)}
-        </ul>
-      )}
-      <ul className="reasons">{reasons.map(r => <li key={r}>{r}</li>)}</ul>
-      <p className="directive" title="What the system asks staff to do for this bed now.">
-        <ClipboardCheck size={14} aria-hidden="true" /> {detail.requested_action || 'Continue monitoring'}
-      </p>
-      <details className="engineering-details"><summary>Engineering details</summary>
-      <h3 className="sub-heading">The six checks <span className="muted">(0 = no concern, 1 = strong concern)</span></h3>
-      <div className="checks">
-        {Object.entries(modelChecks).map(([key, meta]) => {
-          const s: Score | undefined = detail.scores?.[key];
-          const na = !s || s.score === null;
-          return (
-            <Fragment key={key}>
-              <div className="check-row">
-                <span className="check-key mono" title="Engineering check identifier">{key}</span>
-                <span className="check-name">{meta.label}</span>
-                <Meter value={s?.score} hint={`${meta.meaning} ${na ? 'Not applicable in this window.' : ''}`} />
-                <span className="check-reason">{s?.reason || (s ? '' : 'No score received yet')}</span>
-              </div>
-              {key === 'M2' && <ChipOpinionPanel opinion={detail.chip_opinion} now={now} />}
-            </Fragment>
-          );
-        })}
-      </div>
-      </details>
-    </Panel>
-  );
-}
 
 function Witnesses({detail}: {detail: BedDetail}) {
   const m3 = detail.scores?.M3?.extra ?? {};
@@ -75,7 +28,7 @@ function Witnesses({detail}: {detail: BedDetail}) {
   const ecgRate = num(m3.ecg_rate_bpm), ppgRate = num(m3.ppg_rate_bpm);
   const rate = num(f.msg_rate), gaps = num(f.seq_gap_count), dups = num(f.seq_dup_count);
   return (
-    <Panel title="Two witnesses" caption="A faked signal has to fool the body and the network at the same time.">
+    <Panel title="Body and network check" caption="We compare the heartbeat with the finger pulse, then check how the monitor sends its data.">
       <div className="witness-grid">
         <div className="witness">
           <h3><HeartPulse size={14} aria-hidden="true" /> Body</h3>
@@ -84,7 +37,7 @@ function Witnesses({detail}: {detail: BedDetail}) {
                   value={pat === null ? '—' : `${Math.round(pat)} ms${base !== null ? ` (usual ${Math.round(base)})` : ''}`} />
             <Fact label="Heart vs pulse rate" hint="Rate counted from the ECG versus from the finger pulse. They should agree."
                   value={ecgRate === null ? '—' : `${Math.round(ecgRate)} / ${ppgRate === null ? '—' : Math.round(ppgRate)} bpm`} />
-            <Fact label="Finding" hint="Plain summary from the body-mismatch check (M3)." value={detail.scores?.M3?.reason || 'No score yet'} />
+            <Fact label="Finding" hint="Plain summary from the body-mismatch check (M3)." value={plainEvidence(detail.scores?.M3?.reason || 'No score yet')} />
           </dl>
         </div>
         <div className="witness">
@@ -96,7 +49,7 @@ function Witnesses({detail}: {detail: BedDetail}) {
                   value={`${gaps === null ? '—' : gaps} / ${dups === null ? '—' : dups}`} />
             <Fact label="Device link" hint="Whether the hub hears this monitor now, and whether IT has cut it off."
                   value={detail.device?.isolated ? 'Cut off by IT' : detail.device?.online ? 'Online' : 'Not heard'} />
-            <Fact label="Finding" hint="Plain summary from the network check (M5)." value={detail.scores?.M5?.reason || 'No score yet'} />
+            <Fact label="Finding" hint="Plain summary from the network check (M5)." value={plainEvidence(detail.scores?.M5?.reason || 'No score yet')} />
           </dl>
         </div>
       </div>
@@ -127,17 +80,17 @@ function BedsidePanel({detail, untrusted}: {detail: BedDetail; untrusted: boolea
   };
   const noValue = !hr.trim() && !spo2.trim();
   return (
-    <Panel title="Bedside check (the referee)" caption="The nurse at the bed decides. The result is logged and shown on the ward screen.">
+    <Panel title="Bedside check" caption="The nurse at the bed decides. The result is logged and shown on the ward screen.">
       <div className="bedside-row">
         <span>Checked the patient at the bedside?</span>
-        <button disabled={!allowed || check.pending} title={allowed ? 'Record that the patient is fine on direct check.' : 'Only nurses and doctors record bedside checks.'}
+        <Button variant="secondary" pending={check.pending} disabled={!allowed} title={allowed ? 'Record that the patient is fine on direct check.' : 'Only nurses and doctors record bedside checks.'}
                 onClick={() => void check.run(`/api/beds/${encodeURIComponent(bed)}/bedside-check`, {type: 'confirm_bedside', bedId: bed, status: 'patient_ok'})}>
           <Check size={14} aria-hidden="true" /> Patient OK
-        </button>
-        <button className="danger" disabled={!allowed || check.pending} title={allowed ? 'Record that the patient is NOT fine: escalate care now.' : 'Only nurses and doctors record bedside checks.'}
+        </Button>
+        <Button variant="danger" pending={check.pending} disabled={!allowed} title={allowed ? 'Record that the patient is NOT fine: escalate care now.' : 'Only nurses and doctors record bedside checks.'}
                 onClick={() => void check.run(`/api/beds/${encodeURIComponent(bed)}/bedside-check`, {type: 'confirm_bedside', bedId: bed, status: 'patient_not_ok'})}>
           <X size={14} aria-hidden="true" /> Patient NOT OK
-        </button>
+        </Button>
       </div>
       <p className="tiny">
         Last bedside check: {lastCheck ? `${lastCheck.result === 'patient_ok' || lastCheck.status === 'patient_ok' ? 'Patient OK' : 'Patient NOT OK'} · ${time(Number(lastCheck.ts))} by ${staff(lastCheck.by)}` : 'none recorded'}
@@ -157,10 +110,10 @@ function BedsidePanel({detail, untrusted}: {detail: BedDetail; untrusted: boolea
         <label>HR <small>bpm</small><input inputMode="numeric" value={hr} onChange={e => setHr(e.target.value.replace(/[^\d.]/g, ''))} aria-describedby="manual-hint" /></label>
         <label>SpO₂ <small>%</small><input inputMode="numeric" value={spo2} onChange={e => setSpo2(e.target.value.replace(/[^\d.]/g, ''))} /></label>
         <label className="grow">Notes<input value={notes} maxLength={400} onChange={e => setNotes(e.target.value)} placeholder="e.g. radial pulse, portable oximeter" /></label>
-        <button type="submit" disabled={!allowed || manual.pending || noValue}
+        <Button type="submit" pending={manual.pending} disabled={!allowed || noValue}
                 title={!allowed ? 'Only nurses and doctors record hand checks.' : noValue ? 'Enter at least one value.' : 'Save this hand check to the bed record.'}>
           Record hand check
-        </button>
+        </Button>
       </form>
       <p className="tiny" id="manual-hint">Hand-check values are kept separately from monitor data
         {detail.manual ? ` · last: HR ${value(detail.manual.hr)}, SpO₂ ${value(detail.manual.spo2)} at ${time(Number(detail.manual.ts))}` : ''}.</p>
@@ -218,6 +171,7 @@ export function BedPage() {
   const clinical = can(role, 'clinical');
   const bedActions = actions.filter(a => a.bed_id === bedId || a.device_id === detail.device_id).slice(0, 10);
   const frozenAt = detail.last_trusted?.captured_at;
+  const flags = vitalFlags(detail);
   const tv = tileView(detail, alerts, now);
   const vv = verdictView(detail);
   const cause = tv.key === 'ALARM_OPEN' ? 'An emergency alert is open on this bed. Go now and check the patient by hand.'
@@ -268,19 +222,19 @@ export function BedPage() {
         <div className="bed-main">
           <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
                  caption={state.untrusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'Most recent samples from the monitor, about 25 per second.'}
-                 aside={<Trust bed={detail} />} className={state.untrusted ? 'untrusted-panel' : ''}>
+                 aside={<Trust bed={detail} />} className={`bed-signals ${state.untrusted ? 'untrusted-panel' : ''}`}>
             {state.untrusted && (
               <div className="last-good big">Not trusted · showing the last good recording{frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ' (none yet: check by hand)'}</div>
             )}
             {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
+            <div role="group" aria-label="Vital signs" className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
+              <Tip text="Heart rate in beats per minute. A dash means no reading; zero is a real measurement."><div className={`vital ${flags.hr ? 'outside-limit' : ''}`}><span>HR <small>bpm</small></span><strong>{value(v?.hr)}{flags.hr && <i className="bed-vital-arrow" title="Outside alert limits">{flags.hr === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
+              <Tip text="Blood oxygen saturation from the finger sensor, in percent."><div className={`vital ${flags.spo2 ? 'outside-limit' : ''}`}><span>SpO₂ <small>%</small></span><strong>{value(v?.spo2)}{flags.spo2 && <i className="bed-vital-arrow" title="Outside alert limits">↓</i>}</strong></div></Tip>
+              <Tip text="Blood pressure, systolic / diastolic in mmHg."><div className={`vital bp ${flags.sys ? 'outside-limit' : ''}`}><span>BP <small>mmHg</small></span><strong>{value(v?.systolic)}<span>/</span>{value(v?.diastolic)}{flags.sys && <i className="bed-vital-arrow" title="Outside alert limits">{flags.sys === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
+              <Tip text="Breathing rate in breaths per minute, newest value in the 30-minute history."><div className="vital rr"><span>RR <small>/min</small></span><strong>{value(trend.rr)}</strong></div></Tip>
+            </div>
             <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} />
             <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} />
-            <div className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
-              <Tip text="Heart rate in beats per minute. A dash means no reading; zero is a real measurement."><div className="vital"><span>HR <small>bpm</small></span><strong>{value(v?.hr)}</strong></div></Tip>
-              <Tip text="Blood oxygen saturation from the finger sensor, in percent."><div className="vital"><span>SpO₂ <small>%</small></span><strong>{value(v?.spo2)}</strong></div></Tip>
-              <Tip text="Blood pressure, systolic / diastolic in mmHg."><div className="vital bp"><span>BP <small>mmHg</small></span><strong>{value(v?.systolic)}<span>/</span>{value(v?.diastolic)}</strong></div></Tip>
-              <Tip text="Breathing rate in breaths per minute, newest value in the 30-minute history."><div className="vital bp"><span>RR <small>/min</small></span><strong>{value(trend.rr)}</strong></div></Tip>
-            </div>
             {state.untrusted && detail.vitals && (
               <div className="incoming" title="What the monitor is sending now. Not trusted: do not act on these numbers.">
                 <span className="eyebrow">Incoming (not trusted)</span>
@@ -288,30 +242,28 @@ export function BedPage() {
               </div>
             )}
           </Panel>
-          <Panel title="30-minute trend" caption="One point per second. Striped spans = data the system did not trust."
-                 aside={<div className="legend">{trend.series.map(s => (
-                   <Tip key={s.label} text={`${s.label} line, scaled to its own range (${s.unit}).`}><span><i style={{background: s.color}} />{s.label}</span></Tip>
-                 ))}</div>}>
+          <Panel title="30-minute trend" caption="Each signal has its own scale. Shaded periods are not trusted." className="bed-trends"
+                 aside={<span className="bed-meta mono">5 min intervals</span>}>
             <TrendChart ts={trend.ts} series={trend.series} untrusted={trend.untrusted} label={`30-minute trend of heart rate, SpO2 and blood pressure for ${bedId}`} />
             {hist.error && <p className="tiny">History unavailable: {hist.error}</p>}
           </Panel>
-          <Witnesses detail={detail} />
           <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
+          <Witnesses detail={detail} />
         </div>
         <aside className="bed-side">
-          <WhyPanel detail={detail} now={now} />
-          <Panel title="Recent verdicts" caption="Newest first; one verdict about every 5 seconds per bed.">
+          <WhyPanel detail={detail} now={now} explanation={tv.key === 'ALARM_OPEN' ? cause : undefined} />
+          <Panel title="Recent verdicts" caption="Newest first · checked about every 5 seconds" className="bed-verdicts">
             {detail.recent_verdicts.length === 0 ? <p className="tiny">No verdicts received yet.</p> : (
               <ol className="verdict-list">
                 {detail.recent_verdicts.slice(0, 6).map((r, i) => (
-                  <li key={`${r.ts}-${i}`}><time className="mono">{time(r.ts, true)}</time><span>{verdictWords[r.verdict] ?? r.verdict}</span>
-                    <Tip text="Data trust attached to this verdict, 0 to 1. Verdicts made after the monitor was cut off or went silent show “not trusted”."><span className="mono muted">{verdictTrust(r.trust, r.ts, detail)}</span></Tip></li>
+                  <li key={`${r.ts}-${i}`}><time className="mono">{time(r.ts, true)}</time><span>{plainEvidence(verdictWords[r.verdict] ?? r.verdict)}</span>
+                    <Tip text="Data trust attached to this verdict, 0 to 1. Verdicts made after the monitor was cut off or went silent show “not trusted”."><span className="bed-history-trust">{verdictTrust(r.trust, r.ts, detail) === 'not trusted' ? 'Not trusted' : r.trust == null ? 'Checking' : r.trust >= .5 ? 'Trusted' : 'Checking'}</span></Tip></li>
                 ))}
               </ol>
             )}
           </Panel>
-          <Panel title="Actions taken" caption="Automatic actions show Undo; IT security can reverse them.">
-            <ActionList actions={bedActions} />
+          <Panel title="Actions for this bed" caption="Who acted, and why. IT security can undo automatic actions." className="bed-action-panel">
+            <BedActions actions={bedActions} />
           </Panel>
           {detail.assignment && (
             <Panel title="Assignment">
