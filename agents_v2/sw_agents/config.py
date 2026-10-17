@@ -95,12 +95,17 @@ class Settings:
     confirm_verdicts: int = 2
     clear_verdicts: int = 2
     unsure_confirm_verdicts: int = 6  # UNSURE is a doubt, not a finding: ~30 s before a nurse is paged
+    unsure_clear_verdicts: int = 4    # an UNSURE alert closes only after 4 NORMAL verdicts in a row (~20 s)
+    unsure_repage_s: float = 180.0    # no new UNSURE page to the same nurse within 3 min of the last one closing
     telegram_token: str | None = field(default=None, repr=False)
     telegram_chats: Mapping[str, int] = field(default_factory=dict)
     telegram_it_chat: int | None = None
     telegram_min_interval_s: float = 1.0
     # A2
     a2_min_confidence: float = 0.8
+    # TAMPERING/DEVICE_ATTACK must hold this long (consecutive verdicts) before the hub cut-off;
+    # BOTH cuts at once. Until then the bed is only marked untrusted, so a real alarm still gets through.
+    a2_confirm_s: float = 20.0
     a2_force_dry_run: bool = False
     dynsec_options: str | None = None
     contain_audit: str | None = None
@@ -129,7 +134,10 @@ class Settings:
     briefing_every_s: float = 600.0
     briefing_demo_at_s: float = 1140.0
     granite_url: str | None = None
-    granite_timeout_s: float = 20.0
+    granite_timeout_s: float = 120.0
+    granite_max_tokens: int = 120
+    # Granite takes ~30-60 s on the LinuxONE CPU: start the T+19:00 demo briefing this many seconds early.
+    granite_lead_s: float = 60.0
 
     @property
     def a2_dry_run(self) -> bool:
@@ -193,11 +201,14 @@ class Settings:
             confirm_verdicts=int(_num(env, "SW_A1_CONFIRM_VERDICTS", 2, 1, 10)),
             clear_verdicts=int(_num(env, "SW_A1_CLEAR_VERDICTS", 2, 1, 10)),
             unsure_confirm_verdicts=int(_num(env, "SW_A1_UNSURE_CONFIRM_VERDICTS", 6, 1, 24)),
+            unsure_clear_verdicts=int(_num(env, "SW_A1_UNSURE_CLEAR_VERDICTS", 4, 1, 24)),
+            unsure_repage_s=_num(env, "SW_A1_UNSURE_REPAGE_S", 180, 0, 3600),
             telegram_token=_first(env, "SW_TELEGRAM_BOT_TOKEN"),
             telegram_chats=chats,
             telegram_it_chat=_chat_id(it_chat, "SW_TELEGRAM_IT_CHAT") if it_chat else None,
             telegram_min_interval_s=_num(env, "SW_TELEGRAM_MIN_INTERVAL_S", 1.0, 1.0, 10),
             a2_min_confidence=_num(env, "SW_A2_MIN_CONFIDENCE", 0.8, 0, 1),
+            a2_confirm_s=_num(env, "SW_A2_CONFIRM_S", 20, 0, 600),
             a2_force_dry_run=_bool(env, "SW_A2_DRY_RUN", False),
             dynsec_options=_first(env, "SW_DYNSEC_OPTIONS"),
             contain_audit=_first(env, "SW_CONTAIN_AUDIT"),
@@ -220,7 +231,9 @@ class Settings:
             briefing_every_s=_num(env, "SW_A8_EVERY_S", 600, 0, 86400),
             briefing_demo_at_s=_num(env, "SW_A8_DEMO_AT_S", 1140, 0, 86400),
             granite_url=granite,
-            granite_timeout_s=_num(env, "SW_GRANITE_TIMEOUT_S", 20, 1, 120),
+            granite_timeout_s=_num(env, "SW_GRANITE_TIMEOUT_S", 120, 1, 600),
+            granite_max_tokens=int(_num(env, "SW_GRANITE_MAX_TOKENS", 120, 20, 400)),
+            granite_lead_s=_num(env, "SW_A8_GRANITE_LEAD_S", 60, 0, 3600),
         )
 
 

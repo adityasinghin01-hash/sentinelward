@@ -95,7 +95,8 @@ def register(app: FastAPI, d: Deps) -> None:
 
     @app.get("/api/alerts", response_model=list[dict], tags=["alerts"])
     async def alerts(status: str | None = Query(default=None), identity=Depends(d.user)):
-        """Latest state of each alert (one entry per alert_id), newest first."""
+        """Latest state of each alert (one entry per alert_id), newest first. ?status=open lists every alert that
+        still needs a person (open and escalated); other values match that status exactly."""
         if status is not None and status not in ALERT_STATUSES:
             raise HTTPException(422, f"status must be one of {', '.join(ALERT_STATUSES)}")
         return runtime.state.alerts_list(status)

@@ -114,6 +114,8 @@ class A1Alerts(Agent):
         self.learning_noted: set[str] = set()
         self.it_open: dict[str, dict] = {}
         self.it_streak: dict[str, int] = {}
+        self.unsure_closed: dict[str, tuple[int, frozenset]] = {}  # bed -> (close ts, nurses it had paged)
+        self.repage_noted: set[str] = set()
         self.history: list[dict] = []  # for A8: {alert_id, bed_id, verdict, opened_ts, acked_s}
 
     # ------------------------------------------------------------------ text
@@ -316,7 +318,12 @@ class A1Alerts(Agent):
             if self.normal_streak[bed] >= self.e.s.clear_verdicts:
                 self.it_open.pop(bed, None)
                 a = self.current.get(bed)
-                if a is not None and (a.status == "acked" or a.priority != "high"):
+                # UNSURE flaps: it closes only after SW_A1_UNSURE_CLEAR_VERDICTS (4) NORMALs in a row
+                need = self.e.s.unsure_clear_verdicts if a is not None and a.verdict == "UNSURE" else self.e.s.clear_verdicts
+                if a is not None and self.normal_streak[bed] >= need and (a.status == "acked" or a.priority != "high"):
+                    if a.verdict == "UNSURE":
+                        self.unsure_closed[bed] = (self.e.now(), frozenset(a.to))
+                        self.repage_noted.discard(bed)
                     self._close(a, "bed back to NORMAL")
             return
         self.normal_streak[bed] = 0
@@ -340,7 +347,24 @@ class A1Alerts(Agent):
         need = self.e.s.unsure_confirm_verdicts if verdict == "UNSURE" else self.e.s.confirm_verdicts
         if VERDICT_PRIORITY[verdict] != "high" and self.current.get(bed) is None and self.streak[bed] < need:
             return
+        if verdict == "UNSURE" and self.current.get(bed) is None and self._unsure_cooldown(bed):
+            return
         self._raise(bed, verdict, list(v.get("reasons") or []), "verdict")
+
+    def _unsure_cooldown(self, bed: str) -> bool:
+        """True while a new UNSURE page would reach the same nurse < SW_A1_UNSURE_REPAGE_S after the last closed."""
+        last = self.unsure_closed.get(bed)
+        if last is None:
+            return False
+        closed_ts, paged = last
+        left_s = self.e.s.unsure_repage_s - (self.e.now() - closed_ts) / 1000
+        if left_s <= 0 or not set(self.recipients(bed, 1)) <= paged:
+            return False
+        if bed not in self.repage_noted:
+            self.repage_noted.add(bed)
+            self.e.note(agent="A1", bed_id=bed, msg=f"UNSURE again {self.e.s.unsure_repage_s - left_s:.0f} s after the "
+                        f"last UNSURE alert closed: no new page for {int(left_s)} s (bed screen shows UNSURE)")
+        return True
 
     def on_bedside(self, b: dict) -> None:
         bed = b["bed_id"]

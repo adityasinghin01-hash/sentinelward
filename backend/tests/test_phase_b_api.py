@@ -93,6 +93,19 @@ def test_call_nurse_and_assignment_are_stored_pushed_and_never_published(app, cl
     assert client_ws.qsize >= 4  # each change pushed a bed.updated
 
 
+def test_open_alerts_include_escalated(app, client, clock):
+    """Ward run 2: B03's alert was 'escalated' (step 2, still unacknowledged) and ?status=open missed it."""
+    login(client, "nurse")
+    for aid, status in (("al_open", "open"), ("al_esc", "escalated"), ("al_ack", "acked"), ("al_closed", "closed")):
+        clock.advance(1)
+        ingest(app, make_alert(alert_id=aid, bed_id="B03", verdict="EMERGENCY", text="check", to=[],
+                               status=status, ts=clock.ms()))
+    assert [a["alert_id"] for a in client.get("/api/alerts?status=open").json()] == ["al_esc", "al_open"]
+    assert [a["alert_id"] for a in client.get("/api/alerts?status=escalated").json()] == ["al_esc"]
+    assert [a["alert_id"] for a in client.get("/api/alerts?status=acked").json()] == ["al_ack"]
+    assert len(client.get("/api/alerts").json()) == 4
+
+
 def test_alert_list_dedup_and_ack_alias(app, client, bus, clock):
     login(client, "nurse")
     for status in ("open", "escalated", "open"):

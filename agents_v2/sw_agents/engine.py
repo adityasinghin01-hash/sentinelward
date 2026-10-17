@@ -81,6 +81,11 @@ class Agent:
         return {}
 
 
+# The only actions that may carry an undo_id (a working one-click undo). Messages, escalations,
+# evidence, drafts, briefings and undo/expiry actions themselves are never undoable.
+UNDOABLE_ACTIONS = frozenset({"set_bed_untrusted", "disable_client", "set_watch_level", "open_ticket",
+                              "record_ack", "warn_workload"})
+
 # request action -> (agent id, method name)
 REQUEST_ROUTES = {
     "ack_alert": ("A1", "ack_request"),
@@ -166,6 +171,10 @@ class Engine:
                            reason="not on the allow-list for this agent")
             log.warning("allow-list: %s may not %s (refused, logged)", agent, action)
             return None
+        if undo is not None and (action not in UNDOABLE_ACTIONS or undoes is not None):
+            self.stats["undo_refused"] += 1  # a bug in an agent: publish the action, but never with an Undo
+            log.error("%s %s is not undoable; undo_id dropped", agent, action)
+            undo = None
         aid = self.new_id("act")
         msg = make_action(action_id=aid, ts=self.now(), by=agent, action=action, bed_id=bed_id,
                           device_id=device_id, detail=clean_text(detail, 480),
@@ -357,5 +366,8 @@ class Engine:
 
     def snapshot(self) -> dict:
         with self.lock:
-            return {"ts": self.now(), "stats": dict(self.stats), "timers": sorted(self.timers),
+            snap = {"ts": self.now(), "stats": dict(self.stats), "timers": sorted(self.timers),
                     "agents": {aid: a.snapshot() for aid, a in self.agents.items()}}
+            if self.telegram is not None and hasattr(self.telegram, "stats"):
+                snap["telegram"] = self.telegram.stats()
+            return snap

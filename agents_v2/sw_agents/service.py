@@ -55,9 +55,9 @@ class RedactFilter(logging.Filter):
 class Worker:
     """One background thread for slow work (hub control, Granite) so handlers never block."""
 
-    def __init__(self) -> None:
+    def __init__(self, name: str = "sw-agents-worker") -> None:
         self.q: queue.Queue[Callable[[], None] | None] = queue.Queue(maxsize=1000)
-        self.thread = threading.Thread(target=self._run, name="sw-agents-worker", daemon=True)
+        self.thread = threading.Thread(target=self._run, name=name, daemon=True)
         self.thread.start()
 
     def __call__(self, fn: Callable[[], None]) -> None:
@@ -81,8 +81,11 @@ class Worker:
 
 
 def build(settings: Settings, publisher, clock=None, background=None, *, broker=None, writer=None,
-          telegram_http=None) -> Engine:
-    """Wire the engine and A1-A8. Used by the service and by the tests."""
+          telegram_http=None, granite_background=None) -> Engine:
+    """Wire the engine and A1-A8. Used by the service and by the tests.
+
+    granite_background: A8's own thread, so a slow Granite call never delays a hub cut-off.
+    """
     engine = Engine(settings, publisher, clock, background)
     engine.telegram = Telegram(settings.telegram_token, engine.clock, min_interval_s=settings.telegram_min_interval_s,
                                http=telegram_http)
@@ -93,7 +96,7 @@ def build(settings: Settings, publisher, clock=None, background=None, *, broker=
     engine.register(A5Report(engine))
     engine.register(A6Tickets(engine))
     engine.register(A7Workload(engine))
-    engine.register(A8Briefing(engine, writer))
+    engine.register(A8Briefing(engine, writer, granite_background))
     for agent in engine.agents.values():
         if hasattr(agent, "after_reset"):
             agent.after_reset()
@@ -112,7 +115,8 @@ def main() -> int:
     bus = Bus(settings.mqtt_host, settings.mqtt_port, settings.client_id, username=settings.mqtt_username,
               password=settings.mqtt_password, tls_ca_file=settings.mqtt_ca_file)
     worker = Worker()
-    engine = build(settings, bus.publish, background=worker)
+    granite_worker = Worker("sw-agents-granite")
+    engine = build(settings, bus.publish, background=worker, granite_background=granite_worker)
     log.info("agents_v2 starting: hub %s:%s as %s; A2 %s; telegram %s; granite %s; state %s",
              settings.mqtt_host, settings.mqtt_port, settings.client_id,
              "DRY RUN" if settings.a2_dry_run else "hub control", "on" if settings.telegram_token else "off",
@@ -163,6 +167,7 @@ def main() -> int:
     stop.wait()
     log.info("agents_v2 stopping")
     worker.stop()
+    granite_worker.stop()
     bus.close()
     engine.telegram.close()
     return 0

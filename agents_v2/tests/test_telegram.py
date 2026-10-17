@@ -126,3 +126,52 @@ def test_token_never_logged(make_world, caplog):
     assert TOKEN not in caplog.text and "SECRET" not in caplog.text
     assert TOKEN not in (w.state_dir / "actions.jsonl").read_text()
     assert TOKEN not in repr(w.e.s)
+
+
+def test_every_delivery_is_logged_and_counted(make_world, caplog):
+    caplog.set_level(logging.INFO, logger="sw_agents.telegram")
+    w = make_world(telegram=True)
+    w.verdict("B03", "EMERGENCY", 1.0)
+    aid = w.bus.alerts()[0]["alert_id"]
+    pump_all(w, 2)
+    w.request("ack_alert", aid, by="staff:priya")
+    pump_all(w, 2)
+    lines = [r.getMessage() for r in caplog.records if r.name == "sw_agents.telegram"]
+    assert f"telegram sendMessage ok for {aid}" in lines and f"telegram editMessageText ok for {aid}" in lines
+    assert all(r.levelno == logging.INFO for r in caplog.records if "ok for" in r.getMessage())
+    w.tg_http.raise_exc = RuntimeError("down")
+    w.verdict("B07", "EMERGENCY", 1.0)
+    pump_all(w, 2)
+    assert any("FAILED for al_" in m for m in (r.getMessage() for r in caplog.records))
+    snap = w.e.snapshot()["telegram"]
+    assert snap == {"enabled": True, "sent": 1, "edited": 1, "failed": 1, "queued": 0}
+    text = caplog.text
+    assert TOKEN not in text and "1001" not in text and "1002" not in text  # no token, no chat IDs
+
+
+def test_status_has_telegram_counters_when_off(world):
+    assert world.e.snapshot()["telegram"] == {"enabled": False, "sent": 0, "edited": 0, "failed": 0, "queued": 0}
+
+
+def test_delivery_check_script(tmp_path, capsys, monkeypatch, caplog):
+    from conftest import FakeTelegramHTTP
+    from sw_agents import telegram_check
+    for k in list(__import__("os").environ):
+        if k.startswith("SW_"):
+            monkeypatch.delenv(k)
+    env = tmp_path / "agents2.env"
+    env.write_text(f"# comment\nSW_TELEGRAM_BOT_TOKEN={TOKEN}\nSW_TELEGRAM_CHATS='{{\"staff:priya\":1001}}'\n"
+                   "SW_TELEGRAM_IT_CHAT=2001\n")
+    http = FakeTelegramHTTP()
+    assert telegram_check.main([str(env)], http=http) == 0
+    assert http.calls == [("sendMessage", {"chat_id": 2001, "text": "SentinelWard test: delivery check"})]
+    out = capsys.readouterr().out
+    assert out.startswith("ok: delivered to the IT chat") and TOKEN not in out and "2001" not in out
+    env.write_text(f"SW_TELEGRAM_BOT_TOKEN={TOKEN}\nSW_TELEGRAM_CHATS='{{\"staff:priya\":1001}}'\n")
+    http = FakeTelegramHTTP()
+    http.raise_exc = RuntimeError(f"https://api.telegram.org/bot{TOKEN}/sendMessage")
+    assert telegram_check.main([str(env)], http=http) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("failed:") and "staff:priya chat" in out and TOKEN not in out + caplog.text
+    env.write_text("SW_TELEGRAM_BOT_TOKEN=\n")
+    assert telegram_check.main([str(env)]) == 1 and "not set" in capsys.readouterr().out

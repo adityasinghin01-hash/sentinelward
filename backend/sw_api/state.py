@@ -785,8 +785,12 @@ class WardState:
         return max(candidates, key=lambda a: (PRIORITY_RANK.get(a["priority"], 0), a["ts"]))
 
     def alerts_list(self, status: str | None = None) -> list[dict]:
-        """Latest state of each alert, newest first, optionally filtered by status."""
-        out = [a for a in self.alerts.values() if status is None or a["status"] == status]
+        """Latest state of each alert, newest first, optionally filtered by status.
+
+        status="open" means "still needs a person": open AND escalated (anything not acked or closed).
+        """
+        wanted = OPEN_ALERT_STATUSES if status == "open" else (status,)
+        out = [a for a in self.alerts.values() if status is None or a["status"] in wanted]
         out.sort(key=lambda a: a["ts"], reverse=True)
         return out
 

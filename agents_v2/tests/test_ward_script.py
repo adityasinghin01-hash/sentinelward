@@ -69,7 +69,7 @@ def test_ward_script_key_moments(world):
     assert b12["bed_id"] == "B12" and b12["priority"] == "medium"
     at("18:00")
     w.bedside("B12", "patient_ok")
-    w.verdict("B12", "NORMAL", 1.0, n=2)
+    w.verdict("B12", "NORMAL", 1.0, n=4)  # an UNSURE alert closes after 4 NORMALs
     assert w.bus.alerts(b12["alert_id"])[-1]["status"] == "closed"
     # T+19:00 A8 writes the shift briefing from these 20 minutes
     at("19:00")

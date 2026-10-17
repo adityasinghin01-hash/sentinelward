@@ -175,16 +175,88 @@ def test_tampering_then_emergency_upgrades_same_alert(world):
 
 
 def test_normal_closes_medium_alert(world):
-    world.verdict("B12", "UNSURE", 0.5, scores={"M4": 0.6}, n=2)
+    world.verdict("B08", "DRIFTING", 0.9, n=2)
     aid = world.bus.alerts()[-1]["alert_id"]
-    world.verdict("B12", "NORMAL", 1.0)
+    world.verdict("B08", "NORMAL", 1.0)
     assert world.bus.alerts(aid)[-1]["status"] == "open"
-    world.verdict("B12", "NORMAL", 1.0, n=1)
     world.advance(5)
-    world.verdict("B12", "NORMAL", 1.0)
+    world.verdict("B08", "NORMAL", 1.0)
     assert world.bus.alerts(aid)[-1]["status"] == "closed"
-    world.verdict("B12", "UNSURE", 0.5, scores={"M4": 0.6}, n=2)
+    world.verdict("B08", "DRIFTING", 0.9, n=2)
     assert world.bus.alerts()[-1]["alert_id"] != aid  # a new episode gets a new alert
+
+
+# ---------------------------------------------------------------- UNSURE noise (ward run 2: 19 of 30 nurse alerts)
+def _unsure(w, n, bed="B12"):
+    w.verdict(bed, "UNSURE", 0.5, scores={"M4": 0.6}, n=n)
+
+
+def test_unsure_alert_closes_only_after_4_normals(world):
+    _unsure(world, 2)
+    aid = world.bus.alerts()[-1]["alert_id"]
+    world.advance(5)
+    world.verdict("B12", "NORMAL", 1.0, n=3)
+    assert world.bus.alerts(aid)[-1]["status"] == "open"
+    world.advance(5)
+    _unsure(world, 1)  # a 15 s NORMAL gap: still the same alert, no new page
+    assert {a["alert_id"] for a in world.bus.alerts() if a["bed_id"] == "B12"} == {aid}
+    assert len(world.bus.actions("send_message", "A1")) == 1
+    world.advance(5)
+    world.verdict("B12", "NORMAL", 1.0, n=4)
+    assert world.bus.alerts(aid)[-1]["status"] == "closed"
+
+
+def test_unsure_does_not_repage_same_nurse_within_3_min(world):
+    _unsure(world, 2)
+    first = world.bus.alerts()[-1]["alert_id"]
+    world.advance(5)
+    world.verdict("B12", "NORMAL", 1.0, n=4)  # closes at t
+    assert world.bus.alerts(first)[-1]["status"] == "closed"
+    sends = len(world.bus.actions("send_message", "A1"))
+    world.advance(5)
+    _unsure(world, 30)  # UNSURE again for 145 s: within 3 min of the close -> no new page
+    assert len(world.bus.actions("send_message", "A1")) == sends
+    assert [a for a in world.bus.alerts() if a["bed_id"] == "B12"][-1]["alert_id"] == first
+    assert world.e.latest_verdict["B12"]["verdict"] == "UNSURE"  # the screen still shows the state
+    notes = [l for l in world.log_lines() if l.get("event") == "note" and "no new page" in l.get("msg", "")]
+    assert len(notes) == 1 and notes[0]["bed_id"] == "B12"
+    _unsure(world, 8)  # past 180 s since the close: page again
+    new = [a for a in world.bus.alerts() if a["bed_id"] == "B12"][-1]
+    assert new["alert_id"] != first and new["status"] == "open"
+    assert new["ts"] - world.bus.alerts(first)[-1]["ts"] >= 180_000
+
+
+def test_unsure_cooldown_never_blocks_a_real_finding(world):
+    _unsure(world, 2)
+    world.advance(5)
+    world.verdict("B12", "NORMAL", 1.0, n=4)
+    world.advance(5)
+    world.verdict("B12", "EMERGENCY", 1.0)
+    assert [a for a in world.bus.alerts() if a["bed_id"] == "B12"][-1]["priority"] == "high"
+    world.verdict("B11", "TAMPERING", 0.9, n=2)  # other beds unaffected
+    assert [a for a in world.bus.alerts() if a["bed_id"] == "B11"]
+
+
+def test_unsure_cooldown_other_nurse_is_paged(make_world):
+    w = make_world()
+    _unsure(w, 2)
+    w.advance(5)
+    w.verdict("B12", "NORMAL", 1.0, n=4)
+    w.e.s.roster["B12"] = "staff:priya"  # shift change: a different nurse now owns the bed
+    _unsure(w, 2)
+    last = [a for a in w.bus.alerts() if a["bed_id"] == "B12"][-1]
+    assert last["status"] == "open" and last["to"] == ["staff:priya"]
+
+
+def test_unsure_settings(make_world):
+    from sw_agents.config import Settings
+    s = Settings.from_env({})
+    assert (s.unsure_confirm_verdicts, s.unsure_clear_verdicts, s.unsure_repage_s) == (6, 4, 180)
+    w = make_world(unsure_confirm_verdicts=6)
+    _unsure(w, 5)
+    assert w.bus.alerts() == []
+    _unsure(w, 1)
+    assert len(w.bus.alerts()) == 1
 
 
 def test_same_priority_change_edits_not_duplicates(world):

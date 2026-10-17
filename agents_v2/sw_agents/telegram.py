@@ -32,7 +32,8 @@ class Telegram:
         self.message_ids: dict[tuple[str, int], int] = {}
         self.last_send_ms = -10**12
         self.offset = 0
-        self.sent = 0
+        self.sent = 0      # successful sendMessage calls
+        self.edited = 0    # successful editMessageText calls (incl. harmless "not modified")
         self.failed = 0
         self.on_result = on_result
         self._http = http
@@ -77,10 +78,17 @@ class Telegram:
         with self._lock:
             if ok and method == "sendMessage" and isinstance(result, dict) and "message_id" in result:
                 self.message_ids[(key, chat_id)] = int(result["message_id"])
-            if ok:
+            if ok and method == "sendMessage":
                 self.sent += 1
+            elif ok:
+                self.edited += 1
             else:
                 self.failed += 1
+        # Delivery is visible in the journal: method + alert/IT key only (never the token or chat ID).
+        if ok:
+            log.info("telegram %s ok for %s", method, key)
+        else:
+            log.warning("telegram %s FAILED for %s", method, key)
         if self.on_result:
             self.on_result(key, chat_id, ok)
         return True
@@ -100,6 +108,26 @@ class Telegram:
             log.warning("telegram %s rejected (HTTP %s)", method, getattr(response, "status_code", "?"))
             return False, None
         return True, data.get("result")
+
+    def stats(self) -> dict:
+        """Counters for status.json (no chat IDs, no token)."""
+        with self._lock:
+            return {"enabled": self.enabled, "sent": self.sent, "edited": self.edited, "failed": self.failed,
+                    "queued": len(self.pending)}
+
+    def send_test(self, chat_id: int, text: str) -> bool:
+        """One plain message, outside the alert queue (used by sw_agents.telegram_check)."""
+        if not self.enabled:
+            return False
+        ok, result = self._call("sendMessage", {"chat_id": chat_id, "text": text[:4000]})
+        ok = ok and isinstance(result, dict) and "message_id" in result
+        with self._lock:
+            if ok:
+                self.sent += 1
+            else:
+                self.failed += 1
+        log.info("telegram sendMessage %s for delivery check", "ok" if ok else "FAILED")
+        return ok
 
     # ---------------------------------------------------------------- callbacks
     def poll(self, timeout_s: int = 20) -> list[dict]:
