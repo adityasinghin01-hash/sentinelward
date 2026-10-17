@@ -8,10 +8,10 @@ SentinelWard watches simulated bedside monitors and decides, for every bed, whet
 
 | Folder | What | Owner |
 |---|---|---|
-| `agents/` | Agent engine, alerts (A1), reports (A5), tickets (A6), workload (A7), briefing (A8), M6 drift watcher, IBM Granite writer | Aditya |
-| `frontend/` | The 13 web screens and Telegram templates | Antara Gupta |
-| `ml/` | M1–M4 models, M6 drift monitor, decision layer (D) | Aditya Singhal |
-| `security/` | Hub security, attack scripts, M4 replay, M5 network witness, device cut-off | Kartik |
+| `agents_v2/` | Fresh A1–A8 agents (merge pending) | Aditya |
+| `web/` | Fresh React screens (merge pending) | Antara Gupta |
+| `ml_v2/` | Fresh M2 models; brain/ runs the decision pipeline | Aditya Singhal |
+| `security_v2/` | Fresh hub security, M5 network witness and device cut-off | Kartik |
 | `deploy/`, `common/`, `data/`, `simulator/`, `backend/`, `tests_system/` | Server and hub setup, shared message package, data loader, ward simulator, backend + database, system tests (coming next) | Aditya Singh (lead) |
 
 ## Where each folder came from

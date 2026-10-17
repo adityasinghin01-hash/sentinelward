@@ -32,7 +32,7 @@ def process_role(command, name):
         return 'brain (M1–M6)'
     if 'sw_attacks' in text or 'sw-attacks' in text:
         return 'attacks'
-    if 'agents' in command or any(x in text for x in ('agents/', 'agents.', 'sw_agent', 'security/', 'extractor', 'model_service')):
+    if any(x in text for x in ('sw_agents', 'sw-agents', 'security_v2/', 'sw_sec', 'extractor', 'model_service')):
         return 'agent/model/network'
     return None
 

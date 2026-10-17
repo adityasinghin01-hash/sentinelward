@@ -47,7 +47,7 @@ class Settings:
     schema_sql: Path = SCHEMA_SQL
     demo_role_login: bool = True
     session_ttl_s: int = 28800
-    frontend_dist: Path = BACKEND_DIR.parent / "frontend" / "dist"
+    frontend_dist: Path = BACKEND_DIR.parent / "web" / "dist"
 
     @property
     def use_memory_store(self) -> bool:

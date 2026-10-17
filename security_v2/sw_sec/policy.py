@@ -66,10 +66,10 @@ def service_env(service, values):
     common={'SW_MQTT_USER':service,'SW_MQTT_PASS':values[service]}
     if service in ('backend','simulator'):
         return {**common,'MQTT_HOST':'127.0.0.1','MQTT_PORT':'1883','MQTT_USER':service,'MQTT_PASS':values[service]}
-    prefix={'brain':'SW_MQTT_','attacks':'SW_ATTACK_MQTT_','agents':'SENTINEL_MQTT_','extractor':'SW_MQTT_'}[service]
-    result={**common,prefix+'HOST':'127.0.0.1',prefix+'PORT':'1883',prefix+'USERNAME':service,prefix+'PASSWORD':values[service]}
     if service == 'agents':
-        result.update(SENTINEL_MQTT_TLS='false', SENTINEL_MQTT_CLIENT_ID='sw-agents')
-    elif service in ('brain','attacks'):
+        return {**common,'SW_MQTT_HOST':'127.0.0.1','SW_MQTT_PORT':'1883'}
+    prefix={'brain':'SW_MQTT_','attacks':'SW_ATTACK_MQTT_','extractor':'SW_MQTT_'}[service]
+    result={**common,prefix+'HOST':'127.0.0.1',prefix+'PORT':'1883',prefix+'USERNAME':service,prefix+'PASSWORD':values[service]}
+    if service in ('brain','attacks'):
         result[prefix+'TLS']='0'
     return result

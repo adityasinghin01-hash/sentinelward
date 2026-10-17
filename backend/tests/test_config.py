@@ -27,7 +27,7 @@ def test_demo_role_session_and_frontend_environment_controls():
     defaults = Settings.from_env({})
     assert defaults.demo_role_login is True
     assert defaults.use_memory_store is True
-    assert defaults.frontend_dist == BACKEND_DIR.parent / "frontend" / "dist"
+    assert defaults.frontend_dist == BACKEND_DIR.parent / "web" / "dist"
 
 
 @pytest.mark.parametrize("env", [{"SW_DEMO_ROLE_LOGIN": "maybe"}, {"SW_SESSION_TTL_S": "0"},

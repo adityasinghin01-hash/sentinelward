@@ -30,7 +30,7 @@ Dependencies: fastapi, pydantic, plain uvicorn (selected explicitly: `asyncio` l
 pure-Python mode with the system libpq (no psycopg-binary, no psycopg_pool), paho-mqtt, PyYAML and
 sw_common. No uvloop or httptools. Run one worker: the live ward and sessions belong to the process.
 
-When `frontend/dist/index.html` exists the backend also serves the built screens at `/`, so screens,
+When `web/dist/index.html` exists the backend also serves the built screens at `/`, so screens,
 API and WebSocket share one origin on port 8000. Set `SW_FRONTEND_DIST` for wheel installs.
 
 ## Settings
@@ -44,7 +44,7 @@ API and WebSocket share one origin on port 8000. Set `SW_FRONTEND_DIST` for whee
 | `SW_API_HOST`, `SW_API_PORT` | `127.0.0.1`, `8000` | Listen address |
 | `SW_DEMO_ROLE_LOGIN` | `true` | Accept the screens' `{role}` login; `false` = PIN only |
 | `SW_SESSION_TTL_S` | `28800` | Session lifetime |
-| `SW_FRONTEND_DIST` | `../frontend/dist` | Built screens served at `/` |
+| `SW_FRONTEND_DIST` | `../web/dist` | Built screens served at `/` |
 
 ## systemd
 
@@ -59,7 +59,7 @@ Wants=postgresql.service mosquitto.service
 User=sentinelward
 WorkingDirectory=/srv/sentinelward
 Environment=SW_PG_DSN=postgresql://sentinelward@localhost/sentinelward
-Environment=SW_FRONTEND_DIST=/srv/sentinelward/frontend/dist
+Environment=SW_FRONTEND_DIST=/srv/sentinelward/web/dist
 ExecStart=/srv/sentinelward/.venv/bin/sw-api
 Restart=on-failure
 KillSignal=SIGINT
@@ -130,6 +130,5 @@ lost connection. `test_network_ws.py` starts real Uvicorn on a localhost port. T
 laptop do not establish LinuxONE performance (targets: `/api/ward` < 50 ms, 30-minute history
 < 100 ms, verdict to WebSocket < 100 ms).
 
-The frontend contract check lives outside the repo so `frontend/` is never touched: it copies
-`frontend/src/{adapters,domain,mocks}`, generates real backend responses and runs them through the
-unchanged adapters and Zod schemas (`gen_fixtures.py`, then `esbuild harness.ts` and `node`).
+After merging the fresh screens, run their contract checks from `web/` against real backend
+responses. The earlier adapter harness targets retired screens and does not verify this UI.

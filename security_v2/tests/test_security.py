@@ -36,7 +36,7 @@ def test_env_names_match_consumers():
     assert service_env('simulator',values)['MQTT_USER'] == 'simulator'
     assert service_env('brain',values)['SW_MQTT_PASSWORD'] == values['brain']
     assert service_env('attacks',values)['SW_ATTACK_MQTT_USERNAME'] == 'attacks'
-    assert service_env('agents',values)['SENTINEL_MQTT_PASSWORD'] == values['agents']
+    assert service_env('agents',values)['SW_MQTT_PASS'] == values['agents']
 
 
 def test_private_writes_refuse_symlinks_and_keep_600(tmp_path):

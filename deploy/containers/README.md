@@ -5,6 +5,10 @@ app services from one image built on LinuxONE (`api`, `brain`, `sim`, `attacks`)
 isolated copy next to the bare-metal systemd stack: its own private network, hub and database;
 only the web app is published, on `127.0.0.1:8001`.
 
+Build the merged Vite screens with `cd web && npm ci && npm run build` first.
+The API mounts `web/dist` by default; `SW_FRONTEND_DIR` can override that directory.
+The service image includes the fresh `ml_v2/` model code and artifacts required by the brain.
+
 ## Run (on the build server)
 
     sudo apt-get install -y docker.io docker-compose-v2 && sudo usermod -aG docker linux1   # once, then log in again

@@ -121,3 +121,47 @@ def test_failed_service_authentication_rolls_back(server,monkeypatch):
     armed=next(i for i,c in enumerate(calls) if c[0]=='systemd-run')
     stopped=next(i for i,c in enumerate(calls) if c[:3]==['systemctl','stop','mosquitto'])
     assert armed<stopped
+
+
+def test_agents_launcher_executes_fresh_module_with_hub_env(tmp_path):
+    import subprocess
+    package=tmp_path/'sw_agents'
+    package.mkdir()
+    (package/'__init__.py').write_text('')
+    (package/'__main__.py').write_text("""import os, sys
+assert sys.argv[1:]==['--check']
+for key in ('SW_MQTT_HOST','SW_MQTT_PORT','SW_MQTT_USER','SW_MQTT_PASS',
+            'SW_DYNSEC_OPTIONS','SW_CONTAIN_AUDIT','SW_MONITOR_CREDENTIALS'):
+    assert os.environ[key]=='fixture-'+key
+print('fresh agents launched')
+""")
+    keys=('SW_MQTT_HOST','SW_MQTT_PORT','SW_MQTT_USER','SW_MQTT_PASS',
+          'SW_DYNSEC_OPTIONS','SW_CONTAIN_AUDIT','SW_MONITOR_CREDENTIALS')
+    env={**os.environ,**{key:'fixture-'+key for key in keys},
+         'PYTHONPATH':str(tmp_path)+os.pathsep+str(Path(__file__).resolve().parents[1])}
+    script=Path(__file__).resolve().parents[1]/'scripts/run_agents.py'
+    result=subprocess.run([sys.executable,str(script),'--check'],cwd=tmp_path,
+                          env=env,capture_output=True,text=True)
+    assert result.returncode==0, 'Fresh module launch failed'
+    assert result.stdout.strip()=='fresh agents launched'
+
+
+def test_agents_env_uses_fresh_contract():
+    from sw_sec.policy import credentials, service_env
+    values=credentials()
+    env=service_env('agents',values)
+    assert env['SW_MQTT_HOST']=='127.0.0.1'
+    assert env['SW_MQTT_PORT']=='1883'
+    assert env['SW_MQTT_USER']=='agents'
+    assert env['SW_MQTT_PASS']==values['agents']
+    assert not any(key.startswith('SENTINEL_') for key in env)
+
+
+def test_agents_dropin_launches_without_legacy_serve_argument(server):
+    deploy,root,calls=server
+    deploy.setup(server_ip='127.0.0.1',service_user='demo',state=root/'state',
+                 plugin=root/'plugin.so',app=root/'app',venv=root/'venv')
+    unit=(root/'systemd/sw-agents.service.d/90-security-v2.conf').read_text()
+    assert f'ExecStart={root}/venv/bin/python {root}/app/security_v2/scripts/run_agents.py\n' in unit
+    assert f'WorkingDirectory={root}/sw/agents-data\n' in unit
+    assert (root/'sw/agents-data').is_dir()

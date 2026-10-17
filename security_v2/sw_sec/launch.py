@@ -1,10 +1,11 @@
-"""Launch seams for existing services. No changes to simulator/ or agents/."""
+"""Launch seams for the simulator and fresh agents."""
 import asyncio
 import json
 import os
+import sys
 
 from sw_common import Bus
-from .containment import Containment, device_id
+from .containment import device_id
 from .io import private_read
 
 
@@ -65,18 +66,9 @@ def simulator_main():
     raise SystemExit(simulator.main())
 
 
+AGENTS_MODULE = 'sw_agents'
+
+
 def agents_main():
-    import sentinelward.cli as cli
-    original=cli.build_team
-    helper=Containment(os.environ['SW_DYNSEC_OPTIONS'],os.environ['SW_CONTAIN_AUDIT'])
-    passwords=json.loads(private_read(os.environ['SW_MONITOR_CREDENTIALS']))
-    # Fail at launch if credentials are missing; verify broker identity on each action.
-    private_read(helper.options)
-    def secured_team(settings,alerts):
-        phase4,phase5=original(settings,alerts)
-        phase4.broker=AgentBroker(helper,passwords)
-        if phase4.policy is not None:
-            phase4.policy=phase4.policy.model_copy(update={'version':'security-v2-hub'})
-        return phase4,phase5
-    cli.build_team=secured_team
-    cli.main()
+    # exec preserves hub credentials and containment paths without secret argv.
+    os.execv(sys.executable,[sys.executable,'-m',AGENTS_MODULE,*sys.argv[1:]])

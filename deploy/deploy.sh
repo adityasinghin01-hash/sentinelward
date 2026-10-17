@@ -16,26 +16,27 @@ if [ "$#" -gt 1 ]; then echo 'Only --dry-run is supported' >&2; exit 2; fi
 if [ "$DRY" -eq 1 ]; then
   cat <<'PLAN'
 DRY RUN — no network, npm, rsync or remote commands executed.
-1. Copy frontend to a temporary directory; exclude node_modules, dist, secrets.
+1. Copy web/ to a temporary directory; exclude node_modules, dist, secrets.
 2. npm ci; npm run build with backend runtime, API /api, WebSocket same origin.
 3. ssh -4 to linux1@148.100.112.19; check existing ~/sw/.venv, system packages and .env.
-4. rsync repo to /home/linux1/sw/app (include ml/ models; exclude secrets, caches and local outputs).
+4. rsync repo to /home/linux1/sw/app (include ml_v2/ models; exclude secrets, caches and local outputs).
 5. Install missing universal Python wheels only; editable --no-deps --no-build-isolation common/simulator/brain/attacks/backend.
-6. Rsync the temporary frontend/dist to /home/linux1/sw/app/frontend/dist.
+6. Rsync the temporary web/dist to /home/linux1/sw/app/web/dist.
 7. Install four systemd units; daemon-reload; enable and restart; print sanitized status + HTTP health.
 Existing ~/sw/.env, packs, data and runs are preserved. No rsync --delete.
 PLAN
   exit 0
 fi
+[ -d "$ROOT/web" ] || { echo 'web/ is missing; merge the fresh screens before deployment' >&2; exit 1; }
+[ -f "$ROOT/web/package-lock.json" ] || { echo 'web/package-lock.json is required for npm ci' >&2; exit 1; }
 for utility in ssh rsync npm python3; do command -v "$utility" >/dev/null || { echo "Missing $utility" >&2; exit 1; }; done
 [ -r "$KEY" ] || { echo 'SSH key is not readable' >&2; exit 1; }
-[ -f "$ROOT/frontend/package-lock.json" ] || { echo 'frontend/package-lock.json is required for npm ci' >&2; exit 1; }
 BUILD=$(mktemp -d "${TMPDIR:-/tmp}/sw-build.XXXXXX")
 trap 'rm -rf -- "$BUILD"' EXIT INT TERM
 # Copy/build only in a temporary directory, including an empty WS env to override inherited URLs.
-rsync -a --exclude node_modules --exclude dist --exclude '.env*' --exclude '*.tsbuildinfo' "$ROOT/frontend/" "$BUILD/frontend/"
+rsync -a --exclude node_modules --exclude dist --exclude '.env*' --exclude '*.tsbuildinfo' "$ROOT/web/" "$BUILD/web/"
 (
-  cd "$BUILD/frontend"
+  cd "$BUILD/web"
   export npm_config_cache="$BUILD/npm-cache"
   npm ci --no-audit --no-fund >"$BUILD/npm-ci.log" 2>&1 || { echo 'npm ci failed; npm output withheld (possible registry credentials)' >&2; exit 1; }
   # An unset optional WS URL derives /ws from window.location in the frontend adapter.
@@ -43,7 +44,7 @@ rsync -a --exclude node_modules --exclude dist --exclude '.env*' --exclude '*.ts
     echo 'Frontend build failed; inspect it in an isolated temp copy (build output withheld)' >&2; exit 1;
   }
 )
-[ -s "$BUILD/frontend/dist/index.html" ] || { echo 'Build has no dist/index.html' >&2; exit 1; }
+[ -s "$BUILD/web/dist/index.html" ] || { echo 'Build has no dist/index.html' >&2; exit 1; }
 SSH=(ssh -4 -i "$KEY" -o BatchMode=yes -o ConnectTimeout=15)
 # Quote key for rsync's remote-shell string; disallow shell metacharacters in key overrides.
 case "$KEY" in *[!a-zA-Z0-9_./-]*) echo 'SW_SSH_KEY must use a path without shell metacharacters or spaces' >&2; exit 2 ;; esac
@@ -70,7 +71,7 @@ rsync -a -e "$RSH" \
   --exclude .pytest_cache --exclude .mypy_cache --exclude .ruff_cache --exclude '.env*' \
   --exclude '*.pem' --exclude '*.key' --exclude '.aws' --exclude '.ssh' --exclude .codex --exclude .agents \
   --exclude '*.egg-info' --exclude '*.pyc' --exclude '*.tsbuildinfo' \
-  --exclude /frontend/dist --exclude /tests_system/out --exclude /tests_system/results \
+  --exclude /web/dist --exclude /tests_system/out --exclude /tests_system/results \
   --exclude /packs --exclude /runs --exclude /simulator/runs --exclude /attacks/runs \
   "$ROOT/" "$REMOTE:/home/linux1/sw/app/"
 "${SSH[@]}" "$REMOTE" 'bash -se' <<'REMOTE_INSTALL'
@@ -87,7 +88,7 @@ if ! /home/linux1/sw/.venv/bin/python -m pip install --disable-pip-version-check
 fi
 rm -f /home/linux1/sw/.editable-install.log
 REMOTE_INSTALL
-rsync -a -e "$RSH" "$BUILD/frontend/dist/" "$REMOTE:/home/linux1/sw/app/frontend/dist/"
+rsync -a -e "$RSH" "$BUILD/web/dist/" "$REMOTE:/home/linux1/sw/app/web/dist/"
 "${SSH[@]}" "$REMOTE" 'bash -se' <<'REMOTE_START'
 set -euo pipefail
 for service in api brain sim attacks; do

@@ -17,7 +17,7 @@ def main():
             os.environ['SW_PG_DSN'] = os.environ['DATABASE_URL']
         os.environ['SW_API_HOST'] = '127.0.0.1'
         os.environ['SW_API_PORT'] = '8000'
-        os.environ['SW_FRONTEND_DIST'] = '/home/linux1/sw/app/frontend/dist'
+        os.environ['SW_FRONTEND_DIST'] = '/home/linux1/sw/app/web/dist'
     os.execv(sys.argv[1], sys.argv[1:])
 
 

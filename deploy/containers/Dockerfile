@@ -25,6 +25,8 @@ RUN python3 -m venv --system-site-packages /venv \
 COPY common/ common/
 COPY simulator/ simulator/
 COPY brain/ brain/
+COPY ml_v2/m2gbt/ ml_v2/m2gbt/
+COPY ml_v2/artifacts/ ml_v2/artifacts/
 COPY attacks/ attacks/
 COPY backend/ backend/
 RUN /venv/bin/pip install --no-cache-dir --no-deps -e ./common -e ./simulator -e ./brain -e ./attacks -e ./backend \

@@ -103,9 +103,10 @@ Containment survives process restarts and demo resets; use IT undo before rerunn
 
 ## A2: real containment and undo
 
-The deployed agents/team.py normally constructs DryRunBroker. The supplied `run_agents.py` wraps its
-existing build_team function and supplies AgentBroker; the existing coordinator's real containment,
-audit, nurse alert, projection and IT undo paths then run normally. There are no edits under agents/.
+The supplied `run_agents.py` executes `python -m sw_agents` from the fresh `agents_v2/`
+package. The module name is centralized in `sw_sec.launch.AGENTS_MODULE`; arguments and
+hub-issued `SW_MQTT_HOST/PORT/USER/PASS` plus containment paths are inherited through env.
+Containment integration must be verified after the fresh agents are merged.
 Setup installs that entrypoint only if the agent unit exists. If agents are installed later, rollback
 and rerun setup between demos so the original-service snapshot and new unit are consistent.
 

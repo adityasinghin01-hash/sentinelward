@@ -11,7 +11,7 @@ WorkingDirectory=/home/linux1/sw/app
 EnvironmentFile=/home/linux1/sw/.env
 Environment=SW_API_HOST=127.0.0.1
 Environment=SW_API_PORT=8000
-Environment=SW_FRONTEND_DIST=/home/linux1/sw/app/frontend/dist
+Environment=SW_FRONTEND_DIST=/home/linux1/sw/app/web/dist
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/home/linux1/sw/.venv/bin/python /home/linux1/sw/app/deploy/service_env.py /home/linux1/sw/.venv/bin/python -m sw_api
 Restart=always
