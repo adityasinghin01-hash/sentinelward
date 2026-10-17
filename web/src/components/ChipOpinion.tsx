@@ -1,13 +1,12 @@
 import type {ChipOpinion} from '../lib/types';
+import {freshChipOpinion} from '../lib/chip-opinion';
 import {Tip} from './ui';
 import {Fact} from './extra';
 
+export {freshChipOpinion} from '../lib/chip-opinion';
+
 // Live M2-gbt2 evaluation: docs/evidence/ML-RESULTS.md, held-out CinC score.
 const LIVE_MODEL_HELDOUT_CINC = 0.862;
-
-export function freshChipOpinion(opinion: ChipOpinion | null | undefined, now: number): ChipOpinion | null {
-  return opinion && now - opinion.ts < 120_000 ? opinion : null;
-}
 
 /** Display evidence only; alarm colours and decision controls stay with the live verdict. */
 export function ChipOpinionPanel({opinion, now}: {opinion: ChipOpinion | null | undefined; now: number}) {

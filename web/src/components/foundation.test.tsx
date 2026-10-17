@@ -59,7 +59,7 @@ it('logout clears the session, reaches login and shows Signed out', async () => 
   vi.stubGlobal('WebSocket', class {close(){} });
   vi.stubGlobal('fetch',vi.fn(async (url:string,init?:RequestInit)=>new Response(JSON.stringify(init?.method==='DELETE'?{}:url.startsWith('/api/ward')?{beds:[],received_at:1}:url.startsWith('/api/actions')?{actions:[]}:[]))));
   render(<MemoryRouter initialEntries={['/ward']}><App/></MemoryRouter>);
-  fireEvent.keyDown(screen.getByRole('button',{name:/Account/}),{key:'Enter'});
+  fireEvent.keyDown(await screen.findByRole('button',{name:/Account/}),{key:'Enter'});
   fireEvent.click(await screen.findByRole('menuitem',{name:/Log out/}));
   await waitFor(()=>expect(useWard.getState().session).toBeNull());
   expect(await screen.findByText('Signed out')).toBeInTheDocument();

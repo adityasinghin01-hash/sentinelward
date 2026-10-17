@@ -3,7 +3,7 @@ import {AlertTriangle, ShieldAlert, Activity, Wrench, Unplug, Circle, Ban, Cpu, 
 import type {Alert, Bed} from '../lib/types';
 import {displayVitals, value} from '../lib/domain';
 import {Waveform} from './Waveform';
-import {freshChipOpinion} from './ChipOpinion';
+import {freshChipOpinion} from '../lib/chip-opinion';
 import {tileView, vitalFlags} from './ward/tile';
 
 const ICONS = {emergency: AlertTriangle, both: ShieldAlert, security: ShieldAlert, check: AlertTriangle, maint: Activity, nodata: Unplug, ok: Circle};

@@ -48,3 +48,8 @@
 .it-strip a { display: inline-flex; align-items: center; min-height: 40px; }
 @media(max-width:1350px) { .topbar {gap:12px;padding:0 16px} .topbar nav a{padding:0 8px} .topbar-right{gap:6px} .account-trigger>span{display:none} }
 @media(max-width:1000px) { .brand .unit, .clock, .privacy-chip, .live-age{display:none} .topbar{gap:8px} .topbar-right{gap:4px} }
+
+/* Reserve the station viewport while a route loads, without animated placeholders. */
+.app > main, .route-loading { min-height: calc(100svh - 56px); }
+.route-loading { display: grid; place-items: center; background: var(--page); color: var(--text-2); }
+.route-loading-full { min-height: 100svh; }
