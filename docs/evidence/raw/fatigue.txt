@@ -1,0 +1,28 @@
+M2 alarm-fatigue numbers at the live thresholds (advice only: the monitor alarm still sounds)
+2-lead M2-gbt2-2026-10-17: heldout2.json thresholds == deployed artifact: True
+1-lead M2-gbt-2026-10-17: heldout.json thresholds == deployed artifact: True
+
+2-lead trees (live when the second ECG lead is present) - heldout2.json gbt_2lead
+ CinC 2015 held-out
+  ALL       n=188  false alarms marked likely-false  85.1% (97/114)   true alarms missed   2.7% (2/74)
+  ASYSTOLE  n=31   false alarms marked likely-false  80.0% (20/25)   true alarms missed  16.7% (1/6)
+  BRADY     n=23   false alarms marked likely-false  90.9% (10/11)   true alarms missed   8.3% (1/12)
+  TACHY     n=35   false alarms marked likely-false   0.0% (0/2)   true alarms missed   0.0% (0/33)
+  VFIB      n=14   false alarms marked likely-false  92.3% (12/13)   true alarms missed   0.0% (0/1)
+  VTACH     n=85   false alarms marked likely-false  87.3% (55/63)   true alarms missed   0.0% (0/22)
+ VTaC test
+  ALL       n=482  false alarms marked likely-false  84.1% (290/345)   true alarms missed   4.4% (6/137)
+  VTACH     n=482  false alarms marked likely-false  84.1% (290/345)   true alarms missed   4.4% (6/137)
+
+1-lead trees (live fallback) - heldout.json gbt
+ CinC 2015 held-out
+  ALL       n=188  false alarms marked likely-false  82.5% (94/114)   true alarms missed   6.8% (5/74)
+  ASYSTOLE  n=31   false alarms marked likely-false  92.0% (23/25)   true alarms missed  33.3% (2/6)
+  BRADY     n=23   false alarms marked likely-false 100.0% (11/11)   true alarms missed  25.0% (3/12)
+  TACHY     n=35   false alarms marked likely-false  50.0% (1/2)   true alarms missed   0.0% (0/33)
+  VFIB      n=14   false alarms marked likely-false  84.6% (11/13)   true alarms missed   0.0% (0/1)
+  VTACH     n=85   false alarms marked likely-false  76.2% (48/63)   true alarms missed   0.0% (0/22)
+ VTaC test
+  ALL       n=482  false alarms marked likely-false  71.0% (245/345)   true alarms missed   2.9% (4/137)
+  VTACH     n=482  false alarms marked likely-false  71.0% (245/345)   true alarms missed   2.9% (4/137)
+
