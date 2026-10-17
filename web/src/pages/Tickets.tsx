@@ -39,10 +39,11 @@ function TicketCard({t}: {t: AgentRecord}) {
         <Chip hint="Who opened this ticket.">{t.by === 'A6' ? 'A6 agent' : staff(d.created_by ?? t.by)}</Chip>
       </div>
       <p className="ticket-problem">{problem(d)}</p>
-      {typeof d.suggestion === 'string' && <p className="tiny"><strong>Suggested fix:</strong> {d.suggestion}</p>}
+      {typeof (d.suggested_fix ?? d.suggestion) === 'string' && <p className="tiny"><strong>Suggested fix:</strong> {String(d.suggested_fix ?? d.suggestion)}</p>}
       <p className="tiny">
-        <Tip text="How many separate faults this device had in the last 30 days. Repeats suggest replacing it."><span>Issues (30 days): <span className="mono">{typeof d.issues_30d === 'number' ? d.issues_30d : '—'}</span></span></Tip>
-        {' · '}opened {dateTime(Number(d.first_ts ?? d.created_at ?? t.ts))}
+        {typeof d.issues_30d === 'number' && <><Tip text="How many separate faults this device had in the last 30 days. Repeats suggest replacing it."><span>Issues (30 days): <span className="mono">{d.issues_30d}</span></span></Tip>{' · '}</>}
+        {typeof d.issues_30d !== 'number' && typeof d.count === 'number' && <><Tip text="How many times the ticket agent (A6) saw this fault on this ticket. A 30-day history is not available."><span>Seen <span className="mono">{d.count}</span>×</span></Tip>{' · '}</>}
+        opened {dateTime(Number(d.first_seen_ts ?? d.first_ts ?? d.created_at ?? t.ts))}
       </p>
       {typeof d.note === 'string' && d.note && <p className="tiny">Note: {d.note}</p>}
       <div className="row-actions">

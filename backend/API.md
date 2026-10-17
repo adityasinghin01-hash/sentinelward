@@ -63,7 +63,7 @@ TAMPERING verdict with `last_trusted_ts`; waveforms shortened here, real ones ha
 | Request | Response |
 | --- | --- |
 | `GET /api/ward/preview` (public) | `{"received_at":…,"beds":[<bed> × 4]}` B01–B04 without `patient`, `manual`, `last_bedside_check`, `assignment`, `nurse_call` |
-| `GET /api/beds/B03` | `<bed>` plus `"scores":{"M1":<score msg>,…}`, `"recent_verdicts":[<verdict msg> × ≤10]`, `"device":{"online":true,"isolated":false,"isolated_since":null,"last_seen_ts":1792252805000}`, `"open_alerts":[<alert msg>]` |
+| `GET /api/beds/B03` | `<bed>` plus `"scores":{"M1":<score msg>,…}`, `"recent_verdicts":[<verdict msg> × ≤10]`, `"device":{"online":true,"isolated":false,"isolated_since":null,"last_seen_ts":1792252805000}`, `"open_alerts":[<alert msg>]`, `"monitor_alarm":{"code":"VTACH","priority":"high"}` (the alarm on the newest vitals, `null` when none) |
 | `GET /api/beds/B03/history?minutes=30` (1–1440) | `{"bed_id":"B03","points":[{"ts":1792252800000,"hr":0,"spo2":null,"rr":14,"sys":null,"dia":null,"map":null,"abp_mean":null,"verdict":"NORMAL","trusted":true}, …]}` one per second, oldest first |
 | `POST /api/beds/B05/acknowledge` (nurse, doctor) `{"type":"acknowledge_alert","bedId":"B05"}` | 202 receipt + `request_id`; `ack_alert` for the bed's highest-priority, newest open alert; 409 if none |
 | `POST /api/beds/B05/bedside-check` (nurse, doctor) `{"type":"confirm_bedside","bedId":"B05","status":"patient_ok"}` (`result` also accepted) | 201 receipt; publishes `bedside_check` and a `bedside_check` action by `staff:<name>` |
@@ -79,7 +79,7 @@ TAMPERING verdict with `last_trusted_ts`; waveforms shortened here, real ones ha
 | `GET /api/alerts?status=open` | `[{"v":1,"type":"alert","alert_id":"al_1","ts":…,"bed_id":"B05","verdict":"EMERGENCY","priority":"high","text":"Check","to":["staff:priya"],"ladder_step":1,"status":"open","acked_by":null,"acked_ts":null}]` one per alert_id (latest state), newest first |
 | `POST /api/alerts/al_1/ack` (nurse, doctor) `{}` | 202 receipt + `request_id` (`ack_alert`) |
 | `POST /api/alerts/al_1/escalate` (nurse, doctor) `{"type":"escalate_alert","alertId":"al_1","bedId":"B05"}` | 202 receipt + `request_id` (`escalate_alert`) |
-| `GET /api/devices` | `[{"device_id":"MON-01","bed_id":"B01","online":true,"isolated":false,"isolated_since":null,"last_seen_ts":…,"net":<latest net_features msg or null>}, …]` |
+| `GET /api/devices` | `[{"device_id":"MON-01","bed_id":"B01","online":true,"isolated":false,"isolated_since":null,"last_seen_ts":…,"net":<latest net_features msg or null>,"senders":1,"senders_window_start":…}, …]`; `senders` is the newest non-null `net_features.senders` in the buffered 30 min (`null` when the witness never knew it) |
 | `GET /api/devices/MON-07/network?minutes=10` (1–1440) | `[<net_features msg, every field kept>, …]` oldest first |
 | `POST /api/devices/MON-05/isolate` (it, operator) `{"type":"isolate_device","deviceId":"MON-05","bedId":"B05"}` | 202 receipt + `request_id` (`isolate_device`); the device is isolated only when A2 reports it |
 | `POST /api/fleet-hunt` (it, operator) `{"type":"fleet_hunt","model":"MX450"}` (default `all`) | 202 receipt + `request_id` (`fleet_hunt`, target = model) |
@@ -114,14 +114,18 @@ unresolved incident (404 if none, 409 if several). Report routes also accept an 
 
 | Request | Response |
 | --- | --- |
-| `GET /api/briefing?since=2026-10-17T00:00:00Z` (ISO or epoch ms) | `{"since":"2026-10-17T00:00:00.000Z","generated_by":"IBM Granite","summary":"Quiet.","incidents":1,"untrusted_beds":2,"open_tickets":0,"blind_time":[{"bed_id":"B03","minutes":0.5}],"record_id":"br_1","ts":…}`; 503 when A8 has published none |
-| `GET /api/workload?hours=2` (1–48) | `{"nurses":[{"nurse_id":"staff:priya","nurse_name":"Priya (Nurse)","alarms_last_2h":12}],"record_id":"wl_1","ts":…}`; `{"nurses":[]}` when no A7 record is that recent |
+| `GET /api/briefing?since=2026-10-17T00:00:00Z` (ISO or epoch ms) | `{"since":"2026-10-17T00:00:00.000Z","generated_by":"IBM Granite","summary":"Quiet.","incidents":1,"untrusted_beds":2,"open_tickets":0,"blind_time":[{"bed_id":"B03","minutes":0.5}],"record_id":"br_1","ts":…,"facts":{"since_ts":…,"incident_count":1,"blind_time":[…],…},"fallback_reason":null}`; 503 when A8 has published none |
+| `GET /api/workload?hours=2` (1–48) | `{"nurses":[{"nurse_id":"staff:priya","nurse_name":"Priya (Nurse)","role":"nurse","alarms_last_2h":12}],"record_id":"wl_1","ts":…}` (`role` = configured user role; omitted for unknown staff IDs); `{"nurses":[]}` when no A7 record is that recent |
 
 `summary` and `generated_by` come from the newest A8 record (`data.narrative.text` /
 `.generator`); `generated_by` is `"IBM Granite"` only when the generator was Granite, otherwise the
 real generator name (e.g. `"template"`). The counts are computed by the backend from its stored data
 since `since`: incident records, beds that are currently untrusted, tickets not resolved/closed, and
-per-bed untrusted seconds (`blind_time`, in minutes).
+per-bed untrusted seconds (`blind_time`, in minutes). `facts` is the A8 record's own fact set (the
+numbers the summary text was written from: `since_ts`, `shift_start`, `data_from`, `incident_count`,
+`incidents`, `untrusted_bed_count`, `untrusted_beds`, `open_ticket_count`, `open_tickets`, `blind_time`,
+`alerts_sent`, `alerts_acknowledged`, `median_ack_s`, `false_alarms_silenced`; only keys present), or
+`null`; `fallback_reason` is why the template wrote the text, when it did.
 
 ## WebSocket `/ws`
 

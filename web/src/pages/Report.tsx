@@ -3,7 +3,7 @@ import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Download, FileCheck2, Save, Send, Sparkles} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
-import {bytes, can, certFields, countdown, dateTime, longFields, reportReady, staff} from '../lib/domain';
+import {bytes, can, certDeadline, certFields, countdown, dateTime, evidenceView, longFields, reportReady, reportValue, staff} from '../lib/domain';
 import type {AgentRecord, ReportField} from '../lib/types';
 import {Empty, Feedback, PageTitle, Panel, Tip} from '../components/ui';
 import {Chip, Dialog} from '../components/extra';
@@ -24,7 +24,8 @@ function fromRecord(rec: AgentRecord): Draft {
   const checklist = (d.checklist ?? {}) as Record<string, boolean>;
   const narrative = d.narrative as {text?: string} | undefined;
   return {
-    fields: Object.fromEntries(certFields.flatMap(g => g.fields).map(([k]) => [k, fields[k]?.value == null ? '' : String(fields[k].value)])),
+    // A saved field wins; else the value A5 put in its draft (flat keys such as sector, affected_system.host_name).
+    fields: Object.fromEntries(certFields.flatMap(g => g.fields).map(([k]) => [k, fields[k]?.value != null ? String(fields[k].value) : reportValue(d, k)])),
     description: typeof d.description === 'string' ? d.description : narrative?.text ?? '',
     factsChecked: checklist.facts_checked === true || d.factsChecked === true,
     evidenceAttached: checklist.evidence_reviewed === true || d.evidenceAttached === true,
@@ -52,7 +53,8 @@ async function downloadPdf(rec: AgentRecord, draft: Draft, due: number) {
   line('Description', 12, true); line(draft.description || '(not filled)');
   y += 6; line('Evidence', 12, true);
   for (const e of (Array.isArray(rec.data.evidence) ? rec.data.evidence : []) as Record<string, unknown>[]) {
-    line(`${String(e.label ?? e.kind ?? 'file')} · ${bytes(e.size_bytes)} · SHA-256 ${String(e.sha256 ?? 'n/a')}`, 9);
+    const v = evidenceView(e);
+    line(`${v.title}${v.size === null ? '' : ` · ${bytes(v.size)}`} · SHA-256 ${String(e.sha256 ?? 'n/a')}`, 9);
   }
   y += 6; line('Checklist', 12, true);
   line(`Facts checked: ${draft.factsChecked ? 'yes' : 'no'} · Evidence attached: ${draft.evidenceAttached ? 'yes' : 'no'} · Approver: ${draft.approver || '(none)'}`);
@@ -103,7 +105,7 @@ export function ReportPage() {
 
   const d = rec.data;
   const isSent = SENT.includes(String(d.status));
-  const due = Number(d.deadline_ts) || rec.ts + 6 * 3600_000;
+  const due = certDeadline(rec, null) ?? rec.ts + 6 * 3600_000;
   const editor = can(role, 'report') && !isSent;
   const ready = reportReady(draft as unknown as Record<string, unknown>);
   const missing = certFields.flatMap(g => g.fields).filter(([k]) => !draft.fields[k]?.trim()).length;
@@ -122,7 +124,8 @@ export function ReportPage() {
       const before = fields[k];
       const text = draft.fields[k].trim();
       const changed = text !== (before?.value == null ? '' : String(before.value));
-      merged[k] = changed ? {value: text || null, status: text ? 'attested' : 'missing', source: 'staff'} : before ?? {value: null, status: 'missing', source: 'unavailable'};
+      merged[k] = changed ? {value: text || null, status: text ? 'attested' : 'missing', source: 'staff'}
+        : before ?? (text ? {value: text, status: 'observed', source: 'A5 draft'} : {value: null, status: 'missing', source: 'unavailable'});
     }
     const ok = await save.run(`/api/reports/${encodeURIComponent(rec.record_id)}`, {
       type: 'save_report', incidentId: String(d.incident_id ?? incidentId),
@@ -149,12 +152,13 @@ export function ReportPage() {
               <div className="form-grid">
                 {g.fields.map(([k, label]) => {
                   const f = fields[k];
-                  const st = draft.fields[k]?.trim() ? (f?.status && f.status !== 'missing' ? f.status : 'attested') : 'missing';
+                  const fromAgent = !f ? reportValue(d, k) : '';
+                  const st = draft.fields[k]?.trim() ? (f?.status && f.status !== 'missing' ? f.status : fromAgent && draft.fields[k] === fromAgent ? 'observed' : 'attested') : 'missing';
                   const Input = longFields.has(k) ? 'textarea' : 'input';
                   return (
                     <label key={k} className={`field ${longFields.has(k) ? 'span-2' : ''}`}>
                       <span className="field-label">{label}
-                        <Chip kind={st === 'missing' ? 'striped' : 'neutral'} hint={`${STATUS_HINT[st]}${f?.source && f.source !== 'unavailable' ? ` Source: ${f.source}.` : ''}`}>{st}</Chip>
+                        <Chip kind={st === 'missing' ? 'striped' : 'neutral'} hint={`${STATUS_HINT[st]}${f?.source && f.source !== 'unavailable' ? ` Source: ${f.source}.` : st === 'observed' && !f ? ' Source: the A5 draft.' : ''}`}>{st}</Chip>
                       </span>
                       <Input value={draft.fields[k]} disabled={!editor} maxLength={2000} {...(Input === 'textarea' ? {rows: 3} : {})}
                              onChange={(e: {target: {value: string}}) => set({fields: {...draft.fields, [k]: e.target.value}})} />
@@ -173,8 +177,8 @@ export function ReportPage() {
             {evidence.length === 0 ? <p className="tiny">No evidence files listed in this draft.</p> : (
               <ul className="evidence-list compact">
                 {evidence.map((e, i) => (
-                  <li key={i} className="evidence"><strong>{String(e.label ?? e.kind ?? 'file').replace(/_/g, ' ')}</strong>
-                    <span className="tiny"> · {bytes(e.size_bytes)}</span>
+                  <li key={i} className="evidence"><strong>{evidenceView(e).title}</strong>
+                    {evidenceView(e).size !== null && <span className="tiny"> · {bytes(evidenceView(e).size)}</span>}
                     <Tip text="SHA-256 fingerprint; proves the file has not changed."><code className="sha">{String(e.sha256 ?? 'no fingerprint').slice(0, 24)}…</code></Tip></li>
                 ))}
               </ul>

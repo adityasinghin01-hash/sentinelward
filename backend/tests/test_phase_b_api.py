@@ -226,7 +226,7 @@ def test_briefing_projection_since_and_workload(app, client, clock):
     assert client.get(f"/api/briefing?since={start + 1}").status_code == 503
     assert client.get("/api/briefing?since=yesterday").status_code == 422
     nurses = client.get("/api/workload?hours=2").json()["nurses"]
-    assert nurses == [{"nurse_id": "staff:priya", "nurse_name": "Priya (Nurse)", "alarms_last_2h": 41},
+    assert nurses == [{"nurse_id": "staff:priya", "nurse_name": "Priya (Nurse)", "role": "nurse", "alarms_last_2h": 41},
                       {"nurse_id": "staff:ghost", "nurse_name": "staff:ghost", "alarms_last_2h": 3}]
     clock.advance(3 * 3600)
     assert client.get("/api/workload?hours=2").status_code == 401
@@ -296,3 +296,44 @@ def test_openapi_lists_every_screen_route(client):
     for path, methods in expected.items():
         assert path in paths, path
         assert methods <= set(paths[path]), path
+
+
+def test_devices_report_newest_known_senders(app, client, clock):
+    login(client, "it")
+    assert next(d for d in client.get("/api/devices").json() if d["device_id"] == "MON-07")["senders"] is None
+    base = dict(device_id="MON-07", window_s=5, msgs_per_s=1.0, bytes_per_s=None, iat_mean_ms=1000, iat_std_ms=1,
+                payload_mean=900, payload_std=0, connects_per_s=0, malformed=0, seq_gaps=0, seq_repeats=0,
+                stale_ms=0)
+    ws = clock.ms() // 5000 * 5000
+    ingest(app, make_net_features(window_start=ws, senders=2, **base))
+    ingest(app, make_net_features(window_start=ws + 5000, senders=None, **base))  # newest window: count unknown
+    dev = next(d for d in client.get("/api/devices").json() if d["device_id"] == "MON-07")
+    assert dev["net"]["senders"] is None
+    assert (dev["senders"], dev["senders_window_start"]) == (2, ws)
+
+
+def test_bed_detail_carries_monitor_alarm(app, client, clock):
+    login(client, "nurse")
+    ingest(app, make_vitals(bed_id="B03", seq=0, hr=150, monitor_alarm={"code": "VTACH", "priority": "high"},
+                            ts=clock.ms()))
+    assert client.get("/api/beds/B03").json()["monitor_alarm"] == {"code": "VTACH", "priority": "high"}
+    clock.advance(1)
+    ingest(app, make_vitals(bed_id="B03", seq=1, hr=80, ts=clock.ms()))
+    assert client.get("/api/beds/B03").json()["monitor_alarm"] is None
+
+
+def test_briefing_returns_the_facts_its_summary_was_written_from(app, client, clock):
+    login(client, "nurse")
+    facts = {"since_ts": clock.ms(), "shift_start": "08:00", "data_from": "18:41", "incident_count": 2,
+             "untrusted_bed_count": 1, "untrusted_beds": ["B06"], "open_ticket_count": 0,
+             "blind_time": [{"bed_id": "B03", "minutes": 15.4}], "alerts_sent": 30, "alerts_acknowledged": 3}
+    record(app, clock, "briefing", "br_f", {**facts, "generated_by": "template",
+                                             "narrative": {"text": "B03 15.4 min", "generator": "template",
+                                                           "fallback_reason": "Granite unavailable (ReadTimeout)"}})
+    body = client.get("/api/briefing").json()
+    assert body["facts"] == facts
+    assert body["fallback_reason"] == "Granite unavailable (ReadTimeout)"
+    clock.advance(1)
+    record(app, clock, "briefing", "br_g", {"narrative": {"text": "x", "generator": "granite"}})
+    body = client.get("/api/briefing").json()
+    assert body["facts"] is None and body["fallback_reason"] is None

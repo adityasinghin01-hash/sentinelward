@@ -40,7 +40,7 @@ export function LogPage() {
                 <th scope="col"><Tip text="The agent (A1–A8) or the person who acted."><span>Agent or person</span></Tip></th>
                 <th scope="col">Action</th><th scope="col">Bed / device</th>
                 <th scope="col"><Tip text="Person who approved the action, when approval was needed."><span>Approved by</span></Tip></th>
-                <th scope="col"><Tip text="Automatic actions that can be reversed. IT security can undo."><span>Undo</span></Tip></th>
+                <th scope="col"><Tip text="Shown only on actions the API marks as reversible (e.g. a cut-off). IT security can undo."><span>Undo</span></Tip></th>
               </tr></thead>
               <tbody>
                 {shown.map(a => (
@@ -52,7 +52,7 @@ export function LogPage() {
                       {a.references_action_id && <span className="tiny"> · reverses {a.references_action_id.slice(0, 12)}</span>}</td>
                     <td className="mono">{a.bed_id ?? a.device_id ?? 'Ward'}</td>
                     <td>{a.approved_by ? staff(a.approved_by) : '—'}</td>
-                    <td>{a.mode === 'automatic' ? <Undo action={a} /> : <span className="tiny">—</span>}</td>
+                    <td>{a.mode === 'automatic' && a.undoable ? <Undo action={a} /> : <Tip text={a.mode === 'automatic' ? 'This automatic action has no reversal (e.g. a message sent, a briefing written).' : 'Staff actions are not undone from here.'}><span className="tiny">—</span></Tip>}</td>
                   </tr>
                 ))}
               </tbody>

@@ -72,8 +72,33 @@ def bed_detail(state: WardState, bed_id: str) -> dict:
     entry = state.beds[bed_id]
     payload = bed(state, bed_id)
     payload.update(scores=dict(sorted(entry.scores.items())), recent_verdicts=list(entry.recent_verdicts),
-                   device=state.device_brief(entry.cfg.device_id), open_alerts=state.open_alerts(bed_id))
+                   device=state.device_brief(entry.cfg.device_id), open_alerts=state.open_alerts(bed_id),
+                   monitor_alarm=dict(entry.alarm) if entry.alarm else None)
     return payload
+
+
+def devices(state: WardState) -> list[dict]:
+    """GET /api/devices: each device plus the newest known sender count from its buffered net_features rows."""
+    out = []
+    for item in state.devices_list():
+        rows = state.devices[item["device_id"]].net_rows
+        known = max((r for r in rows if isinstance(r.get("senders"), (int, float))),
+                    key=lambda r: r["window_start"], default=None)
+        item.update(senders=known["senders"] if known else None,
+                    senders_window_start=known["window_start"] if known else None)
+        out.append(item)
+    return out
+
+
+BRIEFING_FACTS = ("since_ts", "shift_start", "data_from", "incident_count", "incidents", "untrusted_bed_count",
+                  "untrusted_beds", "open_ticket_count", "open_tickets", "blind_time", "alerts_sent",
+                  "alerts_acknowledged", "median_ack_s", "false_alarms_silenced")
+
+
+def briefing_facts(data: dict) -> dict | None:
+    """The facts an A8 briefing record was written from (only keys the record has), or None."""
+    facts = {k: data[k] for k in BRIEFING_FACTS if k in data}
+    return facts or None
 
 
 def record(rec: dict) -> dict:

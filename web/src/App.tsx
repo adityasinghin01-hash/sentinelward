@@ -1,10 +1,11 @@
 import {useEffect} from 'react';
 import type {ReactNode} from 'react';
 import {Navigate, NavLink, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
-import {Activity, AlertTriangle, LogOut, Radio, WifiOff} from 'lucide-react';
+import {Activity, AlertTriangle, LogOut, Radio, ShieldAlert, WifiOff} from 'lucide-react';
 import {useWard, connectWard} from './lib/store';
-import {canOpen, roleHomes, roleNames, time} from './lib/domain';
-import {useNow} from './lib/hooks';
+import {canOpen, openAlerts, roleHomes, roleNames, time} from './lib/domain';
+import type {AgentRecord} from './lib/types';
+import {useNow, useResource} from './lib/hooks';
 import {api} from './lib/api';
 import {Tip} from './components/ui';
 import {LoginPage} from './pages/Login';
@@ -83,19 +84,37 @@ function TopBar() {
   );
 }
 
-// R8 Part D: any high alarm shows on every screen, so nothing is missed. IT sees only that a bed is affected.
+// R8 Part D: any high alarm shows on every clinical screen (Ward included), so nothing is missed.
+// IT screens get their own strip for open security incidents instead: clinical alarms are not shown to IT.
+function ItStrip() {
+  const incidents = useResource<AgentRecord[]>('/api/incidents', 8000);
+  const open = (incidents.data ?? []).filter(r => !['resolved', 'closed'].includes(String(r.data.status)));
+  if (!open.length) return null;
+  const first = open[0];
+  return (
+    <div className="it-strip" role="status">
+      <ShieldAlert size={15} aria-hidden="true" />
+      <strong>SECURITY INCIDENT{open.length > 1 ? `S · ${open.length}` : ''}</strong>
+      <span>{open.slice(0, 4).map(r => `${String(r.data.device_id ?? 'device')} (Bed ${String(r.data.bed_id ?? '—')}) ${String(r.data.status ?? 'open').replace(/_/g, ' ')}`).join(' · ')}</span>
+      <NavLink to={`/incident/${encodeURIComponent(first.record_id)}`} title="Open the newest open incident: timeline, evidence and CERT-In draft.">Open incident</NavLink>
+    </div>
+  );
+}
+
 function AlarmStrip() {
   const alerts = useWard(s => s.alerts);
   const role = useWard(s => s.session?.role);
   const location = useLocation();
-  const high = alerts.filter(a => a.priority === 'high' && (a.status === 'open' || a.status === 'escalated'));
-  if (!high.length || location.pathname === '/ward') return null;
+  const itScreen = role === 'it' || /^\/(security|incident)/.test(location.pathname);
+  if (itScreen) return <ItStrip />;
+  const high = openAlerts(alerts).filter(a => a.priority === 'high');
+  if (!high.length) return null;
   const beds = [...new Set(high.map(a => a.bed_id))];
   return (
     <div className="alarm-strip" role="alert">
       <AlertTriangle size={15} aria-hidden="true" />
       <strong>HIGH ALARM</strong>
-      <span>{role === 'it' || role === 'biomedical' ? `${beds.join(', ')} affected · nurses alerted` : high.slice(0, 3).map(a => `${a.bed_id}: ${a.text}`).join(' · ')}</span>
+      <span>{role === 'biomedical' ? `${beds.join(', ')} affected · nurses alerted` : high.slice(0, 3).map(a => `${a.bed_id}: ${a.text}`).join(' · ')}</span>
       {role !== 'biomedical' && <NavLink to={`/bed/${beds[0]}`} title="Open the alarming bed.">Open {beds[0]}</NavLink>}
     </div>
   );

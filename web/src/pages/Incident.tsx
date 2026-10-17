@@ -3,14 +3,14 @@ import {Link, useParams} from 'react-router-dom';
 import {Camera, Download, FileText, Fingerprint, Lock, ShieldAlert, CheckCircle2} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
-import {bytes, can, countdown, dateTime, downloadName, staff, time} from '../lib/domain';
+import {bytes, can, certDeadline, countdown, dateTime, downloadName, evidenceView, staff, time, timelineRow} from '../lib/domain';
 import {downloadJson} from '../lib/api';
 import type {AgentRecord} from '../lib/types';
 import {ActionList, BedLink, Empty, Feedback, PageTitle, Panel, ResourceState, Stats, Tip} from '../components/ui';
 import {Chip, Dialog} from '../components/extra';
 
 type Evidence = Record<string, unknown>;
-type Row = {ts: number; what: string; who: string; kind: 'agent' | 'staff' | 'verdict'};
+type Row = {ts: number; what: string; who: string; kind: 'agent' | 'staff' | 'verdict'; before: boolean};
 const title = (d: Record<string, unknown>) =>
   `${String(d.attack_type ?? d.title ?? 'Suspected attack').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} on ${String(d.device_id ?? 'a monitor')}, Bed ${String(d.bed_id ?? '—')}`;
 
@@ -46,17 +46,18 @@ export function IncidentListPage() {
 
 function EvidenceItem({e, incidentId}: {e: Evidence; incidentId: string}) {
   const sha = typeof e.sha256 === 'string' ? e.sha256 : '';
-  const name = String(e.filename ?? e.path ?? e.kind ?? 'evidence').split('/').pop()!;
+  const view = evidenceView(e);
+  const name = view.file || 'evidence';
   const hasContent = e.content !== undefined;
   return (
     <li className="evidence">
       <div className="evidence-head">
         <FileText size={15} aria-hidden="true" />
-        <strong>{String(e.label ?? String(e.kind ?? 'Evidence').replace(/_/g, ' '))}</strong>
+        <strong>{view.title}</strong>
         {e.verified === true && <Chip kind="info" hint="The agent re-read the file and its fingerprint matched."><CheckCircle2 size={12} aria-hidden="true" />verified</Chip>}
         {e.available === false && <Chip kind="striped" hint="This file was expected but no data was available for it.">no data</Chip>}
       </div>
-      <p className="tiny">{name} · {bytes(e.size_bytes)}{e.captured_at ? ` · ${time(Number(e.captured_at), true)}` : ''}{e.captured_by ? ` · ${staff(e.captured_by)}` : ''}</p>
+      <p className="tiny">{view.file && view.file !== view.title ? `${view.file} · ` : ''}{view.size === null ? 'size not recorded' : bytes(view.size)}{e.captured_at ? ` · ${time(Number(e.captured_at), true)}` : ''}{e.captured_by ? ` · ${staff(e.captured_by)}` : ''}</p>
       <Tip text="SHA-256 fingerprint of the file. Any change to the file changes this value, so it proves the evidence was not altered.">
         <code className="sha"><Fingerprint size={12} aria-hidden="true" /> {sha ? `${sha.slice(0, 16)}…${sha.slice(-8)}` : 'no fingerprint'}</code>
       </Tip>
@@ -95,16 +96,17 @@ export function IncidentPage() {
   const status = String(d.status ?? 'open');
   const closed = ['resolved', 'closed'].includes(status);
   const evidence = (Array.isArray(d.evidence) ? d.evidence : []) as Evidence[];
-  const reportDue = Number(rep.data?.data.deadline_ts) || null;
-  const due = reportDue ?? inc.data.ts + 6 * 3600_000;
+  const due = certDeadline(rep.data, inc.data) ?? inc.data.ts + 6 * 3600_000;
+  const fromReport = !!rep.data;
+  const attackStart = Number(d.attack_start_ts ?? d.detected_ts) || inc.data.ts;
   const related = actions.filter(a => (bedId && a.bed_id === bedId) || (deviceId && a.device_id === deviceId)).filter(a => a.occurred_at >= inc.data!.ts - 60_000);
-  const timeline: Row[] = [
-    ...((Array.isArray(d.timeline) ? d.timeline : []) as Record<string, unknown>[]).map(t => ({
-      ts: Number(t.ts), kind: 'verdict' as const, who: String(t.agent ?? t.by ?? 'Decision layer'),
-      what: t.verdict ? `Verdict ${String(t.verdict).replace(/_/g, ' ')}` : String(t.action ?? t.kind ?? 'Event').replace(/_/g, ' '),
-    })),
-    ...related.map(a => ({ts: a.occurred_at, kind: a.mode === 'automatic' ? 'agent' as const : 'staff' as const, who: a.actor.startsWith('staff:') ? staff(a.actor) : a.actor, what: a.action})),
-  ].sort((a, b) => a.ts - b.ts);
+  // A3's own timeline when it has one (it already includes the agents' actions); else the related actions.
+  const own = ((Array.isArray(d.timeline) ? d.timeline : []) as Record<string, unknown>[]).map(timelineRow);
+  const timeline: Row[] = (own.length
+    ? own.map(t => ({...t, kind: /^A[1-8]$/.test(t.who) ? 'agent' as const : t.who === 'Staff' ? 'staff' as const : 'verdict' as const, before: t.ts < attackStart}))
+    : related.map(a => ({ts: a.occurred_at, kind: a.mode === 'automatic' ? 'agent' as const : 'staff' as const, who: a.actor.startsWith('staff:') ? staff(a.actor) : a.actor, what: a.action, before: a.occurred_at < attackStart})))
+    .sort((a, b) => a.ts - b.ts);
+  const firstDuring = timeline.findIndex(t => !t.before);
   const allowed = can(role, 'security');
   const affected = Array.isArray(d.affected_beds) ? d.affected_beds.map(String) : bedId ? [bedId] : [];
   return (
@@ -118,7 +120,7 @@ export function IncidentPage() {
       <Stats items={[
         {label: 'Status', value: <span className="stat-word">{status.replace(/_/g, ' ')}</span>, hint: 'Where this incident stands: pending, evidence verified, contained, resolved.'},
         {label: 'Started', value: time(inc.data.ts, true), hint: 'When the first suspicious verdict for this device arrived.'},
-        {label: 'CERT-In clock', value: countdown(due, now), hint: 'CERT-In asks for a report within 6 hours of noticing an incident.', sub: reportDue ? 'from the report draft' : 'estimated: 6 h from incident start'},
+        {label: 'CERT-In clock', value: countdown(due, now), hint: 'CERT-In asks for a report within 6 hours of noticing an incident. Same deadline as the report draft screen.', sub: fromReport ? `due ${time(due, true)} · from the report draft` : `due ${time(due, true)} · 6 h from detection`},
         {label: 'Evidence files', value: evidence.length, hint: 'Files frozen for this incident, each with a SHA-256 fingerprint.'},
       ]} />
       <div className="row-actions">
@@ -140,12 +142,13 @@ export function IncidentPage() {
         <Panel title="Timeline" caption="Each event with its time and which agent or person did it.">
           {timeline.length === 0 ? <p className="tiny">No events recorded yet.</p> : (
             <ol className="timeline">
-              {timeline.map((t, i) => (
-                <li key={`${t.ts}-${i}`} className={`tl-${t.kind}`}>
+              {timeline.flatMap((t, i) => [
+                ...(i === firstDuring && firstDuring > 0 ? [<li key="divider" className="tl-divider">ATTACK STARTS · {time(attackStart, true)}</li>] : []),
+                <li key={`${t.ts}-${i}`} className={`tl-${t.kind} ${t.before ? 'tl-before' : ''}`} title={t.before ? 'Before the attack started: context only.' : undefined}>
                   <time className="mono">{time(t.ts, true)}</time>
-                  <div><strong>{t.what}</strong><p className="tiny">{t.kind === 'verdict' ? 'Decision layer' : t.who}</p></div>
-                </li>
-              ))}
+                  <div><strong>{t.what}</strong><p className="tiny">{t.who}{t.before ? ' · before the attack' : ''}</p></div>
+                </li>,
+              ])}
             </ol>
           )}
         </Panel>
