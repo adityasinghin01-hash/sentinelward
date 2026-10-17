@@ -1,0 +1,98 @@
+sampler HTTP statuses: {('status', 200): 252, ('alerts_status', 200): 252, ('actions_status', 200): 252, ('health_status', 200): 252, ('bed', 200): 504, ('devices_status', 200): 42, ('incidents_status', 200): 42, ('reports_status', 200): 42, ('tickets_status', 200): 42, ('workload_status', 200): 42, ('briefing_status', 503): 2, ('briefing_status', 200): 40}
+samples: ward 252 bed 504 slow 42
+HUMAN 05:50 tom ack B03 T(my clock) 350.0 sim T 348.7 tom POST /api/alerts/al_cic3cy00695/ack HTTP 202
+HUMAN 11:30 nurse B05 patient_ok T(my clock) 690.0 sim T 688.7 priya POST /api/beds/B05/bedside-check patient_ok HTTP 201
+HUMAN 15:30 sam undo B05 cut-off T(my clock) 930.0 sim T 928.7 sam POST /api/actions/act_cic3cy00742/undo HTTP 202
+HUMAN 18:00 nurse B12 patient_ok T(my clock) 1080.0 sim T 1078.7 tom POST /api/beds/B12/bedside-check patient_ok HTTP 201
+
+display,isolated counts per bed (T 0..1200):
+  B01 {('live', False): 240} blank-after-data: 0 isolated: never
+  B02 {('live', False): 235, ('last_trusted', False): 5} blank-after-data: 0 isolated: never
+  B03 {('live', False): 61, ('last_trusted', False): 6, ('offline', False): 173} blank-after-data: 0 isolated: never
+  B04 {('empty', False): 18, ('live', False): 60, ('last_trusted', False): 7, ('offline', False): 155} blank-after-data: 0 isolated: never
+  B05 {('live', False): 148, ('last_trusted', False): 22, ('last_trusted', True): 53, ('offline', True): 13, ('offline', False): 4} blank-after-data: 0 isolated: 10:04-15:29
+  B06 {('live', False): 189, ('last_trusted', False): 3, ('last_trusted', True): 1, ('offline', True): 47} blank-after-data: 0 isolated: 16:04-19:59
+  B07 {('empty', False): 108, ('live', False): 47, ('last_trusted', False): 11, ('last_trusted', True): 4, ('offline', True): 70} blank-after-data: 88 isolated: 13:54-19:59
+  B08 {('live', False): 179, ('last_trusted', False): 61} blank-after-data: 0 isolated: never
+  B09 {('live', False): 46, ('last_trusted', False): 194} blank-after-data: 0 isolated: never
+  B10 {('empty', False): 1, ('live', False): 71, ('last_trusted', True): 5, ('offline', True): 163} blank-after-data: 0 isolated: 06:04-19:59
+  B11 {('live', False): 124, ('last_trusted', False): 21, ('last_trusted', True): 95} blank-after-data: 0 isolated: 12:09-19:59
+  B12 {('live', False): 191, ('last_trusted', False): 49} blank-after-data: 0 isolated: never
+  B05 while isolated: display Counter({'last_trusted': 53, 'offline': 13}), hr shown [75.0]
+  B07 while isolated: display Counter({'offline': 81, 'last_trusted': 4}), hr shown [167.0]
+   B05 10:29 last_trusted {'captured_at': 1792254025000, 'vitals': {'hr': 75.0, 'spo2': 96.0, 'systolic': 137.0, 'diastolic': 57.0}}
+
+alerts per bed (nurse alerts, T0..20:00):
+  B01 n=0: 
+  B02 n=0: 
+  B03 n=1: 695@05:04 EMERGENCY/high step2 acked ack staff:tom 05:49
+  B04 n=1: 719@06:34 EMERGENCY/high step3 escalated
+  B05 n=1: 740@10:04 TAMPERING/medium step1 closed ack staff:priya 11:29
+  B06 n=1: 800@15:59 BOTH/high step3 escalated
+  B07 n=1: 769@13:19 UNSURE/medium->TAMPERING/medium->BOTH/high step3 escalated
+  B08 n=1: 750@11:14 DRIFTING/medium step1 closed
+  B09 n=2: 693@04:19 UNSURE/medium step1 closed; 723@07:54 EMERGENCY/high step3 escalated
+  B10 n=1: 713@06:04 TAMPERING/medium step1 open
+  B11 n=0: 
+  B12 n=2: 767@12:39 UNSURE/medium step1 closed; 821@17:29 UNSURE/medium step1 closed ack staff:tom 17:59
+nurse alerts total (unique alert_ids opened T0..20:00): 11
+IT notices: 5 [('B10', '05:59'), ('B05', '09:59'), ('B11', '12:04'), ('B07', '13:49'), ('B06', '15:59')]
+actions with 'telegram queued' T0..20:00: 46 Counter({'edit_message': 18, 'send_message': 16, 'escalate': 9, 'record_ack': 3})
+  incl. after 20:00 until stop: 52
+
+A2/undo actions:
+    359.1 set_bed_untrusted B10 act_cic3cy00702 undo_id=act_cic3cy00702 undoes=None ok
+    380.0 disable_client B10 act_cic3cy00715 undo_id=act_cic3cy00715 undoes=None ok
+    599.1 set_bed_untrusted B05 act_cic3cy00729 undo_id=act_cic3cy00729 undoes=None ok
+    620.0 disable_client B05 act_cic3cy00742 undo_id=act_cic3cy00742 undoes=None ok
+    724.1 set_bed_untrusted B11 act_cic3cy00756 undo_id=act_cic3cy00756 undoes=None ok
+    829.1 set_bed_untrusted B07 act_cic3cy00774 undo_id=act_cic3cy00774 undoes=None ok
+    845.0 disable_client B07 act_cic3cy00789 undo_id=act_cic3cy00789 undoes=None ok
+    928.9 enable_client B05 act_cic3cy00795 undo_id=None undoes=act_cic3cy00742 ok
+    928.9 enable_client B05 act_cic3cy00796 undo_id=None undoes=act_cic3cy00729 ok
+    959.0 set_bed_untrusted B06 act_cic3cy00802 undo_id=act_cic3cy00802 undoes=None ok
+    960.0 disable_client B06 act_cic3cy00812 undo_id=act_cic3cy00812 undoes=None ok
+records: Counter({('incident', 'A3'): 45, ('workload', 'A7'): 19, ('report', 'A5'): 13, ('briefing', 'A8'): 6, ('ticket', 'A6'): 2})
+
+time to safe:
+  B05 attack 598.8 untrusted 599.058 cut 619.954 nurse-told 604.053 -> safe 21.2 s
+  B07 attack 823.8 untrusted 829.071 cut 845.016 nurse-told 834.063 -> safe 21.2 s
+  B10 attack 358.8 untrusted 359.078 cut 380.024 nurse-told 364.211 -> safe 21.2 s
+  B11 attack 718.8 untrusted 724.094 cut None nurse-told None -> safe None s
+  B06 attack 958.8 untrusted 959.048 cut 959.963 nurse-told 959.048 -> safe 1.2 s
+  B12 attack 1018.8 untrusted None cut None nurse-told None -> safe None s
+
+B08 M6 at bed polls 08:30-12:00 and 15:30-16:40:
+  08:59 M6=0.19332190476190475 
+  09:29 M6=0.19332190476190475 
+  09:59 M6=0.19332190476190475 
+  10:29 M6=0.19332190476190475 
+  10:59 M6=0.19332190476190475 
+  11:29 M6=0.8864213333333335 
+  11:59 M6=0.8864213333333335 
+  15:59 M6=0.9449288888888893 
+  16:29 M6=0.15351619047619067 
+B11 scores at 12:00-12:20:
+  11:59 M1=0.0 M2=None M3=0.2 M4=0.12203951808481583 M5=0.0 M6=None
+  12:29 M1=0.0 M2=None M3=0.2 M4=0.12031942051804655 M5=0.0 M6=None
+  first TAMPERING B10 05:59 scores={'M1': 0.0, 'M2': None, 'M3': 0.0, 'M4': 0.98, 'M5': 0.0, 'M6': 0.11366017094017025} reasons=['Conflicting frame content for the same sequence or timestamp']
+  first TAMPERING B07 13:54 scores={'M1': 1.0, 'M2': None, 'M3': None, 'M4': 0.98, 'M5': 0.95, 'M6': None} reasons=['Replay checked from sequence and sender; waveform unusable']
+
+last slow sample 20:29
+  INC inc_cic3cy00731 B05 17:04 status open evidence [(None, '4f51d9c697f9'), (None, 'c6dbffc68c21'), (None, '9a4395266b0c')]
+  INC inc_cic3cy00803 B06 16:59 status open evidence [(None, 'cd4a15f03e74'), (None, '5d2fef000d35'), (None, '68345bafca26')]
+  INC inc_cic3cy00776 B07 15:04 status open evidence [(None, '31b9422b814a'), (None, 'a6b9a93628db'), (None, '1184eb09ffc5')]
+  INC inc_cic3cy00758 B11 12:04 status open evidence [(None, '1e1c7cebb944'), (None, '5cb3ca594bf0'), (None, '5db6df1986b3')]
+  INC inc_cic3cy00704 B10 06:20 status open evidence [(None, 'a8d3ff671adc'), (None, '0f121e153d3b'), (None, '5c8bfdb70edf')]
+  RPT rp_cic3cy00809 inc_cic3cy00803 status draft deadline None missing ['reporter_name', 'organisation', 'reporter_email', 'reporter_phone', 'affected_system.ip_address', 'affected_system.os_version', 'affected_system.last_patched'] keys ['actions_taken', 'affected_system', 'bed_id', 'clock_deadline_at', 'clock_deadline_ts', 'clock_started_ts', 'critical_to_mission', 'device_id', 'dpdp_note', 'evidence', 'form', 'incident_id', 'incident_type', 'missing_fields', 'noticed_at', 'noticed_ts', 'occurred_at', 'occurred_ts', 'organisation', 'physical_location', 'report_id', 'reporter_email', 'reporter_name', 'reporter_phone', 'sector']
+  RPT rp_cic3cy00737 inc_cic3cy00731 status draft deadline None missing ['reporter_name', 'organisation', 'reporter_email', 'reporter_phone', 'affected_system.ip_address', 'affected_system.os_version', 'affected_system.last_patched'] keys ['actions_taken', 'affected_system', 'bed_id', 'clock_deadline_at', 'clock_deadline_ts', 'clock_started_ts', 'critical_to_mission', 'device_id', 'dpdp_note', 'evidence', 'form', 'incident_id', 'incident_type', 'missing_fields', 'noticed_at', 'noticed_ts', 'occurred_at', 'occurred_ts', 'organisation', 'physical_location', 'report_id', 'reporter_email', 'reporter_name', 'reporter_phone', 'sector']
+  RPT rp_cic3cy00782 inc_cic3cy00776 status draft deadline None missing ['reporter_name', 'organisation', 'reporter_email', 'reporter_phone', 'affected_system.ip_address', 'affected_system.os_version', 'affected_system.last_patched'] keys ['actions_taken', 'affected_system', 'bed_id', 'clock_deadline_at', 'clock_deadline_ts', 'clock_started_ts', 'critical_to_mission', 'device_id', 'dpdp_note', 'evidence', 'form', 'incident_id', 'incident_type', 'missing_fields', 'noticed_at', 'noticed_ts', 'occurred_at', 'occurred_ts', 'organisation', 'physical_location', 'report_id', 'reporter_email', 'reporter_name', 'reporter_phone', 'sector']
+  RPT rp_cic3cy00764 inc_cic3cy00758 status draft deadline None missing ['reporter_name', 'organisation', 'reporter_email', 'reporter_phone', 'affected_system.ip_address', 'affected_system.os_version', 'affected_system.last_patched'] keys ['actions_taken', 'affected_system', 'bed_id', 'clock_deadline_at', 'clock_deadline_ts', 'clock_started_ts', 'critical_to_mission', 'device_id', 'dpdp_note', 'evidence', 'form', 'incident_id', 'incident_type', 'missing_fields', 'noticed_at', 'noticed_ts', 'occurred_at', 'occurred_ts', 'organisation', 'physical_location', 'report_id', 'reporter_email', 'reporter_name', 'reporter_phone', 'sector']
+  RPT rp_cic3cy00710 inc_cic3cy00704 status draft deadline None missing ['reporter_name', 'organisation', 'reporter_email', 'reporter_phone', 'affected_system.ip_address', 'affected_system.os_version', 'affected_system.last_patched'] keys ['actions_taken', 'affected_system', 'bed_id', 'clock_deadline_at', 'clock_deadline_ts', 'clock_started_ts', 'critical_to_mission', 'device_id', 'dpdp_note', 'evidence', 'form', 'incident_id', 'incident_type', 'missing_fields', 'noticed_at', 'noticed_ts', 'occurred_at', 'occurred_ts', 'organisation', 'physical_location', 'report_id', 'reporter_email', 'reporter_name', 'reporter_phone', 'sector']
+  TKT tk_cic3cy00748 B08 MON-08 open Arterial line reading may be drifting away from the cuff 16:14
+  workload {"nurses": [{"nurse_id": "staff:dr_mehta", "nurse_name": "Dr Mehta (Doctor)", "role": "doctor", "alarms_last_2h": 4}, {"nurse_id": "staff:priya", "nurse_name": "Priya (Nurse)", "role": "nurse", "alarms_last_2h": 6}, {"nurse_id": "staff:tom", "nurse_name": "Tom (Nurse)", "role": "nurse", "alarms_last_2h": 10}], "record_id": "wl_cic3cy00001", "ts": 1792254631967}
+  briefing status 200 generated_by IBM Granite ts 19:49
+  briefing first 2 lines: ["Since 08:00 the ward had 5 incidents: suspected tampering on B06, B07, B10, B11, B12. B06 is untrusted, B07 and B10 are open, B11 is open, B12 is open. There is 1 open biomed ticket, a drift on MON-08. B02 was blind for 0.4 min. Staff got 11 alerts and acknowledged 3, with a median of 44.6 s to acknowledge. 0 false alarms were silenced."]
+  briefing counts {'incidents': 0, 'untrusted_beds': 12, 'open_tickets': 1, 'blind_time': [{'bed_id': 'B11', 'minutes': 0.18}]}
+  first briefing seen at 00:59
+  devices isolated at end: ['MON-06', 'MON-07', 'MON-10', 'MON-11']

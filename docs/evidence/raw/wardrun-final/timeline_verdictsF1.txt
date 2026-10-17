@@ -1,0 +1,420 @@
+== B01 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B02 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-04:19 NORMAL        none   All applicable live checks are clear
+  04:24-04:24 UNSURE        medium Body-match check: ECG rate 87 bpm differs from pulse rate 54 bpm
+  04:29-05:04 NORMAL        none   All applicable live checks are clear
+  05:09-05:09 UNSURE        medium Body-match check: ECG rate 86 bpm differs from pulse rate 58 bpm
+  05:14-09:19 NORMAL        none   All applicable live checks are clear
+  09:24-09:34 UNSURE        medium Body-match check: ECG rate 101 bpm differs from pulse rate 35 bpm
+  09:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B03 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-04:59 NORMAL        none   All applicable live checks are clear
+  05:04-05:39 EMERGENCY     high   Monitor alarm remains active
+  05:44-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B04 227 verdicts
+  01:34-01:39 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  01:44-06:24 NORMAL        none   All applicable live checks are clear
+  06:29-06:29 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  06:34-07:09 EMERGENCY     high   Monitor alarm remains active
+  07:14-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B05 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-00:59 NORMAL        none   All applicable live checks are clear
+  01:04-01:09 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:14-01:39 NORMAL        none   All applicable live checks are clear
+  01:44-01:44 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:49-02:49 NORMAL        none   All applicable live checks are clear
+  02:54-02:54 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  02:59-04:49 NORMAL        none   All applicable live checks are clear
+  04:54-04:54 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  04:59-05:14 NORMAL        none   All applicable live checks are clear
+  05:19-05:19 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  05:24-09:54 NORMAL        none   All applicable live checks are clear
+  09:59-16:54 TAMPERING     medium Old or unverified regressed sequence
+  16:59-17:24 NORMAL        none   All applicable live checks are clear
+  17:29-17:34 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  17:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B06 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-07:09 NORMAL        none   All applicable live checks are clear
+  07:14-07:14 UNSURE        medium Body-match check: Pulse timing 864 ms from ECG; this patient's usual is 696 ms
+  07:19-15:24 NORMAL        none   All applicable live checks are clear
+  15:29-15:34 UNSURE        medium Body-match check: ECG rate 80 bpm differs from pulse rate 41 bpm
+  15:39-15:54 NORMAL        none   All applicable live checks are clear
+  15:59-20:24 BOTH          high   Monitor alarm remains active; Conflicting frame content for the same sequence or timestamp
+== B07 137 verdicts
+  09:04-09:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  09:14-12:49 NORMAL        none   All applicable live checks are clear
+  12:54-13:44 UNSURE        medium Sensor check: PPG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  13:49-13:49 DEVICE_ATTACK none   Message flood at 24.6 messages/s
+  13:54-13:59 TAMPERING     medium Replay checked from sequence and sender; waveform unusable
+  14:04-20:24 BOTH          high   Monitor alarm remains active; Replay checked from sequence and sender; waveform unusable
+== B08 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-11:04 NORMAL        none   All applicable live checks are clear
+  11:09-16:09 DRIFTING      medium Line/cuff gap +9 mmHg vs usual +0 and growing; re-level and re-zero the transducer
+  16:14-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B09 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-00:14 NORMAL        none   All applicable live checks are clear
+  00:19-00:34 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  00:39-01:04 NORMAL        none   All applicable live checks are clear
+  01:09-01:14 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  01:19-01:29 NORMAL        none   All applicable live checks are clear
+  01:34-01:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  01:54-02:04 NORMAL        none   All applicable live checks are clear
+  02:09-02:14 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  02:19-02:24 NORMAL        none   All applicable live checks are clear
+  02:29-02:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  02:54-03:24 NORMAL        none   All applicable live checks are clear
+  03:29-03:39 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  03:44-03:49 NORMAL        none   All applicable live checks are clear
+  03:54-05:19 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  05:24-05:39 NORMAL        none   All applicable live checks are clear
+  05:44-05:44 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  05:49-06:09 NORMAL        none   All applicable live checks are clear
+  06:14-06:44 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  06:49-06:54 NORMAL        none   All applicable live checks are clear
+  06:59-07:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  07:54-19:14 EMERGENCY     high   Low arterial pressure confirmed by cuff
+  19:19-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B10 244 verdicts
+  00:09-00:14 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:19-05:54 NORMAL        none   All applicable live checks are clear
+  05:59-20:24 TAMPERING     medium Conflicting frame content for the same sequence or timestamp
+== B11 245 verdicts
+  00:04-00:14 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:19-02:14 NORMAL        none   All applicable live checks are clear
+  02:19-02:29 UNSURE        medium Body-match check: Pulse timing 1156 ms from ECG; this patient's usual is 712 ms
+  02:34-03:24 NORMAL        none   All applicable live checks are clear
+  03:29-03:39 UNSURE        medium Body-match check: ECG rate 62 bpm differs from pulse rate 53 bpm
+  03:44-04:24 NORMAL        none   All applicable live checks are clear
+  04:29-04:29 UNSURE        medium Body-match check: Pulse timing 896 ms from ECG; this patient's usual is 702 ms
+  04:34-04:59 NORMAL        none   All applicable live checks are clear
+  05:04-05:09 UNSURE        medium Body-match check: Pulse timing 848 ms from ECG; this patient's usual is 702 ms
+  05:14-05:39 NORMAL        none   All applicable live checks are clear
+  05:44-06:04 UNSURE        medium Body-match check: Pulse timing 856 ms from ECG; this patient's usual is 703 ms
+  06:09-08:29 NORMAL        none   All applicable live checks are clear
+  08:34-08:34 UNSURE        medium Body-match check: Pulse timing 912 ms from ECG; this patient's usual is 702 ms
+  08:39-08:39 NORMAL        none   All applicable live checks are clear
+  08:44-08:54 UNSURE        medium Body-match check: Pulse timing 992 ms from ECG; this patient's usual is 702 ms
+  08:59-09:14 NORMAL        none   All applicable live checks are clear
+  09:19-09:19 UNSURE        medium Body-match check: Pulse timing 1120 ms from ECG; this patient's usual is 702 ms
+  09:24-10:19 NORMAL        none   All applicable live checks are clear
+  10:24-10:24 UNSURE        medium Body-match check: Pulse timing 904 ms from ECG; this patient's usual is 696 ms
+  10:29-10:34 NORMAL        none   All applicable live checks are clear
+  10:39-10:39 UNSURE        medium Body-match check: Pulse timing 924 ms from ECG; this patient's usual is 696 ms
+  10:44-11:59 NORMAL        none   All applicable live checks are clear
+  12:04-12:14 DEVICE_ATTACK none   Message flood at 22.1 messages/s
+  12:19-12:39 NORMAL        none   All applicable live checks are clear
+  12:44-12:44 UNSURE        medium Body-match check: Pulse timing 936 ms from ECG; this patient's usual is 688 ms
+  12:49-12:49 NORMAL        none   All applicable live checks are clear
+  12:54-13:04 UNSURE        medium Body-match check: Pulse timing 932 ms from ECG; this patient's usual is 688 ms
+  13:09-14:44 NORMAL        none   All applicable live checks are clear
+  14:49-14:49 UNSURE        medium Body-match check: Pulse timing 888 ms from ECG; this patient's usual is 684 ms
+  14:54-14:59 NORMAL        none   All applicable live checks are clear
+  15:04-15:09 UNSURE        medium Body-match check: ECG rate 69 bpm differs from pulse rate 50 bpm
+  15:14-15:14 NORMAL        none   All applicable live checks are clear
+  15:19-15:24 UNSURE        medium Body-match check: Pulse timing 932 ms from ECG; this patient's usual is 684 ms
+  15:29-15:29 NORMAL        none   All applicable live checks are clear
+  15:34-15:34 UNSURE        medium Body-match check: ECG rate 78 bpm differs from pulse rate 49 bpm
+  15:39-16:14 NORMAL        none   All applicable live checks are clear
+  16:19-16:24 UNSURE        medium Body-match check: ECG rate 73 bpm differs from pulse rate 57 bpm
+  16:29-17:54 NORMAL        none   All applicable live checks are clear
+  17:59-17:59 UNSURE        medium Body-match check: Pulse timing 936 ms from ECG; this patient's usual is 684 ms
+  18:04-18:29 NORMAL        none   All applicable live checks are clear
+  18:34-18:44 UNSURE        medium Body-match check: ECG rate 71 bpm differs from pulse rate 58 bpm
+  18:49-19:09 NORMAL        none   All applicable live checks are clear
+  19:14-19:14 UNSURE        medium Body-match check: ECG rate 82 bpm differs from pulse rate 68 bpm
+  19:19-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B12 245 verdicts
+  00:04-00:24 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:29-00:34 NORMAL        none   All applicable live checks are clear
+  00:39-00:44 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  00:49-01:29 NORMAL        none   All applicable live checks are clear
+  01:34-01:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:44-02:34 NORMAL        none   All applicable live checks are clear
+  02:39-02:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  03:04-05:54 NORMAL        none   All applicable live checks are clear
+  05:59-05:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  06:04-07:04 NORMAL        none   All applicable live checks are clear
+  07:09-07:14 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  07:19-11:09 NORMAL        none   All applicable live checks are clear
+  11:14-11:19 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  11:24-11:44 NORMAL        none   All applicable live checks are clear
+  11:49-11:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  12:04-12:09 NORMAL        none   All applicable live checks are clear
+  12:14-12:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  12:44-12:54 NORMAL        none   All applicable live checks are clear
+  12:59-13:24 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  13:29-15:09 NORMAL        none   All applicable live checks are clear
+  15:14-15:19 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  15:24-15:29 NORMAL        none   All applicable live checks are clear
+  15:34-15:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  15:44-15:49 NORMAL        none   All applicable live checks are clear
+  15:54-15:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  16:04-16:59 NORMAL        none   All applicable live checks are clear
+  17:04-17:54 UNSURE        medium Replay check: Multiple publishers observed; bedside confirmation pending; Network check: Identical live copies; second sender needs bedside confirmation
+  17:59-18:19 NORMAL        none   All applicable live checks are clear
+  18:24-18:34 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  18:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+-00:11 {"event": "reset", "ts": 1792253419679, "cmd": "reset", "run_id": "run_20261017_161019"}
+-00:11 A2 enable_client B10 MON-10 undoes=act_cic3cy00680 res=ok | Re-enabled MON-10 at the hub (demo reset); bed B10 trusted again
+-00:11 A2 enable_client B10 MON-10 undoes=act_cic3cy00662 res=ok | act_cic3cy00662 undone together with act_cic3cy00680 (same release, no second hub change)
+-00:01 {"event": "reset", "ts": 1792253429688, "cmd": "run", "run_id": "run_20261017_161029"}
+00:59 RECORD workload wl_cic3cy00001 by A7
+00:59 RECORD briefing br_cic3cy00690 by A8
+00:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00690 (periodic) written by template; template because: Granite still writing
+01:43 RECORD briefing br_cic3cy00690 by A8
+01:43 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00690 (periodic) refreshed by IBM Granite in 43.8 s
+01:59 RECORD workload wl_cic3cy00001 by A7
+02:59 RECORD workload wl_cic3cy00001 by A7
+03:59 RECORD workload wl_cic3cy00001 by A7
+04:19 ALERT al_cic3cy00693 B09 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 9 — readings unclear. Please check by hand.
+04:19 A1 send_message B09  undoes=None res=ok | Alert al_cic3cy00693 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+04:59 RECORD workload wl_cic3cy00001 by A7
+05:04 ALERT al_cic3cy00695 B03 EMERGENCY high step1 open to=['staff:priya'] acked_by=None | Bed 3 — possible heart emergency. Go now.
+05:04 A1 send_message B03  undoes=None res=ok | Alert al_cic3cy00695 (EMERGENCY, high) step 1 -> staff:priya; telegram queued
+05:34 ALERT al_cic3cy00695 B03 EMERGENCY high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 3 — possible heart emergency. Go now.
+05:34 A1 escalate B03  undoes=None res=ok | Alert al_cic3cy00695: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+05:39 ALERT al_cic3cy00693 B09 UNSURE medium step1 closed to=['staff:tom'] acked_by=None | Bed 9 — readings unclear. Please check by hand.
+05:39 A1 edit_message B09  undoes=None res=ok | Alert al_cic3cy00693 closed: bed back to NORMAL; telegram queued
+05:49 {"event": "request", "ts": 1792253779684, "request_id": "req_08c1b5d2f20f4f85a57dc8f1e36e5b49", "action": "ack_alert", "target_id": "al_cic3cy00695", "by": "staff:tom"}
+05:49 ALERT al_cic3cy00695 B03 EMERGENCY high step2 acked to=['staff:priya', 'staff:tom'] acked_by=staff:tom | Bed 3 — possible heart emergency. Go now.
+05:49 A1 record_ack B03  undoes=None res=ok | Alert al_cic3cy00695 acknowledged by staff:tom via screen after 44.6 s (step 2); telegram queued
+05:59 A1 send_message B10 MON-10 undoes=None res=ok | IT notified: MON-10 TAMPERING; telegram IT group queued
+05:59 A2 set_bed_untrusted B10 MON-10 undoes=None res=ok | Bed B10 marked UNTRUSTED (TAMPERING (conf 0.98)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once on B
+05:59 A1 edit_message B10 MON-10 undoes=None res=ok | IT message updated: Bed marked untrusted (21:46:30); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+05:59 A3 snapshot_files B10 MON-10 undoes=None res=ok | Incident inc_cic3cy00704: froze 216 messages (last 10 min) of B10 into 3 files
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy00704/messages.jsonl: 148722 bytes, sha256 a8d3ff671adc19a6f33a3c81cad0b43c8acddb42ab288582d47d7376d1c4cffc
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy00704/verdicts.jsonl: 27551 bytes, sha256 0f121e153d3be6dc09b6302c0b3aed7f1be04f5d7d877436d82d1254c75f742b
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy00704/timeline.json: 682 bytes, sha256 5c8bfdb70edf59f2b354fe8d85a7e0c04329d2acb184d448e12f3c1d055f1c3e
+05:59 A3 write_timeline B10 MON-10 undoes=None res=ok | Incident inc_cic3cy00704 timeline started with 5 events
+05:59 RECORD incident inc_cic3cy00704 by A3
+05:59 A5 draft_report B10 MON-10 undoes=None res=ok | CERT-In draft rp_cic3cy00710 for incident inc_cic3cy00704; 7 fields need a person; never sent automatically
+05:59 A5 start_clock B10 MON-10 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy00710: deadline 03:46 (2026-10-17T22:16:30.002Z)
+05:59 RECORD report rp_cic3cy00710 by A5
+05:59 RECORD incident inc_cic3cy00704 by A3
+05:59 RECORD workload wl_cic3cy00001 by A7
+06:04 ALERT al_cic3cy00713 B10 TAMPERING medium step1 open to=['staff:tom'] acked_by=None | Bed 10 — monitor can't be trusted. Check pulse and breathing by hand. Use a port
+06:04 RECORD incident inc_cic3cy00704 by A3
+06:04 A1 send_message B10  undoes=None res=ok | Alert al_cic3cy00713 (TAMPERING, medium) step 1 -> staff:tom; telegram queued
+06:04 RECORD incident inc_cic3cy00704 by A3
+06:20 A2 disable_client B10 MON-10 undoes=None res=ok | Cut off MON-10 at the hub after TAMPERING (conf 0.98, held 20 s); session wiped
+06:20 RECORD incident inc_cic3cy00704 by A3
+06:20 RECORD report rp_cic3cy00710 by A5
+06:20 A1 edit_message B10 MON-10 undoes=None res=ok | IT message updated: Device cut off 21:46:30; bed marked untrusted.; telegram IT group queued
+06:20 RECORD incident inc_cic3cy00704 by A3
+06:20 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-10 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-07 (no verdict ye
+06:20 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 22:46 (bookkeeping; IT decides any cut-off)
+06:34 ALERT al_cic3cy00719 B04 EMERGENCY high step1 open to=['staff:priya'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+06:34 A1 send_message B04  undoes=None res=ok | Alert al_cic3cy00719 (EMERGENCY, high) step 1 -> staff:priya; telegram queued
+06:59 RECORD workload wl_cic3cy00001 by A7
+07:04 ALERT al_cic3cy00719 B04 EMERGENCY high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+07:04 A1 escalate B04  undoes=None res=ok | Alert al_cic3cy00719: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+07:34 ALERT al_cic3cy00719 B04 EMERGENCY high step3 escalated to=['staff:priya', 'staff:tom', 'staff:dr_mehta'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+07:34 A1 escalate B04  undoes=None res=ok | Alert al_cic3cy00719: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+07:54 ALERT al_cic3cy00723 B09 EMERGENCY high step1 open to=['staff:tom'] acked_by=None | Bed 9 — possible emergency. Go now.
+07:54 A1 send_message B09  undoes=None res=ok | Alert al_cic3cy00723 (EMERGENCY, high) step 1 -> staff:tom; telegram queued
+08:00 RECORD workload wl_cic3cy00001 by A7
+08:24 ALERT al_cic3cy00723 B09 EMERGENCY high step2 escalated to=['staff:tom', 'staff:priya'] acked_by=None | Bed 9 — possible emergency. Go now.
+08:24 A1 escalate B09  undoes=None res=ok | Alert al_cic3cy00723: no acknowledgement for 30 s; step 2 -> staff:priya; telegram queued
+08:54 ALERT al_cic3cy00723 B09 EMERGENCY high step3 escalated to=['staff:tom', 'staff:priya', 'staff:dr_mehta'] acked_by=None | Bed 9 — possible emergency. Go now.
+08:54 A1 escalate B09  undoes=None res=ok | Alert al_cic3cy00723: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+09:00 RECORD workload wl_cic3cy00001 by A7
+09:59 A1 send_message B05 MON-05 undoes=None res=ok | IT notified: MON-05 TAMPERING; telegram IT group queued
+09:59 A2 set_bed_untrusted B05 MON-05 undoes=None res=ok | Bed B05 marked UNTRUSTED (TAMPERING (conf 0.98)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once on B
+09:59 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Bed marked untrusted (21:50:30); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+09:59 A3 snapshot_files B05 MON-05 undoes=None res=ok | Incident inc_cic3cy00731: froze 363 messages (last 10 min) of B05 into 3 files
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy00731/messages.jsonl: 247272 bytes, sha256 4f51d9c697f9cc014adaaeaf7718080fe2958b4a306de4dc0ac0adeb4d80c062
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy00731/verdicts.jsonl: 46014 bytes, sha256 c6dbffc68c2109155791201110bbccb29144ddab4570ed2b7bab91581d76341e
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy00731/timeline.json: 682 bytes, sha256 9a4395266b0c54532e0270a45645d6c03ab38407156e801c30d2524e84a519f2
+09:59 A3 write_timeline B05 MON-05 undoes=None res=ok | Incident inc_cic3cy00731 timeline started with 5 events
+09:59 RECORD incident inc_cic3cy00731 by A3
+09:59 A5 draft_report B05 MON-05 undoes=None res=ok | CERT-In draft rp_cic3cy00737 for incident inc_cic3cy00731; 7 fields need a person; never sent automatically
+09:59 A5 start_clock B05 MON-05 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy00737: deadline 03:50 (2026-10-17T22:20:30.025Z)
+09:59 RECORD report rp_cic3cy00737 by A5
+09:59 RECORD incident inc_cic3cy00731 by A3
+10:00 RECORD workload wl_cic3cy00001 by A7
+10:04 ALERT al_cic3cy00740 B05 TAMPERING medium step1 open to=['staff:priya'] acked_by=None | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+10:04 RECORD incident inc_cic3cy00731 by A3
+10:04 A1 send_message B05  undoes=None res=ok | Alert al_cic3cy00740 (TAMPERING, medium) step 1 -> staff:priya; telegram queued
+10:04 RECORD incident inc_cic3cy00731 by A3
+10:20 A2 disable_client B05 MON-05 undoes=None res=ok | Cut off MON-05 at the hub after TAMPERING (conf 0.98, held 20 s); session wiped
+10:20 RECORD incident inc_cic3cy00731 by A3
+10:20 RECORD report rp_cic3cy00737 by A5
+10:20 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Device cut off 21:50:30; bed marked untrusted.; telegram IT group queued
+10:20 RECORD incident inc_cic3cy00731 by A3
+10:20 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-05 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+10:20 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 22:50 (bookkeeping; IT decides any cut-off)
+10:59 RECORD briefing br_cic3cy00746 by A8
+10:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00746 (periodic) written by template; template because: Granite still writing
+11:00 RECORD workload wl_cic3cy00001 by A7
+11:09 A6 open_ticket B08 MON-08 undoes=None res=ok | Biomed ticket tk_cic3cy00748 for MON-08: Arterial line reading may be drifting away from the cuff. Fix: Re-level and re-zero the transducer; take a cu
+11:09 RECORD ticket tk_cic3cy00748 by A6
+11:14 ALERT al_cic3cy00750 B08 DRIFTING medium step1 open to=['staff:tom'] acked_by=None | Bed 8 — blood pressure may be drifting. Re-level and re-zero the line; take a cu
+11:14 A1 send_message B08  undoes=None res=ok | Alert al_cic3cy00750 (DRIFTING, medium) step 1 -> staff:tom; telegram queued
+11:29 RECORD incident inc_cic3cy00731 by A3
+11:29 ALERT al_cic3cy00740 B05 TAMPERING medium step1 acked to=['staff:priya'] acked_by=staff:priya | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+11:29 RECORD incident inc_cic3cy00731 by A3
+11:29 A1 record_ack B05  undoes=None res=ok | Alert al_cic3cy00740 acknowledged by staff:priya via bedside check (patient OK) after 84.6 s (step 1); telegram queued
+11:29 RECORD incident inc_cic3cy00731 by A3
+11:49 RECORD briefing br_cic3cy00746 by A8
+11:49 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00746 (periodic) kept by template; template because: Granite output rejected: mentions MON-11 which is not in the facts
+12:00 RECORD workload wl_cic3cy00001 by A7
+12:04 A1 send_message B11 MON-11 undoes=None res=ok | IT notified: MON-11 DEVICE_ATTACK; telegram IT group queued
+12:04 A2 set_bed_untrusted B11 MON-11 undoes=None res=ok | Bed B11 marked UNTRUSTED (DEVICE_ATTACK (conf 0.95)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once 
+12:04 A1 edit_message B11 MON-11 undoes=None res=ok | IT message updated: Bed marked untrusted (21:52:35); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+12:04 A3 snapshot_files B11 MON-11 undoes=None res=ok | Incident inc_cic3cy00758: froze 363 messages (last 10 min) of B11 into 3 files
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy00758/messages.jsonl: 259671 bytes, sha256 1e1c7cebb944602a35246cc01197da2621280dda48839bcc98592b2386e6fc1d
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy00758/verdicts.jsonl: 44701 bytes, sha256 5cb3ca594bf03d18568742d008f199354c15f0635b3bfaf5ffbb24d8f1be1b52
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy00758/timeline.json: 694 bytes, sha256 5db6df1986b364ac469ed50fb62014c19b5404f7f5bbaec08714c0b537023189
+12:04 A3 write_timeline B11 MON-11 undoes=None res=ok | Incident inc_cic3cy00758 timeline started with 5 events
+12:04 RECORD incident inc_cic3cy00758 by A3
+12:04 A5 draft_report B11 MON-11 undoes=None res=ok | CERT-In draft rp_cic3cy00764 for incident inc_cic3cy00758; 7 fields need a person; never sent automatically
+12:04 A5 start_clock B11 MON-11 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy00764: deadline 03:52 (2026-10-17T22:22:35.019Z)
+12:04 RECORD report rp_cic3cy00764 by A5
+12:04 RECORD incident inc_cic3cy00758 by A3
+12:39 ALERT al_cic3cy00767 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+12:39 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy00767 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+13:00 RECORD workload wl_cic3cy00001 by A7
+13:19 ALERT al_cic3cy00769 B07 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 7 — readings unclear. Please check by hand.
+13:19 A1 send_message B07  undoes=None res=ok | Alert al_cic3cy00769 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+13:44 ALERT al_cic3cy00767 B12 UNSURE medium step1 closed to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+13:44 A1 edit_message B12  undoes=None res=ok | Alert al_cic3cy00767 closed: bed back to NORMAL; telegram queued
+13:49 A1 send_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 DEVICE_ATTACK; telegram IT group queued
+13:49 A2 set_bed_untrusted B07 MON-07 undoes=None res=ok | Bed B07 marked UNTRUSTED (DEVICE_ATTACK (conf 0.95)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once 
+13:49 A1 edit_message B07 MON-07 undoes=None res=ok | IT message updated: Bed marked untrusted (21:54:20); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+13:49 A3 snapshot_files B07 MON-07 undoes=None res=ok | Incident inc_cic3cy00776: froze 179 messages (last 10 min) of B07 into 3 files
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy00776/messages.jsonl: 113645 bytes, sha256 31b9422b814a7ff57944512cb023532fab3746afb188fbf6394dc2f309f55388
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy00776/verdicts.jsonl: 22669 bytes, sha256 a6b9a93628dbddca9f52dd3bfdb542d9050fd9276180eb5459dd2971cb7a43ab
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy00776/timeline.json: 817 bytes, sha256 1184eb09ffc582a6994e72e64cbb8fdaf45499d91f3de1683da78ecba82a4828
+13:49 A3 write_timeline B07 MON-07 undoes=None res=ok | Incident inc_cic3cy00776 timeline started with 6 events
+13:49 RECORD incident inc_cic3cy00776 by A3
+13:49 A5 draft_report B07 MON-07 undoes=None res=ok | CERT-In draft rp_cic3cy00782 for incident inc_cic3cy00776; 7 fields need a person; never sent automatically
+13:49 A5 start_clock B07 MON-07 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy00782: deadline 03:54 (2026-10-17T22:24:20.014Z)
+13:49 RECORD report rp_cic3cy00782 by A5
+13:49 RECORD incident inc_cic3cy00776 by A3
+13:54 A1 edit_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 TAMPERING; telegram IT group queued
+13:54 RECORD incident inc_cic3cy00776 by A3
+13:54 ALERT al_cic3cy00769 B07 TAMPERING medium step1 open to=['staff:tom'] acked_by=None | Bed 7 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+13:54 RECORD incident inc_cic3cy00776 by A3
+13:54 A1 edit_message B07  undoes=None res=ok | Alert al_cic3cy00769 updated UNSURE -> TAMPERING (medium); telegram queued
+13:54 RECORD incident inc_cic3cy00776 by A3
+13:54 RECORD incident inc_cic3cy00776 by A3
+13:54 RECORD report rp_cic3cy00782 by A5
+14:00 RECORD workload wl_cic3cy00001 by A7
+14:04 A1 edit_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 BOTH; telegram IT group queued
+14:04 RECORD incident inc_cic3cy00776 by A3
+14:04 ALERT al_cic3cy00769 B07 BOTH high step1 open to=['staff:tom'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+14:04 A1 edit_message B07  undoes=None res=ok | Alert al_cic3cy00769 updated TAMPERING -> BOTH (high); telegram queued
+14:04 RECORD incident inc_cic3cy00776 by A3
+14:04 RECORD incident inc_cic3cy00776 by A3
+14:04 RECORD report rp_cic3cy00782 by A5
+14:05 A2 disable_client B07 MON-07 undoes=None res=ok | Cut off MON-07 at the hub after BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once; session wiped
+14:05 RECORD incident inc_cic3cy00776 by A3
+14:05 RECORD report rp_cic3cy00782 by A5
+14:05 A1 edit_message B07 MON-07 undoes=None res=ok | IT message updated: Device cut off 21:54:20; bed marked untrusted.; telegram IT group queued
+14:05 RECORD incident inc_cic3cy00776 by A3
+14:05 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-07 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+14:05 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 22:54 (bookkeeping; IT decides any cut-off)
+14:34 ALERT al_cic3cy00769 B07 BOTH high step2 escalated to=['staff:tom', 'staff:priya'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+14:34 RECORD incident inc_cic3cy00776 by A3
+14:34 A1 escalate B07  undoes=None res=ok | Alert al_cic3cy00769: no acknowledgement for 30 s; step 2 -> staff:priya; telegram queued
+14:34 RECORD incident inc_cic3cy00776 by A3
+15:00 RECORD workload wl_cic3cy00001 by A7
+15:04 ALERT al_cic3cy00769 B07 BOTH high step3 escalated to=['staff:tom', 'staff:priya', 'staff:dr_mehta'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+15:04 RECORD incident inc_cic3cy00776 by A3
+15:04 A1 escalate B07  undoes=None res=ok | Alert al_cic3cy00769: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+15:04 RECORD incident inc_cic3cy00776 by A3
+15:29 {"event": "request", "ts": 1792254359687, "request_id": "req_ff0527fbd5c04e289531d9e5e49ba2d4", "action": "undo_action", "target_id": "act_cic3cy00742", "by": "staff:sam"}
+15:29 A2 enable_client B05 MON-05 undoes=act_cic3cy00742 res=ok | Re-enabled MON-05 at the hub (undo by staff:sam); bed B05 trusted again
+15:29 RECORD incident inc_cic3cy00731 by A3
+15:29 RECORD report rp_cic3cy00737 by A5
+15:29 A2 enable_client B05 MON-05 undoes=act_cic3cy00729 res=ok | act_cic3cy00729 undone together with act_cic3cy00742 (same release, no second hub change)
+15:29 RECORD incident inc_cic3cy00731 by A3
+15:29 RECORD report rp_cic3cy00737 by A5
+15:29 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Device not cut off.; telegram IT group queued
+15:29 RECORD incident inc_cic3cy00731 by A3
+15:59 A1 send_message B06 MON-06 undoes=None res=ok | IT notified: MON-06 BOTH; telegram IT group queued
+15:59 ALERT al_cic3cy00800 B06 BOTH high step1 open to=['staff:priya'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+15:59 A1 send_message B06  undoes=None res=ok | Alert al_cic3cy00800 (BOTH, high) step 1 -> staff:priya; telegram queued
+15:59 A2 set_bed_untrusted B06 MON-06 undoes=None res=ok | Bed B06 marked UNTRUSTED (BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once); last trusted values stay on screen
+15:59 A3 snapshot_files B06 MON-06 undoes=None res=ok | Incident inc_cic3cy00803: froze 367 messages (last 10 min) of B06 into 3 files
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy00803/messages.jsonl: 254178 bytes, sha256 cd4a15f03e7423f7195a87debd7a22596c23e10697a4484a706676c3660c2be0
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy00803/verdicts.jsonl: 45994 bytes, sha256 5d2fef000d3583d239bf1837fd4700bcabbd9c93c0a4dd4c24db2f6178d32a8a
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy00803/timeline.json: 546 bytes, sha256 68345bafca2668b4e02dd8141a120385e52ddcbd5e97b55056e0be1484e34904
+15:59 A3 write_timeline B06 MON-06 undoes=None res=ok | Incident inc_cic3cy00803 timeline started with 5 events
+15:59 RECORD incident inc_cic3cy00803 by A3
+15:59 A5 draft_report B06 MON-06 undoes=None res=ok | CERT-In draft rp_cic3cy00809 for incident inc_cic3cy00803; 7 fields need a person; never sent automatically
+15:59 A5 start_clock B06 MON-06 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy00809: deadline 03:56 (2026-10-17T22:26:30.005Z)
+15:59 RECORD report rp_cic3cy00809 by A5
+15:59 RECORD incident inc_cic3cy00803 by A3
+16:00 A2 disable_client B06 MON-06 undoes=None res=ok | Cut off MON-06 at the hub after BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once; session wiped
+16:00 RECORD incident inc_cic3cy00803 by A3
+16:00 RECORD report rp_cic3cy00809 by A5
+16:00 A1 edit_message B06 MON-06 undoes=None res=ok | IT message updated: Device cut off 21:56:30; bed marked untrusted.; telegram IT group queued
+16:00 RECORD incident inc_cic3cy00803 by A3
+16:00 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-06 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+16:00 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 22:56 (bookkeeping; IT decides any cut-off)
+16:00 RECORD workload wl_cic3cy00001 by A7
+16:14 A6 update_ticket B08 MON-08 undoes=None res=ok | Ticket tk_cic3cy00748: MON-08 back to NORMAL; stays open until biomed closes it
+16:14 RECORD ticket tk_cic3cy00748 by A6
+16:19 ALERT al_cic3cy00750 B08 DRIFTING medium step1 closed to=['staff:tom'] acked_by=None | Bed 8 — blood pressure may be drifting. Re-level and re-zero the line; take a cu
+16:19 A1 edit_message B08  undoes=None res=ok | Alert al_cic3cy00750 closed: bed back to NORMAL; telegram queued
+16:29 ALERT al_cic3cy00800 B06 BOTH high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+16:29 RECORD incident inc_cic3cy00803 by A3
+16:29 A1 escalate B06  undoes=None res=ok | Alert al_cic3cy00800: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+16:29 RECORD incident inc_cic3cy00803 by A3
+16:59 ALERT al_cic3cy00800 B06 BOTH high step3 escalated to=['staff:priya', 'staff:tom', 'staff:dr_mehta'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+16:59 RECORD incident inc_cic3cy00803 by A3
+16:59 A1 escalate B06  undoes=None res=ok | Alert al_cic3cy00800: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+16:59 RECORD incident inc_cic3cy00803 by A3
+17:01 RECORD workload wl_cic3cy00001 by A7
+17:04 ALERT al_cic3cy00740 B05 TAMPERING medium step1 closed to=['staff:priya'] acked_by=staff:priya | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+17:04 RECORD incident inc_cic3cy00731 by A3
+17:04 A1 edit_message B05  undoes=None res=ok | Alert al_cic3cy00740 closed: bed back to NORMAL; telegram queued
+17:04 RECORD incident inc_cic3cy00731 by A3
+17:29 ALERT al_cic3cy00821 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+17:29 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy00821 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+17:59 ALERT al_cic3cy00821 B12 UNSURE medium step1 acked to=['staff:tom'] acked_by=staff:tom | Bed 12 — readings unclear. Please check by hand.
+17:59 A1 record_ack B12  undoes=None res=ok | Alert al_cic3cy00821 acknowledged by staff:tom via bedside check (patient OK) after 29.6 s (step 1); telegram queued
+18:01 RECORD workload wl_cic3cy00001 by A7
+18:14 ALERT al_cic3cy00821 B12 UNSURE medium step1 closed to=['staff:tom'] acked_by=staff:tom | Bed 12 — readings unclear. Please check by hand.
+18:14 A1 edit_message B12  undoes=None res=ok | Alert al_cic3cy00821 closed: bed back to NORMAL; telegram queued
+18:59 RECORD briefing br_cic3cy00825 by A8
+18:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00825 (ward script T+19:00) written early by IBM Granite in 49.8 s
+19:01 RECORD workload wl_cic3cy00001 by A7
+19:49 RECORD briefing br_cic3cy00825 by A8
+19:49 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00825 (ward script T+19:00) refreshed by IBM Granite in 49.8 s
+20:01 RECORD workload wl_cic3cy00001 by A7
+20:29 ALERT al_cic3cy00828 B01 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 1 — readings unclear. Please check by hand.
+20:29 A1 send_message B01  undoes=None res=ok | Alert al_cic3cy00828 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 ALERT al_cic3cy00830 B02 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 2 — readings unclear. Please check by hand.
+20:29 A1 send_message B02  undoes=None res=ok | Alert al_cic3cy00830 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 ALERT al_cic3cy00832 B05 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 5 — readings unclear. Please check by hand.
+20:29 RECORD incident inc_cic3cy00731 by A3
+20:29 A1 send_message B05  undoes=None res=ok | Alert al_cic3cy00832 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 RECORD incident inc_cic3cy00731 by A3
+20:29 ALERT al_cic3cy00834 B08 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 8 — readings unclear. Please check by hand.
+20:29 A1 send_message B08  undoes=None res=ok | Alert al_cic3cy00834 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+20:29 ALERT al_cic3cy00836 B11 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 11 — readings unclear. Please check by hand.
+20:29 RECORD incident inc_cic3cy00758 by A3
+20:29 A1 send_message B11  undoes=None res=ok | Alert al_cic3cy00836 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+20:29 RECORD incident inc_cic3cy00758 by A3
+20:59 RECORD briefing br_cic3cy00838 by A8
+20:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy00838 (periodic) written by template; template because: Granite still writing
+21:01 RECORD workload wl_cic3cy00001 by A7
+21:19 ALERT al_cic3cy00840 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+21:19 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy00840 (UNSURE, medium) step 1 -> staff:tom; telegram queued
