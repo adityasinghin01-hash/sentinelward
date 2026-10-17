@@ -64,6 +64,8 @@ class AttackService:
                 self.history.clear(); self.latest.clear(); self.own_hashes.clear()
             else:
                 self._stop(now,'new run interrupted the attack')
+                if self.origin_ms is not None:
+                    self.history.clear(); self.latest.clear(); self.own_hashes.clear()
                 self.origin_ms=message['ts']-int(message['start_at_s']*1000); self.start_ms=message['ts']
                 self.event_log=EventLog(self.runs_dir,message['run_id'],self.origin_ms)
                 self.states={s['id']:{'spec':s,'started':False,'done':False,'count':0,'next_ms':max(self.start_ms,self.origin_ms+int(s['start_s']*1000)), 'unavailable':None,'unavailable_ms':-10000} for s in self.schedule}

@@ -82,3 +82,11 @@ def test_real_account_file_disables_unprovisioned_legacy_pins(bus, clock, tmp_pa
     monkeypatch.setenv('SW_AUTH_ACCOUNTS_FILE',str(path))
     with TestClient(app_for(bus,clock,demo_role_login=False)) as client:
         assert client.post('/api/session',json={'username':'admin','pin':'9012'}).status_code==401
+
+
+def test_non_ascii_csrf_cookie_returns_forbidden_instead_of_500(bus, clock):
+    with TestClient(app_for(bus, clock), raise_server_exceptions=False) as client:
+        # Browsers can send arbitrary cookie text; compare_digest(str, str) accepts ASCII only.
+        result = client.post('/api/session/logout', content='',
+                             headers={b'Cookie': b'sw_session=\xe9', b'X-CSRF-Token': b'same'})
+        assert result.status_code == 403

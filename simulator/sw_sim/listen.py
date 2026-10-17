@@ -10,6 +10,7 @@ import logging
 import math
 import queue
 import threading
+from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 
@@ -72,6 +73,9 @@ class Controller:
         self._current: WardRun | None = None
         self._thread: threading.Thread | None = None
         self.results: list[RunResult] = []
+        self._last_control_ts = -1
+        self._active_run_id: str | None = None
+        self._controls: deque[tuple] = deque(maxlen=128)
 
     @property
     def current(self) -> WardRun | None:
@@ -86,6 +90,18 @@ class Controller:
         except ControlError as exc:
             log.warning("ignoring control message on %s: %s", topic, exc)
             return
+        ts = message.get("ts")
+        if type(ts) is not int or ts < 0:
+            return
+        key = (command.cmd, command.run_id, ts, command.start_at_s)
+        with self._lock:
+            if ts < self._last_control_ts or key in self._controls:
+                return
+            if command.cmd == "run" and command.run_id == self._active_run_id:
+                return
+            self._controls.append(key)
+            self._last_control_ts = ts
+            self._active_run_id = command.run_id if command.cmd == "run" else None
         if command.cmd == "reset":
             run = self.current
             if run is not None:

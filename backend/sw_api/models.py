@@ -73,7 +73,7 @@ class Undo(BedCommand):
 class DemoRun(Input):
     scenario: Literal["full_ward_script", "emergency", "loose_sensor", "drifting", "replay_attack", "fake_flatline", "flood"] = "full_ward_script"
     speed: Literal[1, 2, 5] = 1
-    start_at_s: int = Field(default=0, ge=0)
+    start_at_s: int = Field(default=0, ge=0, lt=1200)
 
 
 class Receipt(BaseModel):

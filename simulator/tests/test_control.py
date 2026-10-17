@@ -147,3 +147,19 @@ def test_bad_control_messages_rejected(message):
 def test_control_parsing():
     assert parse_control(control("run", "run_b", 270.9), 1200).start_at_s == 270
     assert parse_control({"v": 1, "type": "demo_control", "cmd": "reset"}, 1200).cmd == "reset"
+
+
+@pytest.mark.parametrize('delivery', ['duplicate_run', 'stale_reset'])
+def test_delayed_control_delivery_cannot_interrupt_current_run(controller_setup, delivery):
+    controller, bus, _, _ = controller_setup
+    message = control('run', 'run_current')
+    bus.inject(sw_common.DEMO_CONTROL_TOPIC, message)
+    assert wait_for(lambda: len(bus.messages) >= 2, timeout=8)
+    current = controller.current
+    if delivery == 'stale_reset':
+        message = {**message, 'cmd': 'reset', 'ts': message['ts'] - 1}
+    bus.inject(sw_common.DEMO_CONTROL_TOPIC, message)
+    time.sleep(0.4)  # controller consumes its queue every 0.2 seconds
+    assert controller.current is current
+    assert not current.stop_requested
+    assert not controller.results

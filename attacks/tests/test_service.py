@@ -280,3 +280,16 @@ def test_transport_drop_never_records_success(tmp_path, frame):
     assert service.states['replay_B05']['count'] == 0
     assert not any(row['event'] == 'attack_start' for row in events(tmp_path))
     assert any(row['event'] == 'attack_unavailable' for row in events(tmp_path))
+
+
+def test_replacing_run_cannot_forge_from_previous_run_source(tmp_path, frame):
+    bus = MemoryBus(); service = AttackService(bus, runs_dir=tmp_path)
+    assert control(service, run_id='old')
+    capture(service, frame(999, bed='B06'))
+    assert control(service, ts=1000000, start=960, run_id='new')
+    service.tick(1000000)
+    assert not any(message['bed_id'] == 'B06' for _, message, _, _ in bus.published)
+    capture(service, frame(1001, bed='B06', seq=1))
+    service.tick(1001000)
+    assert any(message['bed_id'] == 'B06' for _, message, _, _ in bus.published)
+    service.close(1002000)
