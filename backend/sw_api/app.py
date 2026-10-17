@@ -18,7 +18,7 @@ from .config import Clock, Settings, UserConfig, load_users, load_ward
 from .ingest import Ingest
 from .models import (Acknowledge, ActionsResponse, Bedside, DemoReceipt, DemoRun, DeviceEntry, Escalate,
                      HealthResponse, Isolate, Receipt, SessionInput, SessionResponse, Undo, WardResponse)
-from .routes import Deps, clinical, records, security
+from .routes import Deps, clinical, fhir, records, security
 from .state import WardState
 from .store import MemoryStore, Store
 from .ws import Hub
@@ -348,6 +348,7 @@ def create_app(*, settings: Settings | None = None, bus=None, store: Store | Non
     clinical.register(app, deps)
     security.register(app, deps)
     records.register(app, deps)
+    fhir.register(app, deps)
 
     # Last route: serve a prebuilt SPA on the same origin, preserving API 404s.
     if settings.frontend_dist.is_dir() and (settings.frontend_dist / "index.html").is_file():
