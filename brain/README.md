@@ -25,6 +25,8 @@ SW_MQTT_HOST=localhost .venv/bin/sw-brain
 
 Credentials: `SW_MQTT_USERNAME`, `SW_MQTT_PASSWORD`; connection: `SW_MQTT_HOST`, `SW_MQTT_PORT`, `SW_MQTT_TLS=1`, optional `SW_MQTT_CA`. No credentials are stored in source. Vitals use QoS 0; scores, bedside/control/features and verdicts use QoS 1; only verdicts are retained.
 
+Scale: `SW_BRAIN_MAX_BED` (default 12) sets the accepted beds `B01`..`B<n>` and monitors `MON-01`..`MON-<n>` (1..99, the shared contract's two-digit IDs); reset clears retained verdicts for that whole set. `SW_BRAIN_TICK_STATS=1` logs one `tick_stats` JSON line per tick (tick ms, beds, verdicts, messages in, invalid/dropped totals, queue depth). Per-bed receipt history is pruned to 330 s (the longest reader, M6 and the cuff low-pressure check, looks back 300 s) and 6 windows are kept, so memory is flat after warm-up; M4's own 120-window fingerprint history (about 12 MB per bed) fills over ~20 min and then stays flat.
+
 The shared `sw_brain.io` seam uses `sw_common` topics, builders, decode/validation and MQTT `Bus`. Every outgoing envelope is checked before transport; invalid messages are rejected, counted in `invalid_outgoing` and logged. Services also count rejected direct inputs in `invalid_incoming`; the underlying shared Bus counts/logs invalid MQTT input in `bus.stats()['invalid']`. The adapter retains original payload sizes, arrival clocks and the bounded safety queue, including TLS with system trust roots when no CA file is supplied.
 
 ## Optional M2 bundle
