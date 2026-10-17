@@ -1,0 +1,24 @@
+{
+ "model": "M2-cnn-nnpa-2026-10-17",
+ "state_sha256": "c7ad2efe8dfb475619e336d437e1d4df4aaa3290470bec777f9a4894a571f1c6",
+ "thresholds": {
+  "ASYSTOLE": 0.18371481448411942,
+  "BRADY": 0.6505768895149231,
+  "TACHY": 0.0,
+  "VFIB": 0.326496884226799,
+  "VTACH": 0.2109798938035965
+ },
+ "best_epoch": 7,
+ "heldout_challenge_cinc": 0.6229508196721312,
+ "heldout_challenge_vtac": 0.664983164983165,
+ "heldout_auroc_cinc": 0.8806306306306306,
+ "heldout_auroc_vtac": 0.8832116788321168,
+ "nnpa": {
+  "available": true,
+  "telum2": true,
+  "seconds": 0.36910557746887207,
+  "max_abs_diff_vs_cpu": 0.001780390739440918,
+  "param_device": "nnpa:0"
+ },
+ "torch": "2.11.0+cpu"
+}

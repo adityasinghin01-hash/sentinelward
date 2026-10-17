@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sw-chip"
+version = "0.1.0"
+description = "SentinelWard AI-chip second opinion: M2 1D-CNN on the IBM z17 NNPA, shown only"
+requires-python = ">=3.11"
+dependencies = ["numpy", "paho-mqtt>=2.1"]
+
+[tool.setuptools]
+packages = ["sw_chip"]

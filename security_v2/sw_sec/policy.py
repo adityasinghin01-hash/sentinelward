@@ -6,7 +6,9 @@ import secrets
 from sw_common.topics import ALL_SUB
 
 DEVICES = tuple(f'MON-{i:02d}' for i in range(1,13))
-SERVICES = ('simulator','brain','backend','agents','attacks','extractor')
+SERVICES = ('simulator','brain','backend','agents','attacks','extractor','chip')
+# AI-chip second opinion (chip/): shown only, so it reads vitals and writes ward/chip/<bed> only.
+CHIP_TOPIC = 'ward/chip/+'
 CONTROL = '$CONTROL/dynamic-security/v1'
 
 
@@ -34,13 +36,15 @@ def roles():
         role('simulator',(),('ward/demo/control',)),
         role('brain',('ward/bed/+/score/+','ward/bed/+/verdict'),
              ('ward/bed/+/vitals','net/device/+/features','ward/bed/+/bedside','ward/demo/control')),
-        role('backend',('ward/request','ward/demo/control','ward/action','ward/bed/+/bedside'),ALL_SUB),
+        role('backend',('ward/request','ward/demo/control','ward/action','ward/bed/+/bedside'),(*ALL_SUB,CHIP_TOPIC)),
         role('agents',('ward/action','ward/alert','ward/record','ward/bed/+/bedside'),
              ('ward/request','ward/bed/+/verdict','ward/bed/+/bedside',
               'ward/bed/+/score/M3','ward/bed/+/score/M5','ward/demo/control','ward/action','ward/alert','ward/record')),
         # Deliberate demo attacker; never grant verdict/feature/control/admin writes.
         role('attacks',vitals,('ward/bed/+/vitals','ward/demo/control')),
         role('extractor',('net/device/+/features',),('ward/bed/+/vitals','ward/demo/control')),
+        # No verdict/score/action/control/vitals writes: it can never change what the ward decides.
+        role('chip',(CHIP_TOPIC,),('ward/bed/+/vitals',)),
     ]
 
 
@@ -68,6 +72,8 @@ def service_env(service, values):
         return {**common,'MQTT_HOST':'127.0.0.1','MQTT_PORT':'1883','MQTT_USER':service,'MQTT_PASS':values[service]}
     if service == 'agents':
         return {**common,'SW_MQTT_HOST':'127.0.0.1','SW_MQTT_PORT':'1883'}
+    if service == 'chip':
+        return {**common,'SW_CHIP_HOST':'127.0.0.1','SW_CHIP_PORT':'1883','SW_CHIP_USER':'chip','SW_CHIP_PASSWORD':values['chip']}
     prefix={'brain':'SW_MQTT_','attacks':'SW_ATTACK_MQTT_','extractor':'SW_MQTT_'}[service]
     result={**common,prefix+'HOST':'127.0.0.1',prefix+'PORT':'1883',prefix+'USERNAME':service,prefix+'PASSWORD':values[service]}
     if service in ('brain','attacks'):

@@ -1,0 +1,11 @@
+/opt/venv/lib64/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1233: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a, func=_nanmedian, keepdims=keepdims,
+/opt/venv/lib64/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1634: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+2026-10-17 16:15:43,307 INFO sw_chip model M2-cnn-nnpa-2026-10-17 sha256 c7ad2efe8dfb on nnpa:0
+2026-10-17 16:15:43,314 INFO sw_chip connected to 127.0.0.1:1883 rc=Success
+2026-10-17 16:16:04,006 INFO sw_chip chip B03 VTACH p_real=0.769 real nnpa:0 3.96 ms
+2026-10-17 16:16:43,324 INFO sw_chip stats {"alarms": 1, "dropped": 0, "errors": 0, "invalid": 0, "published": 1, "vitals": 100}
+2026-10-17 16:17:34,005 INFO sw_chip chip B04 ASYSTOLE p_real=0.166 false nnpa:0 3.56 ms
+2026-10-17 16:17:43,336 INFO sw_chip stats {"alarms": 2, "dropped": 0, "errors": 0, "invalid": 0, "published": 2, "vitals": 160}
+2026-10-17 16:18:43,348 INFO sw_chip stats {"alarms": 2, "dropped": 0, "errors": 0, "invalid": 0, "published": 2, "vitals": 180}

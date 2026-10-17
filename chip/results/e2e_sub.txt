@@ -1,0 +1,2 @@
+ward/chip/B03 {"v":1,"bed_id":"B03","ts":1792253764000,"alarm_code":"VTACH","p_real":0.7694,"label":"real","threshold":0.211,"model":"M2-cnn-nnpa-2026-10-17","device":"nnpa:0","latency_ms":3.96,"heldout_challenge_cinc":0.623,"heldout_challenge_vtac":0.665}
+ward/chip/B04 {"v":1,"bed_id":"B04","ts":1792253854000,"alarm_code":"ASYSTOLE","p_real":0.1659,"label":"false","threshold":0.1837,"model":"M2-cnn-nnpa-2026-10-17","device":"nnpa:0","latency_ms":3.56,"heldout_challenge_cinc":0.623,"heldout_challenge_vtac":0.665}
