@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Iterable
 from sw_common import device_for_bed
 
 from .config import BedConfig, Clock, WardConfig
+from .chip import CHIP_TTL_MS
 
 if TYPE_CHECKING:
     from .store import WarmStart
@@ -134,6 +135,8 @@ class BedState:
         self.verdict: dict | None = None
         self.recent_verdicts: deque[dict] = deque(maxlen=RECENT_VERDICTS)
         self.scores: dict[str, dict] = {}
+        self.chip_opinion: dict | None = None
+        self.chip_received_mono: float | None = None
         self.alarm: dict | None = None
         self.manual: dict | None = None
         self.last_bedside: dict | None = None
@@ -204,6 +207,27 @@ class WardState:
     def reset(self) -> None:
         """Forget all run data (keeps the ward configuration)."""
         self._init_data()
+
+    def chip_opinion(self, bed_id: str) -> dict | None:
+        """Only fresh display evidence; neither a score nor a verdict input."""
+        bed = self.beds[bed_id]
+        opinion = bed.chip_opinion
+        if opinion is None or bed.chip_received_mono is None:
+            return None
+        if (self.clock.ms() - opinion["ts"] >= CHIP_TTL_MS or
+                self.clock.mono() - bed.chip_received_mono >= CHIP_TTL_MS / 1000):
+            return None
+        return copy.deepcopy(opinion)
+
+    def expire_chip_opinions(self) -> list[str]:
+        """Expire once so silent beds also send a null live update."""
+        expired = []
+        for bed_id, bed in self.beds.items():
+            if bed.chip_opinion is not None and self.chip_opinion(bed_id) is None:
+                bed.chip_opinion = None
+                bed.chip_received_mono = None
+                expired.append(bed_id)
+        return expired
 
     # ------------------------------------------------------------------ trust
 

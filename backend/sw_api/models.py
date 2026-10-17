@@ -2,6 +2,8 @@
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .chip import ChipOpinion
+
 FrontendRole = Literal["nurse", "doctor", "it", "biomedical", "operator"]
 Verdict = Literal["NORMAL", "EMERGENCY", "BOTH", "TAMPERING", "UNSURE", "DRIFTING", "LOOSE_SENSOR", "DEVICE_ATTACK"]
 
@@ -112,6 +114,7 @@ class TrustedSnapshot(BaseModel):
 
 
 class RawBed(BaseModel):
+    chip_opinion: ChipOpinion | None = None
     bed_id: str
     device_id: str
     patient: Patient | None = None

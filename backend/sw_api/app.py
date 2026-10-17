@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
-from sw_common import Bus
+from .chip import ChipBus
 
 from . import commands, presenters
 from .auth import COOKIE_NAME, ROLE_FRONTEND, Sessions, check_origin
@@ -106,6 +106,8 @@ class Runtime:
             self.store.published(publication_id)
 
     async def tick(self) -> None:
+        for bed_id in self.state.expire_chip_opinions():
+            self.push_bed(bed_id)
         for change in self.state.changes():
             self.push_bed(change["bed_id"])
         self.resolve_pins()
@@ -144,7 +146,7 @@ def create_app(*, settings: Settings | None = None, bus=None, store: Store | Non
     """Build an injectable app; external connections start only during lifespan."""
     settings = settings or Settings.from_env()
     clock = clock or Clock()
-    bus = bus if bus is not None else Bus(settings.mqtt_host, settings.mqtt_port, "sw-api", username=settings.mqtt_user, password=settings.mqtt_pass)
+    bus = bus if bus is not None else ChipBus(settings.mqtt_host, settings.mqtt_port, "sw-api", username=settings.mqtt_user, password=settings.mqtt_pass)
     runtime = Runtime(settings, bus, store, clock)
 
     @asynccontextmanager

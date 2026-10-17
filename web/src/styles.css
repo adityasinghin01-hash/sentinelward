@@ -480,3 +480,10 @@ textarea { resize: vertical; }
 .timeline li.tl-divider { display: block; }
 .timeline li.tl-divider::before { display: none; }
 .evidence-list.compact .evidence strong { margin-right: 8px; }
+
+/* Chip evidence is a neutral comparison next to M2, never an alarm indicator. */
+.chip-opinion { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin: 6px 0 12px; background: var(--surface-2); }
+.chip-opinion h3 { font-size: .85rem; margin: 0 0 8px; color: var(--text-2); }
+.chip-opinion > .tip { display: block; }
+.chip-opinion .facts { margin: 0; }
+.chip-opinion .tiny { margin: 8px 0 0; }

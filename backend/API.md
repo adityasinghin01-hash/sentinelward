@@ -45,7 +45,7 @@ TAMPERING verdict with `last_trusted_ts`; waveforms shortened here, real ones ha
                  "waveform":{"ecg":[0.3,0.3],"ppg":[0.3,0.3]}},
  "display":"last_trusted","offline_since":null,"manual":null,"last_bedside_check":null,
  "assignment":{"clinician_id":"staff:priya","staff_id":"staff:priya","status":"assigned","ts":null,"by":null},
- "nurse_call":null}
+ "nurse_call":null,"chip_opinion":null}
 ```
 
 - `display`: `live` (trusted), `last_trusted` (frozen at the newest trusted values), `offline` (no
@@ -59,6 +59,24 @@ TAMPERING verdict with `last_trusted_ts`; waveforms shortened here, real ones ha
   109 bpm differs from pulse rate 135 bpm"`; inconclusive checks come first, then waiting ones.
 - Absent waveform channels are `[]`. `manual` (`{reading_id,bed_id,ts,by,hr,spo2,sys,dia,rr,notes}`)
   is separate from `vitals`.
+
+`chip_opinion` is present on ward/preview beds, bed detail, and `/ws` `bed.updated` payloads.
+It is `null` without a fresh result, at 120 seconds from the source timestamp (also capped at
+120 seconds since receipt), and after `/api/demo/run` or `/api/demo/reset`. It is memory-only.
+A fresh value is the chip message below, without added fields:
+
+```json
+{"v":1,"bed_id":"B03","ts":1792252805000,"alarm_code":"VTACH","p_real":0.87,
+ "label":"real","threshold":0.5,"model":"M2-cnn-nnpa-2026-10-17","device":"nnpa:0",
+ "latency_ms":1.3,"heldout_challenge_cinc":0.623,"heldout_challenge_vtac":0.665}
+```
+
+The backend subscribes to `ward/chip/+` at QoS 1. Retained results, malformed JSON, missing or
+extra fields, wrong types, nonfinite/out-of-range numbers, and mismatched topic beds are rejected
+and counted in `/api/health.invalid_messages`. Only B01–B12 are accepted; delayed older results
+do not replace newer ones. Arrival and expiry push a live bed update even without new vitals.
+This is a second opinion for display only: it never changes verdicts, alerts, actions, trust,
+or escalation ladders, and is not inserted into the live `scores` map.
 
 | Request | Response |
 | --- | --- |

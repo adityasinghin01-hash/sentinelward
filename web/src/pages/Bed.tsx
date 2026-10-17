@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {Fragment, useMemo, useState} from 'react';
 import type {FormEvent} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, ClipboardCheck, X, Eye, EyeOff} from 'lucide-react';
@@ -10,12 +10,13 @@ import {ActionList, Badge, Empty, Feedback, Panel, ResourceState, Tip, Trust} fr
 import {Chip, Fact, Meter} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
+import {ChipOpinionPanel} from '../components/ChipOpinion';
 
 const CHECK_EVERY_MS = 5 * 60_000; // suggested hand-check interval for an untrusted bed (R8 S3)
 
 function num(v: unknown) { return typeof v === 'number' && Number.isFinite(v) ? v : null; }
 
-function WhyPanel({detail}: {detail: BedDetail}) {
+function WhyPanel({detail, now}: {detail: BedDetail; now: number}) {
   const latest = detail.recent_verdicts[0];
   const reasons = latest?.reasons?.length ? latest.reasons : [detail.reason || 'No reason recorded'];
   const view = verdictView(detail);
@@ -46,12 +47,15 @@ function WhyPanel({detail}: {detail: BedDetail}) {
           const s: Score | undefined = detail.scores?.[key];
           const na = !s || s.score === null;
           return (
-            <div className="check-row" key={key}>
-              <span className="check-key mono">{key}</span>
-              <span className="check-name">{meta.label}</span>
-              <Meter value={s?.score} hint={`${meta.meaning} ${na ? 'Not applicable in this window.' : ''}`} />
-              <span className="check-reason">{s?.reason || (s ? '' : 'No score received yet')}</span>
-            </div>
+            <Fragment key={key}>
+              <div className="check-row">
+                <span className="check-key mono">{key}</span>
+                <span className="check-name">{meta.label}</span>
+                <Meter value={s?.score} hint={`${meta.meaning} ${na ? 'Not applicable in this window.' : ''}`} />
+                <span className="check-reason">{s?.reason || (s ? '' : 'No score received yet')}</span>
+              </div>
+              {key === 'M2' && <ChipOpinionPanel opinion={detail.chip_opinion} now={now} />}
+            </Fragment>
           );
         })}
       </div>
@@ -281,7 +285,7 @@ export function BedPage() {
           <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
         </div>
         <aside className="bed-side">
-          <WhyPanel detail={detail} />
+          <WhyPanel detail={detail} now={now} />
           <Panel title="Recent verdicts" caption="Newest first; one verdict about every 5 seconds per bed.">
             {detail.recent_verdicts.length === 0 ? <p className="tiny">No verdicts received yet.</p> : (
               <ol className="verdict-list">
