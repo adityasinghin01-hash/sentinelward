@@ -62,22 +62,23 @@ class PressureDrift:
         self.baselines = {}
         self.seen = {}
         self.current = {}
-        self.arterial_beds = set()
 
     def reset(self):
         self.baselines.clear()
         self.seen.clear()
         self.current.clear()
-        self.arterial_beds.clear()
 
     def __call__(self, window, state, now_ms):
         bed = (window or {}).get('bed_id', getattr(state,'bed_id','unknown'))
         frames = [r['message'] for r in state.messages
                   if now_ms-300000 <= r['received_ms'] <= now_ms and not r.get('sequence_issue')]
-        has_abp = any(isinstance(m.get('abp'),list) and any(v is not None for v in m['abp']) for m in frames)
-        if has_abp: self.arterial_beds.add(bed)
-        if not has_abp and bed not in self.arterial_beds:
-            return result(None, 'No arterial line on this bed', no_arterial_line=True, path='live_patient_gap')
+        start = (window or {}).get('window_start', now_ms-10000)
+        end = start+10000 if window and 'window_start' in window else now_ms+1
+        has_abp = any(start <= m['ts'] < end and isinstance(m.get('abp'),list) and
+                      any(v is not None for v in m['abp']) for m in frames)
+        if not has_abp:
+            return result(None, 'No arterial line in this window', not_applicable=True,
+                          no_arterial_line=True, path='live_patient_gap')
         baseline = self.baselines.setdefault(bed, deque(maxlen=30))
         for frame in frames:
             cuff = frame.get('nibp')

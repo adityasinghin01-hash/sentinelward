@@ -46,7 +46,7 @@ def test_m6_relative_gap_and_only_new_cuffs_update_baseline():
         frame = {'abp': [pressure]*125, 'nibp': {'map':80, 'sys':120, 'dia':60, 'ts':cuff_ts}, 'ts':cuff_ts}
         bed.messages = [{'message':frame, 'received_ms':cuff_ts, 'payload_bytes':100,'sender_id':None}]
         bed.last_message = frame
-        return detector({'bed_id':bed_id,'window_start':cuff_ts-10000}, bed, cuff_ts)
+        return detector({'bed_id':bed_id,'window_start':cuff_ts-9000}, bed, cuff_ts+1000)
     assert sample(10000, 100)['score'] is None
     assert sample(10000, 100)['extra']['baseline_samples'] == 1
     normal = sample(20000, 100)
@@ -115,7 +115,8 @@ def test_integrated_six_live_scores_include_null_warmup_and_no_line(frame):
     for i in range(10):
         service.receive('ward/bed/B01/vitals',json.dumps(frame(i)),received_ms=i*1000)
     verdict = service.tick(10000)[0]
-    assert all(isinstance(verdict['scores'][m],float) for m in ('M1','M2','M4','M5'))
+    assert all(isinstance(verdict['scores'][m],float) for m in ('M1','M4','M5'))
+    assert verdict['scores']['M2'] is None
     assert verdict['scores']['M3'] is None
     assert verdict['scores']['M6'] is None
     assert verdict['verdict'] == 'UNSURE'  # patient pulse-arrival baseline is still warming
@@ -123,7 +124,7 @@ def test_integrated_six_live_scores_include_null_warmup_and_no_line(frame):
 
 def test_drifting_plus_network_is_tampering_and_low_cuff_is_emergency():
     from sw_brain.decision import decide
-    from sw_brain.detectors import EmergencyDetector
+    from sw_brain.detectors import EmergencyDetector, confirmed_low_pressure
     values = {f'M{i}':{'score':.05,'reason':'clean','extra':{'eligible':True}} for i in range(1,7)}
     values['M5']['score'] = values['M6']['score'] = .95
     assert decide('B10',0,10000,values)['verdict'] == 'TAMPERING'
@@ -132,8 +133,11 @@ def test_drifting_plus_network_is_tampering_and_low_cuff_is_emergency():
     bed.last_alarm_code=None; bed.alarm_until_ms=0; bed.prealarm_window=None
     bed.patient_ok_ts=-1
     emergency = EmergencyDetector().evaluate(waves(),bed,10000)
-    assert emergency['score'] >= .9
-    assert emergency['extra']['positive'] is True
+    assert emergency['score'] is None
+    assert emergency['extra']['not_applicable'] is True
+    assert confirmed_low_pressure(bed,10000) is True
+    values['M2'] = emergency
+    assert decide('B10',0,10000,values,confirmed_low_pressure=True)['verdict'] == 'BOTH'
 
 
 def test_missing_inputs_are_null_and_seq_gaps_alone_not_attack():

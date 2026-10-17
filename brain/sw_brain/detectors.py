@@ -71,9 +71,14 @@ class QualityDetector:
 class EmergencyDetector:
     def __init__(self,research=None): self.research=research
     def evaluate(self,window,state,now_ms):
+        code=state.last_alarm_code if state.alarm_until_ms>0 and state.alarm_until_ms>=now_ms else None
+        alarms=(window or {}).get('monitor_alarms',[])
+        if code is None and alarms and getattr(state,'patient_ok_ts',-1)<window.get('window_start',0):
+            code=alarms[-1]['code']
+        if code is None:
+            return result(None,'No monitor alarm in or just before this window',not_applicable=True)
         if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable')
-        metrics=pulse_metrics(window); alarms=window.get('monitor_alarms',[])
-        code=state.last_alarm_code if state.alarm_until_ms>now_ms else None
+        metrics=pulse_metrics(window)
         research={'status':'unavailable','extra':{'unavailable_reason':'not_a_full_prealarm_VTACH_window'}}
         if code=='VTACH' and state.prealarm_window is not None and self.research:
             research=self.research.m2(state.prealarm_window)
@@ -90,15 +95,20 @@ class EmergencyDetector:
             pulse=pulse_metrics(window,'ppg')
             positive=(rate<20 and pulse is not None and pulse['rate']<20) or rate>180
             evidence=f'ECG rate is {rate:.0f} bpm'
-        # B09: low pressure independently confirmed by the cuff must remain an emergency.
-        frame=state.last_message or {}; cuff=frame.get('nibp'); abp=frame.get('abp')
-        if cuff is None:
-            cuff=next((r['message']['nibp'] for r in reversed(state.messages) if r['message'].get('nibp') and not r.get('sequence_issue')),None)
-        if cuff and cuff.get('map') is not None and 0<=now_ms-cuff['ts']<=300000 and cuff['map']<65:
-            observed=[v for v in (abp or []) if v is not None]
-            if observed and float(np.mean(observed))<65:
-                positive=True; evidence='Low arterial pressure confirmed by cuff'
+        if confirmed_low_pressure(state,now_ms):
+            positive=True; evidence='Low arterial pressure confirmed by cuff'
         return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,research=research)
+
+
+def confirmed_low_pressure(state,now_ms):
+    """Preserve the independent cuff/arterial safety check even without an alarm."""
+    frame=state.last_message or {}; cuff=frame.get('nibp'); abp=frame.get('abp')
+    if cuff is None:
+        cuff=next((r['message']['nibp'] for r in reversed(state.messages) if r['message'].get('nibp') and not r.get('sequence_issue')),None)
+    if cuff and cuff.get('map') is not None and 0<=now_ms-cuff['ts']<=300000 and cuff['map']<65:
+        observed=[v for v in (abp or []) if v is not None]
+        return bool(observed and float(np.mean(observed))<65)
+    return False
 
 class ReplayDetector:
     def __init__(self,research=None): self.history={}; self.research=research
@@ -149,7 +159,7 @@ class DetectorSuite:
         for i in (1,2,5,4,3,6):
             model=f'M{i}'
             if i==4:
-                state.baseline_admission_allowed=all(values[m]['score'] is not None and values[m]['score']<.5 and values[m]['extra'].get('eligible',False) for m in ('M1','M2','M5')) and state.alarm_until_ms<now_ms and not state.patient_not_ok
+                state.baseline_admission_allowed=all(values[m]['extra'].get('not_applicable',False) or (values[m]['score'] is not None and values[m]['score']<.5 and values[m]['extra'].get('eligible',False)) for m in ('M1','M2','M5')) and state.alarm_until_ms<now_ms and not state.patient_not_ok and not confirmed_low_pressure(state,now_ms)
             if i==3:
                 state.baseline_admission_allowed=state.baseline_admission_allowed and values['M4']['score'] is not None and values['M4']['score']<.5
             if model in self.detectors:

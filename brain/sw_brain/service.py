@@ -6,7 +6,7 @@ from dataclasses import dataclass,field
 import logging
 from .io import decode
 from .windows import VitalsWindowAssembler
-from .detectors import DetectorSuite,LABELS
+from .detectors import DetectorSuite,LABELS,confirmed_low_pressure
 from .decision import decide
 
 log=logging.getLogger(__name__)
@@ -123,7 +123,7 @@ class BrainService:
                 envelope={'v':1,'type':'score','bed_id':bed,'model':model,'model_version':model+'-live-2026-10-17','window_start':start,'window_s':10,'score':value['score'],'label':LABELS[model],'reason':value['reason'][:120],'extra':{**value['extra'],'offline':offline}}
                 self.bus.publish(f'ward/bed/{bed}/score/{model}',envelope,qos=1,retain=False)
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
-            verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok)
+            verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
             if verdict['verdict']=='NORMAL':
                 state.last_trusted_ts=int(now_ms)
                 self.last_trusted_snapshots[bed]=deepcopy(state.last_message)
