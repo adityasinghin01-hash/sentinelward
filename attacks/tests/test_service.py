@@ -121,6 +121,7 @@ def test_exact_20s_sender_window_and_reset_end_pairing(tmp_path,frame):
         capture(service,frame(sec,bed='B12'))
         service.tick(sec*1000)
     assert len([m for _,m,_,_ in bus.published if m['bed_id']=='B12'])==20
+    assert all(m==frame(m['seq'],bed='B12') for _,m,_,_ in bus.published if m['bed_id']=='B12')
     rows=events(tmp_path)
     assert next(e for e in rows if e['event']=='attack_start')['t_s']==1020
     assert next(e for e in rows if e['event']=='attack_end')['t_s']==1040
@@ -202,17 +203,59 @@ def test_new_run_interrupts_old_run_and_fixture_shape_is_validated(tmp_path,fram
     with pytest.raises(ValueError): AttackService(MemoryBus(),runs_dir=tmp_path,fixtures=fixture)
 
 
-def test_b07_burst_then_sender_ends_at_source_boundary(tmp_path,frame):
+def test_b07_burst_then_forged_loop_ends_at_source_boundary(tmp_path,frame):
     bus=MemoryBus(); service=AttackService(bus,runs_dir=tmp_path)
     control(service,ts=825000,start=825)
+    for sec in range(765,825): capture(service,frame(sec,bed='B07'))
     for now in range(825000,871001,20):
         if now%1000==0 and now<870000: capture(service,frame(now//1000,bed='B07'))
         service.tick(now)
     sent=[m for _,m,_,_ in bus.published if m['bed_id']=='B07']
-    assert 400<len(sent)<=500
+    assert len(sent)==437  # 400 exact burst copies + 37 paced forgeries.
+    assert all(m==frame(m['seq'],bed='B07') for m in sent[:400])
+    for message in sent[400:]:
+        expected=frame(message['seq']-60,bed='B07')
+        expected.update(seq=message['seq'],ts=message['ts'])
+        assert message==expected
     assert max(m['ts'] for m in sent)<870000
     end=next(e for e in events(tmp_path) if e['event']=='attack_end' and e['bed_id']=='B07')
     assert end['ts']==870000
+
+
+@pytest.mark.parametrize('origin', [0,123])
+@pytest.mark.parametrize('fixtures', [False,True])
+def test_b07_mask_uses_own_old_signal_with_current_envelope(tmp_path,frame,origin,fixtures):
+    old=frame(773,bed='B07',hr=65,nibp={'sys':110,'dia':70,'map':83,'ts':768000})
+    current=frame(833,bed='B07',hr=180,monitor_alarm={'code':'VFIB','priority':'high'})
+    fixture_path=None
+    if fixtures:
+        fixture_path=tmp_path/'history.jsonl'
+        fixture_path.write_text(json.dumps({'t_s':773,'message':old})+'\n')
+    bus=MemoryBus(); service=AttackService(bus,runs_dir=tmp_path/'runs',fixtures=fixture_path)
+    control(service,ts=833000+origin,start=833)
+    if not fixtures: capture(service,old)
+    capture(service,frame(773,bed='B05',hr=40))  # Never borrow a different bed.
+    capture(service,current)
+    service.tick(833000+origin)
+    forged=next(m for _,m,_,_ in bus.published if m['bed_id']=='B07')
+    expected=dict(old,seq=833,ts=833000,nibp={'sys':110,'dia':70,'map':83,'ts':828000})
+    assert forged==expected and forged['monitor_alarm'] is None
+    assert service.latest['B07']==current
+    if not fixtures: assert service.history['B07'][773000]==old
+    assert capture(service,forged,833001+origin) is False  # Echo cannot poison source history.
+
+
+@pytest.mark.parametrize('missing', ['older','current'])
+def test_b07_paced_loop_requires_both_real_sources(tmp_path,frame,missing):
+    bus=MemoryBus(); service=AttackService(bus,runs_dir=tmp_path)
+    control(service,ts=833000,start=833)
+    if missing!='older': capture(service,frame(773,bed='B07'))
+    if missing!='current': capture(service,frame(833,bed='B07'))
+    capture(service,frame(773,bed='B05'))
+    service.tick(833000)
+    assert not any(m['bed_id']=='B07' for _,m,_,_ in bus.published)
+    assert any(e['event']=='attack_unavailable' and e['bed_id']=='B07' for e in events(tmp_path))
+    assert not service.states['mixed_B07']['count']
 
 
 def test_non_second_control_timestamp_replays_nearest_actual_source_frame(tmp_path,frame):

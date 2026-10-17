@@ -53,7 +53,7 @@ How to pick MIMIC patients #4–#6 at H1:
 | 11:30 | B05 | Nurse taps "Patient OK" (Antara) | Logged. Stays isolated until IT acts |
 | 12:00 | B11 | Port scan + flood against MON-11 (Kartik) | M5 → `DEVICE_ATTACK`: **IT only, no nurse alert**. A4 fleet hunt, A3 evidence, A5 drafts the CERT-In report and starts the 6-hour clock |
 | ~13:00 | B10 | Hacker drift now about 10 mmHg off the cuff, and the network shows forged messages | M6 drift + M5 network → `TAMPERING`, **not** `DRIFTING` |
-| 13:45 | B07 | Attack on MON-07 starts: flood + second sender (Kartik) | `TAMPERING` |
+| 13:45 | B07 | Attack on MON-07 starts: flood, then forged loop of its own older signal (Kartik) | `TAMPERING` |
 | 14:00 | B07 | f543l reaches its alarm: `VFIB` (true) | **`BOTH`**: nurse alerted now (high) **and** device cut off. The tampering verdict never cancels the emergency. Last trusted values stay on screen |
 | 15:00 | B08 | Injector stops (the nurse "re-zeroed") | Next cuff at T+16:12 agrees → back to `NORMAL`. Ticket stays open for biomed |
 | 15:30 | B05 | IT clicks Undo on the cut-off (Kartik) | `enable_client` logged with `undoes`. B05 trusted again, `NORMAL` |

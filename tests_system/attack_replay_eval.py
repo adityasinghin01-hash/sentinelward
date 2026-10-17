@@ -5,12 +5,15 @@ Run before editing with --output /tmp/m4-before.json; after editing use
 Attack-first means the attacker has received the source frame while its delivery
 on the brain's monitor connection is delayed by 10 ms. Other packets use 20 ms
 scheduler steps; scoring runs on the real five-second grid before new frames.
+MQTT receipts carry no publisher ID. The real security-v2 Extractor consumes the
+same wire payloads and synthetic Mosquitto PUBLISH lines; only its aggregate
+net_features reach the brain. Completed windows arrive 200 ms after their end
+(one extractor poll), so scoring never sees the just-completed window early.
 """
 from __future__ import annotations
 
 import argparse
 from collections import Counter
-from dataclasses import replace
 import json
 from pathlib import Path
 import tempfile
@@ -23,24 +26,68 @@ from sw_sim.clock import InstantClock
 from sw_sim.config import load_script
 from sw_sim.engine import WardRun
 from sw_sim.packs import load_packs
+from sw_sec.features import Extractor
 
 ROOT = Path(__file__).resolve().parents[1]
 BEDS = ('B05', 'B06', 'B07', 'B10', 'B11', 'B12')
 ORIGIN = 1800000000000  # aligned to five seconds, same epoch for both runs
 
 
-class AttackBus(MemoryBus):
-    def __init__(self, brain):
-        super().__init__()
+class LiveInputs:
+    """Real aggregation: features.py:71-100,111-153; cadence: extractor_service.py:39-55.
+
+    Assumes healthy subscription/log coverage after the initial partial window,
+    no loss, and one 200 ms poll of publication latency. Client IDs are used only
+    in broker log lines, never in brain receipts or vitals payloads.
+    """
+    def __init__(self, brain, origin=ORIGIN, beds=BEDS):
         self.brain = brain
+        self.origin = origin
+        self.beds = beds
+        self.extractor = Extractor()
+        self.extractor.logs_available = True
+        self.extractor.log_coverage_start = origin+5000
+        self.next_end = origin+5000
+        self.published = Counter()
+
+    def observe(self, topic, payload, at, client):
+        self.extractor.observe(topic, payload, at)
+        self.extractor.log(f"{at//1000}: Received PUBLISH from {client} (d0, q0, r0, m0, '{topic}', ... ({len(payload)} bytes))")
+
+    def receive(self, topic, payload, at, client):
+        self.observe(topic, payload, at, client)
+        return self.brain.receive(topic, payload, received_ms=at,
+                                  received_mono_ms=at-self.origin, sender_id=None)
+
+    def publish_due(self, at):
+        if at < self.next_end+200:
+            return
+        start = self.next_end-5000
+        for bed in self.beds:
+            device = 'MON-'+bed[1:]
+            message = self.extractor.snapshot(device, start)
+            # extractor_service.py:49-52: startup partial receive coverage is unknown.
+            if start < self.origin+5000:
+                for key in message:
+                    if key not in ('v','type','device_id','window_start','window_s'):
+                        message[key] = None
+            topic = f'net/device/{device}/features'
+            assert self.brain.receive(topic, encode(topic, message), received_ms=at)
+            self.published[bed] += 1
+        self.next_end = (at//5000+1)*5000
+
+
+class AttackBus(MemoryBus):
+    def __init__(self, live):
+        super().__init__()
+        self.live = live
         self.now = ORIGIN
         self.counts = Counter()
         self.accepted = Counter()
 
     def publish(self, topic, data, qos=1, retain=False):
         self.counts[data['bed_id']] += 1
-        accepted = self.brain.receive(topic, encode(topic, data), received_ms=self.now,
-                                      received_mono_ms=self.now-ORIGIN, sender_id='attack-account')
+        accepted = self.live.receive(topic, encode(topic, data), self.now, 'sw-attacks')
         self.accepted[data['bed_id']] += bool(accepted)
         return True
 
@@ -52,11 +99,15 @@ def evaluate(packs_dir, order):
     run = WardRun(script, packs, run_id='offline', runs_dir='/tmp', clock=clock, bus=None, dry_run=True)
     bus = MemoryBus()
     brain = BrainService(bus)
-    attack_bus = AttackBus(brain)
+    live = LiveInputs(brain)
+    attack_bus = AttackBus(live)
     timelines = {bed: [] for bed in BEDS}
     counts = {bed: Counter() for bed in BEDS}
     monitor = Counter()
     blank = invalid = 0
+    checkpoints = {}
+    b07_evidence = []
+    b07_monitor_alarms = []
     with tempfile.TemporaryDirectory(prefix='m4-replay-') as logs:
         attack = AttackService(attack_bus, runs_dir=logs)
         attack.receive('ward/demo/control', json.dumps(dict(v=1, type='demo_control', ts=ORIGIN,
@@ -69,6 +120,16 @@ def evaluate(packs_dir, order):
                     counts[bed][label] += 1
                     if not timelines[bed] or timelines[bed][-1][1] != label:
                         timelines[bed].append([sec, label])
+                    if sec in (730, 740, 830, 835, 840, 845, 1025, 1045, 1080, 1085, 1090):
+                        checkpoints.setdefault(sec, {})[bed] = verdict
+                    if bed == 'B07' and 825 <= sec <= 885:
+                        m4 = next(m for _, m, _, _ in reversed(bus.published)
+                                  if m.get('bed_id') == bed and m.get('model') == 'M4')
+                        state = brain.beds[bed]
+                        b07_evidence.append(dict(t_s=sec, verdict=label, scores=verdict['scores'],
+                                                 m4_reason=m4['reason'], m4_extra=m4['extra'],
+                                                 alarm_active=now <= state.alarm_until_ms,
+                                                 anonymous=all(r['sender_id'] is None for r in state.messages)))
                     blank += brain.display_snapshot(bed) is None
                 bus.published.clear()  # scores are validated by MemoryBus; avoid retaining a run of waveforms
             if sec == 1080:
@@ -80,17 +141,29 @@ def evaluate(packs_dir, order):
             _, batch = run._prepare(sec, now)
             for out in batch:
                 assert out.message is not None, (sec, out.bed.bed_id)
+                if out.bed.bed_id == 'B07' and out.message['monitor_alarm']:
+                    b07_monitor_alarms.append(dict(t_s=sec, alarm=out.message['monitor_alarm']))
                 topic = vitals_topic(out.bed.bed_id)
                 # The attack connection sees the real source independently of brain receipt order.
                 attack.receive(topic, encode(topic, out.message), received_ms=now)
             def deliver_monitor(delay):
                 for out in batch:
                     topic = vitals_topic(out.bed.bed_id)
-                    brain.receive(topic, encode(topic, out.message), received_ms=now+delay,
-                                  received_mono_ms=sec*1000+delay, sender_id='monitor-account')
+                    payload = encode(topic, out.message)
+                    # The independent extractor sees the broker's source first;
+                    # only the brain monitor connection is delayed in attack-first.
+                    if delay:
+                        brain.receive(topic, payload, received_ms=now+delay,
+                                      received_mono_ms=sec*1000+delay, sender_id=None)
+                    else:
+                        live.receive(topic, payload, now, out.message['device_id'])
                     monitor[out.bed.bed_id] += 1
             if order == 'monitor-first':
                 deliver_monitor(0)
+            else:
+                for out in batch:
+                    live.observe(vitals_topic(out.bed.bed_id), encode(vitals_topic(out.bed.bed_id), out.message),
+                                 now, out.message['device_id'])
             attack_bus.now = now
             attack.tick(now)
             if order == 'attack-first':
@@ -101,10 +174,13 @@ def evaluate(packs_dir, order):
             for ms in range(20, 1000, 20):
                 attack_bus.now = now+ms
                 attack.tick(now+ms)
+                live.publish_due(now+ms)
         attack.close(ORIGIN+script.run_length_s*1000)
         invalid = brain.invalid_incoming+brain.invalid_outgoing+attack.invalid_incoming+attack.invalid_outgoing
         return dict(order=order, timelines=timelines, verdict_counts=counts, monitor_frames=monitor,
                     attack_frames=attack_bus.counts, accepted_attack_frames=attack_bus.accepted,
+                    net_feature_windows=live.published, checkpoints=checkpoints,
+                    b07_evidence=b07_evidence, b07_monitor_alarms=b07_monitor_alarms,
                     blank_snapshots=blank, invalid_messages=invalid)
 
 
