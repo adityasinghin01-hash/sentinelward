@@ -80,15 +80,66 @@ class BodyMismatch:
 
 
 class PressureDrift:
+    """Arterial line vs cuff: is the line moving away from this patient's usual gap?
+
+    The usual gap is learned only from the early cuff pairs (cuffs within EARLY_MS of the bed's
+    first frame, at most EARLY_PAIRS, each plausible and consistent). A drifting line must not
+    teach itself a new normal, so the baseline never updates after that. With no early pair the
+    clinical prior applies: a zeroed line and a cuff agree on mean pressure (gap 0 mmHg).
+    """
+    EARLY_MS = 300000       # cuffs in the first 5 minutes on this bed may define its usual gap
+    EARLY_PAIRS = 3
+    PLAUSIBLE_MMHG = 25.    # a larger early gap is not a usable "normal" (damped/unzeroed line)
+    CONSISTENT_MMHG = 5.    # early pairs must agree with each other
+    PRIOR_GAP_MMHG = 0.
+    SCALE_MMHG = 15.        # plain score = deviation / 15
+    MARGIN_MMHG = 6.        # a growing deviation past this margin is drift (score >= .8)
+    GROWTH_MMHG = 2.        # "growing": at least this much further from usual than the last cuff
+    CUFF_STABLE_MMHG = 10.  # the cuff itself must stay roughly level (both falling is not drift)
+    CLEAR_MMHG = 3.         # back within this of 0 or of the usual gap = re-zeroed
+
     def __init__(self):
         self.baselines = {}
         self.seen = {}
         self.current = {}
+        self.first_ts = {}
+        self.last_pair = {}
+        self.drifting = {}
 
     def reset(self):
-        self.baselines.clear()
-        self.seen.clear()
-        self.current.clear()
+        for memory in (self.baselines, self.seen, self.current, self.first_ts, self.last_pair, self.drifting):
+            memory.clear()
+
+    def _usual(self, bed, cuff_ts):
+        baseline = self.baselines.get(bed, ())
+        early_open = cuff_ts <= self.first_ts[bed]+self.EARLY_MS and len(baseline) < self.EARLY_PAIRS
+        if len(baseline) >= 2 or (baseline and not early_open):
+            return float(np.median(baseline)), 'early_pairs'
+        if not baseline and not early_open:
+            return self.PRIOR_GAP_MMHG, 'clinical_prior'
+        return None, 'learning'
+
+    def _score(self, bed, gap, usual, cuff_map):
+        deviation = gap-usual
+        score = min(1., abs(deviation)/self.SCALE_MMHG)
+        previous = self.last_pair.get(bed)
+        self.last_pair[bed] = (deviation, cuff_map)
+        sign = 1 if deviation > 0 else -1
+        if previous is not None and abs(deviation) >= self.MARGIN_MMHG:
+            prev_dev, prev_map = previous
+            growing = (prev_dev*deviation >= 0 and abs(deviation) >= abs(prev_dev)+self.GROWTH_MMHG
+                       and abs(cuff_map-prev_map) <= self.CUFF_STABLE_MMHG)
+            if growing: self.drifting[bed] = sign
+        if self.drifting.get(bed) == sign and abs(deviation) >= self.MARGIN_MMHG:
+            # Gap kept growing past a clear margin and is still out there: drift, not one noisy cuff.
+            score = max(score, min(1., .8+(abs(deviation)-self.MARGIN_MMHG)/30.))
+        else:
+            self.drifting.pop(bed, None)
+        if min(abs(gap-self.PRIOR_GAP_MMHG), abs(deviation)) <= self.CLEAR_MMHG:
+            # Re-zeroed / re-levelled: line and cuff agree again, clear at once.
+            self.drifting.pop(bed, None)
+            score = min(score, min(abs(deviation), abs(gap))/self.SCALE_MMHG)
+        return score, deviation
 
     def __call__(self, window, state, now_ms):
         bed = (window or {}).get('bed_id', getattr(state,'bed_id','unknown'))
@@ -96,13 +147,15 @@ class PressureDrift:
                   if now_ms-300000 <= r['received_ms'] <= now_ms and not r.get('sequence_issue')]
         start = (window or {}).get('window_start', now_ms-10000)
         end = start+10000 if window and 'window_start' in window else now_ms+1
+        # The early-pair learning period is anchored to the first time this bed is checked.
+        self.first_ts.setdefault(bed, min((m['ts'] for m in frames), default=now_ms))
         has_abp = any(start <= m['ts'] < end and isinstance(m.get('abp'),list) and
                       any(v is not None for v in m['abp']) for m in frames)
         if not has_abp:
             return result(None, 'No arterial line in this window', not_applicable=True,
                           no_arterial_line=True, path='live_patient_gap')
-        baseline = self.baselines.setdefault(bed, deque(maxlen=30))
-        for frame in frames:
+        baseline = self.baselines.setdefault(bed, deque(maxlen=self.EARLY_PAIRS))
+        for frame in sorted((f for f in frames if f.get('nibp')), key=lambda f: f['nibp'].get('ts', 0)):
             cuff = frame.get('nibp')
             if not cuff or cuff.get('map') is None or cuff['ts'] > now_ms or now_ms-cuff['ts'] > 300000:
                 continue
@@ -112,13 +165,19 @@ class PressureDrift:
                         for v in (m.get('abp') or []) if v is not None and math.isfinite(v)]
             if not arterial: continue
             gap = float(np.mean(arterial)-cuff['map'])
-            usual = float(np.median(baseline)) if len(baseline) >= 2 else None
-            deviation = abs(gap-usual) if usual is not None else 0.
-            score = min(1., deviation/15.)
-            self.current[bed] = dict(score=score, gap_mmhg=gap, baseline_gap_mmhg=usual,
-                                     deviation_mmhg=deviation, cuff_ts=cuff['ts'])
-            # Require two distinct cuff observations, then reject changes >3 mmHg from normal.
-            if getattr(state,'baseline_admission_allowed',True) and (usual is None or deviation <= 3):
+            usual, source = self._usual(bed, cuff['ts'])
+            if usual is None:
+                score, deviation = 0., 0.
+            else:
+                score, deviation = self._score(bed, gap, usual, cuff['map'])
+            self.current[bed] = dict(score=score, gap_mmhg=gap, baseline_gap_mmhg=usual, baseline_source=source,
+                                     deviation_mmhg=abs(deviation), cuff_ts=cuff['ts'], cuff_map=cuff['map'],
+                                     drift_growing=bed in self.drifting)
+            # Only early, plausible, mutually consistent pairs define this patient's usual gap.
+            early = (cuff['ts'] <= self.first_ts[bed]+self.EARLY_MS and len(baseline) < self.EARLY_PAIRS
+                     and abs(gap) <= self.PLAUSIBLE_MMHG and
+                     (not baseline or abs(gap-float(np.median(baseline))) <= self.CONSISTENT_MMHG))
+            if getattr(state,'baseline_admission_allowed',True) and early:
                 baseline.append(gap)
             self.seen[bed] = cuff['ts']
         current = self.current.get(bed)
@@ -129,8 +188,15 @@ class PressureDrift:
             return result(None, 'Cuff reading is too old for a pressure comparison', eligible=False, not_applicable=True,
                           baseline_samples=len(baseline), path='live_patient_gap')
         usual = current['baseline_gap_mmhg']
-        reason = (f"Line/cuff gap {current['gap_mmhg']:.0f} mmHg; this patient's usual is {usual:.0f} mmHg"
-                  if usual is not None else 'Learning this patient’s usual arterial-line/cuff gap')
+        gap = current['gap_mmhg']
+        if usual is None:
+            reason = 'Learning this patient’s usual arterial-line/cuff gap'
+        elif current['drift_growing'] and current['score'] >= .8:
+            reason = (f"Line/cuff gap {gap:+.0f} mmHg vs usual {usual:+.0f} and growing; "
+                      "re-level and re-zero the transducer")
+        else:
+            reason = (f"Line/cuff gap {gap:.0f} mmHg; this patient's usual is {usual:.0f} mmHg"
+                      + (' (no early cuff: line and cuff should agree)' if current['baseline_source'] == 'clinical_prior' else ''))
         return result(current['score'], reason, **{k:v for k,v in current.items() if k!='score'},
                       baseline_samples=len(baseline), baseline_warming=usual is None, eligible=usual is not None,
                       # No cuff baseline yet = no drift evidence either way; it must not block NORMAL.
