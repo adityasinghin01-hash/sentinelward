@@ -7,7 +7,7 @@ describe('clinical colour contract',()=>{
   const light=tokens.split(':root, :root[data-theme="light"] {')[1].split(':root[data-theme="dark"]')[0];
   const dark=tokens.split(':root[data-theme="dark"] {')[1];
   it.each([
-    ['emergency','#B3261E','#E5483D'],['check','#F2A900','#FFB020'],
+    ['emergency','#B3261E','#B83229'],['check','#F2A900','#FFB020'],
     ['security','#5B3FA8','#8F7BFF'],['maint','#B26A00','#FFB020'],
     ['ok','#2E7D32','#5BD17A'],['nodata','#8C7E79','#6E625E'],
   ])('%s uses the specified semantic colour in both themes',(name,day,night)=>{

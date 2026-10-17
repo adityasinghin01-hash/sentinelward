@@ -1,3 +1,4 @@
+import {verdictWords} from '../../lib/domain';
 import type {Action} from '../../lib/types';
 import {actionView, actorName, plainText} from './actions';
 
@@ -12,7 +13,7 @@ export function timelineView(t: Record<string, unknown>, bed: string, monitor: s
     return {...base, what: v.what, who: v.who, why: v.why, kind: 'agent'};
   }
   if (/^Detected:/i.test(event)) {
-    const state = /BOTH/.test(event) ? 'an emergency on a hacked monitor' : /TAMPERING|DEVICE_ATTACK/.test(event) ? 'a hacked monitor' : /EMERGENCY/.test(event) ? 'a possible patient emergency' : 'a change in the signal';
+    const state = /BOTH/.test(event) ? 'an emergency with a suspected device attack' : /TAMPERING/.test(event) ? 'possible monitor tampering' : /DEVICE_ATTACK/.test(event) ? 'a suspected device attack' : /EMERGENCY/.test(event) ? 'a possible patient emergency' : 'a change in the signal';
     return {...base, what: `Detected ${state}`, who: 'Signal checks', why: '', kind: 'verdict'};
   }
   if (/^Last trusted/i.test(event)) return {...base, what: 'Last trusted signal received', who: 'Signal checks', why: '', kind: 'verdict'};
@@ -25,5 +26,5 @@ export function timelineView(t: Record<string, unknown>, bed: string, monitor: s
     const view = actionView({actor, action_code: legacyCode, action: event, bed_id: bed, device_id: monitor, mode: kind === 'agent' ? 'automatic' : 'person'} as Action);
     if (view.what !== 'Recorded an action') return {...base, what: view.what, who: view.who, why: view.why, kind};
   }
-  return {...base, what: plainText(event || (t.verdict ? `Decision: ${t.verdict}` : String(t.kind ?? 'Event recorded').replace(/_/g, ' '))), who: actor === 'Signal checks' ? actor : actorName(actor), why: '', kind};
+  return {...base, what: t.verdict ? `Decision: ${verdictWords[String(t.verdict)] ?? plainText(String(t.verdict))}` : plainText(event || String(t.kind ?? 'Event recorded').replace(/_/g, ' ')), who: actor === 'Signal checks' ? actor : actorName(actor), why: '', kind};
 }

@@ -20,7 +20,7 @@ it('requires confirmation before the existing undo write and focuses Cancel', as
   fireEvent.click(screen.getByRole('button',{name:'Undo'}));
   expect(fetch).not.toHaveBeenCalled();
   expect(screen.getByRole('button',{name:'Cancel'})).toHaveFocus();
-  fireEvent.click(screen.getByRole('button',{name:'Undo action'}));
+  fireEvent.click(screen.getByRole('button',{name:'Reconnect monitor'}));
   await waitFor(() => expect(fetch).toHaveBeenCalled());
   expect(fetch.mock.calls[0]).toEqual(['/api/actions/act_123/undo', expect.objectContaining({method:'POST',body:JSON.stringify({type:'undo_action',originalActionId:'act_123',bedId:'B05'})})]);
 });

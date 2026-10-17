@@ -26,12 +26,12 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page: #151211; --surface: #1F1A18; --surface-raised: #2A2320; --surface-sunken: #110E0D;
-  --text: #F6E6DF; --text-2: #B9A9A1; --text-3: #8E7F79;
+  --text: #F6E6DF; --text-2: #B9A9A1; --text-3: #A09189;
   --border: rgba(255,240,232,.10); --border-strong: rgba(255,240,232,.18);
   --control: #2A2320; --control-hover: #352B28; --focus: #F6E6DF; --brand: #B3261E; --brand-ink: #FFFFFF;
-  --st-emergency: #E5483D; --st-emergency-ink: #FFFFFF; --st-emergency-text: #FF8A80;
+  --st-emergency: #B83229; --st-emergency-ink: #FFFFFF; --st-emergency-text: #FF8A80;
   --st-check: #FFB020; --st-check-ink: #1A1312; --st-security: #8F7BFF; --st-security-ink: #120E1F;
   --st-maint: #FFB020; --st-maint-ink: #FFB020; --st-ok: #5BD17A; --st-nodata: #6E625E;
-  --wave-ecg: #5BD17A; --wave-pleth: #4DD0E1; --wave-abp: #FF8A80; --wave-grid: rgba(255,240,232,.06); --wave-frozen: #6E625E;
+  --wave-ecg: #5BD17A; --wave-pleth: #4DD0E1; --wave-abp: #FF8A80; --wave-grid: rgba(255,240,232,.06); --wave-frozen: #A09189;
   --overlay: rgba(0,0,0,.48); --shadow-colour: rgba(0,0,0,.4);
 }

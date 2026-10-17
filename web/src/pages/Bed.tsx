@@ -13,7 +13,7 @@ import {AlertTriangle as BandAlert, ShieldAlert as BandShield, Activity as BandA
 import {Chip, Fact} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
-import {WhyPanel} from '../components/bed/WhyPanel';
+import {BedDirective, WhyPanel} from '../components/bed/WhyPanel';
 import {plainEvidence} from '../components/bed/copy';
 
 const CHECK_EVERY_MS = 5 * 60_000; // suggested hand-check interval for an untrusted bed (R8 S3)
@@ -218,6 +218,10 @@ export function BedPage() {
       <Feedback message={alertCmd.feedback || callCmd.feedback} failed={alertCmd.failed || callCmd.failed} />
       <ResourceState loading={false} error={res.error} retry={() => void res.reload()} />
 
+      <div className="bed-priority">
+        <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
+        <Panel title="What to do now" className="bed-next-step"><BedDirective detail={detail} /></Panel>
+      </div>
       <div className="bed-layout">
         <div className="bed-main">
           <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
@@ -247,7 +251,6 @@ export function BedPage() {
             <TrendChart ts={trend.ts} series={trend.series} untrusted={trend.untrusted} label={`30-minute trend of heart rate, SpO2 and blood pressure for ${bedId}`} />
             {hist.error && <p className="tiny">History unavailable: {hist.error}</p>}
           </Panel>
-          <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
           <Witnesses detail={detail} />
         </div>
         <aside className="bed-side">

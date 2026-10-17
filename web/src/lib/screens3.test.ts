@@ -19,9 +19,9 @@ describe('data trust display', () => {
 
 describe('hero verdict wording', () => {
   const base = {reason: '', isolated: false, connected: true, display: 'live' as const, recent_verdicts: [] as BedDetail['recent_verdicts']};
-  it('BOTH says emergency on an attacked monitor, never just "Real emergency"', () => {
+  it('BOTH says emergency with a suspected device attack, never just "Real emergency"', () => {
     const v = verdictView({...base, verdict: 'BOTH', scores: {}});
-    expect(v.headline).toBe('Emergency alarm on an attacked monitor — go now, check by hand; numbers not trusted');
+    expect(v.headline).toBe('Emergency alarm with a suspected device attack — go now, check by hand; numbers not trusted');
     expect(v.showConfidence).toBe(false);
   });
   it('EMERGENCY shows the monitor alarm code and M2 against its threshold', () => {
@@ -36,8 +36,8 @@ describe('hero verdict wording', () => {
     expect(v.alarm).toBe('Monitor alarm: ASYSTOLE');
     expect(v.aiCheck).toBe('AI check: not available (m2 reason)');
   });
-  it('EMERGENCY on a cut-off monitor reads as an attacked monitor', () =>
-    expect(verdictView({...base, verdict: 'EMERGENCY', isolated: true, connected: false, display: 'offline', scores: {}}).headline).toContain('attacked monitor'));
+  it('EMERGENCY on a flagged monitor keeps the emergency and suspected attack visible', () =>
+    expect(verdictView({...base, verdict: 'EMERGENCY', isolated: true, connected: false, display: 'offline', scores: {}}).headline).toContain('suspected device attack'));
   it('UNSURE shows the blocking check from the API', () => {
     const v = verdictView({...base, verdict: 'UNSURE', recent_verdicts: [{reasons: ['Body-match check: ECG rate 96 bpm differs from pulse rate 47 bpm']}] as BedDetail['recent_verdicts'], scores: {}});
     expect(v.why).toBe('Blocked by: Body-match check: ECG rate 96 bpm differs from pulse rate 47 bpm');

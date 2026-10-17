@@ -11,6 +11,8 @@ import {ActionList, Feedback, Button, StateChip} from '../components/ui';
 import {alertLine, orderBeds, tileView} from '../components/ward/tile';
 import type {TileGroup, TileView} from '../components/ward/tile';
 
+const hasSecurityConcern = (bed: Bed) => bed.isolated || bed.verdict === 'BOTH' || bed.verdict === 'TAMPERING' || bed.verdict === 'DEVICE_ATTACK';
+
 const PRIORITY_ORDER = {high: 0, medium: 1, low: 2, none: 3} as const;
 
 function AlertRail({alerts}: {alerts: Alert[]}) {
@@ -61,7 +63,7 @@ function AlertRail({alerts}: {alerts: Alert[]}) {
 const FILTERS: {key: TileGroup | 'all'; label: string; dot: string}[] = [
   {key: 'all', label: 'All beds', dot: ''},
   {key: 'emergency', label: 'Emergency', dot: 'emergency'},
-  {key: 'security', label: 'Monitor hacked', dot: 'security'},
+  {key: 'security', label: 'Security concern', dot: 'security'},
   {key: 'check', label: 'Check by hand', dot: 'check'},
   {key: 'nosignal', label: 'No signal', dot: 'nodata'},
   {key: 'normal', label: 'Normal', dot: 'ok'},
@@ -83,10 +85,15 @@ export function WardPage() {
   const counts = useMemo(() => {
     const c: Record<string, number> = {all: beds.length};
     for (const v of views.values()) c[v.group] = (c[v.group] || 0) + 1;
+    // Security overlaps emergency: count the underlying concern, even with a high alert open.
+    c.security = beds.filter(hasSecurityConcern).length;
     c.check = (c.check || 0) + (c.maint || 0);
     return c;
-  }, [views, beds.length]);
-  const matches = (g: TileGroup) => filter === 'all' || g === filter || (filter === 'check' && g === 'maint');
+  }, [views, beds]);
+  const visible = ordered.filter(b => {
+    const v = views.get(b.bed_id)!;
+    return filter === 'all' || v.group === filter || (filter === 'security' && hasSecurityConcern(b)) || (filter === 'check' && v.group === 'maint');
+  });
 
   // Arrow keys move between tiles in reading order; Enter opens the bed (links handle Enter).
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -116,12 +123,9 @@ export function WardPage() {
         {beds.length === 0 ? (
           <div className="bed-grid" aria-busy="true">{Array.from({length: 12}, (_, i) => <div key={i} className="skeleton-tile" />)}</div>
         ) : (
-          <div className={`bed-grid ${filter !== 'all' ? 'filtered' : ''}`} ref={grid} onKeyDown={onKey} aria-label="Beds. Use arrow keys to move, Enter to open.">
-            {ordered.map(b => (
-              <div key={b.bed_id} className={`tile-slot ${matches(views.get(b.bed_id)!.group) ? 'match' : ''}`} style={{display: 'contents'}}>
-                <BedTile bed={b} hidden={hidden} now={now} alerts={alerts} />
-              </div>
-            ))}
+          <div className="bed-grid" ref={grid} onKeyDown={onKey} aria-label="Beds. Use arrow keys to move, Enter to open.">
+            {visible.map(b => <BedTile key={b.bed_id} bed={b} hidden={hidden} now={now} alerts={alerts} />)}
+            {visible.length === 0 && <p className="ward-filter-empty" role="status">No beds match this filter.</p>}
           </div>
         )}
         <aside className="ward-rail">

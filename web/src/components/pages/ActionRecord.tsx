@@ -1,10 +1,7 @@
-import {useState} from 'react';
-import {Bot, ShieldCheck, Undo2, UserRound} from 'lucide-react';
-import {useWard} from '../../lib/store';
-import {useCommand} from '../../lib/hooks';
+import {Bot, ShieldCheck, UserRound} from 'lucide-react';
 import {time} from '../../lib/domain';
 import type {Action} from '../../lib/types';
-import {Button, ConfirmDialog, Empty, Feedback} from '../ui';
+import {Empty, Undo} from '../ui';
 import {actionView} from './actions';
 import type {ActorKind} from './actions';
 
@@ -19,25 +16,9 @@ export function ActionDetails({action}: {action: Action}) {
   </details>;
 }
 
-/** Keep the exact existing reversal endpoint and payload; only the presentation is local. */
+/** One confirmation and result message for every action log. */
 export function UndoAction({action}: {action: Action}) {
-  const role = useWard(s => s.session?.role);
-  const cmd = useCommand();
-  const [confirm, setConfirm] = useState(false);
-  const allowed = role === 'it' || role === 'operator';
-  const view = actionView(action);
-  const cutOff = /disable_client|isolate_device/.test(action.action_code);
-  return <span className="pages-undo">
-    <Button size={36} variant="secondary" disabled={!allowed || !action.undoable || cmd.pending}
-      hint={allowed ? 'Ask the responsible agent to reverse this action.' : 'IT security can undo this action.'}
-      onClick={() => setConfirm(true)}><Undo2 size={14} aria-hidden="true" />Undo</Button>
-    <ConfirmDialog open={confirm} title={cutOff ? 'Reconnect this monitor?' : 'Undo this action?'}
-      bed={view.bed} monitor={action.device_id || 'Ward action'}
-      consequence={cutOff ? 'The monitor may send signals to the ward again. Check that IT has verified it is safe to reconnect. This reversal is recorded in the action log.' : `Reverse “${view.what}”. The responsible agent will record the result in the action log.`}
-      actionLabel={cutOff ? 'Reconnect monitor' : 'Undo action'} pending={cmd.pending} onClose={() => setConfirm(false)}
-      onConfirm={() => {setConfirm(false); void cmd.run(`/api/actions/${encodeURIComponent(action.id)}/undo`, {type: 'undo_action', originalActionId: action.id, bedId: action.bed_id});}} />
-    <Feedback message={cmd.feedback} failed={cmd.failed} />
-  </span>;
+  return <Undo action={action} />;
 }
 
 export function ActionFeed({actions, emptyTitle = 'No actions recorded'}: {actions: Action[]; emptyTitle?: string}) {

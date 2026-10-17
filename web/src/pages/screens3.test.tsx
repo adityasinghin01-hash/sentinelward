@@ -55,7 +55,7 @@ describe('S7 incident (#8)', () => {
     as('it'); useWard.setState({actions: []});
     at('/incident/inc_1', '/incident/:incidentId', <IncidentPage />);
     expect(await screen.findByText('Cut off MON-11 at the hub')).toBeInTheDocument();
-    expect(screen.getByText('Detected a hacked monitor')).toBeInTheDocument();
+    expect(screen.getByText('Detected possible monitor tampering')).toBeInTheDocument();
     expect(screen.getByText(/Attack starts/)).toBeInTheDocument();
     expect(screen.getByText('Signal record')).toBeInTheDocument();
     expect(screen.getByText(/208\.4 KB/)).toBeInTheDocument();

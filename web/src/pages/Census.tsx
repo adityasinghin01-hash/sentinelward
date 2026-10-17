@@ -1,8 +1,8 @@
 import {useNavigate} from 'react-router-dom';
 import {useWard} from '../lib/store';
 import {useNow} from '../lib/hooks';
-import {bedState, displayVitals, isOpenAlert, staff, time, trustView, value} from '../lib/domain';
-import {BedLink, Empty, PageTitle, Panel, Tip} from '../components/ui';
+import {age, bedState, displayVitals, isOpenAlert, staff, time, trustView, value} from '../lib/domain';
+import {BedLink, Empty, PageTitle, Panel, StateChip, Tip} from '../components/ui';
 import {tileView} from '../components/ward/tile';
 import type {TileGroup} from '../components/ward/tile';
 const GROUP_RANK: Record<TileGroup, number> = {emergency: 0, security: 1, check: 2, nosignal: 3, maint: 4, normal: 5};
@@ -51,9 +51,9 @@ export function CensusPage() {
                         onKeyDown={e => { if (e.key === 'Enter') navigate(`/bed/${b.bed_id}`); }}>
                       <td><BedLink id={b.bed_id} /></td>
                       <td>{!hidden && b.patient ? `${b.patient.initials} · ${b.patient.age ?? '—'} ${b.patient.sex ?? ''}` : 'Hidden'}</td>
-                      <td><span className={`census-state tone-${t.tone}`}>{t.word}</span>{t.reason && <span className="census-reason">{t.reason}</span>}</td>
+                      <td><StateChip state={t.key === 'NO_SIGNAL' ? 'NO_DATA' : t.key === 'ALARM_OPEN' ? 'EMERGENCY' : t.key} />{t.reason && <span className="census-reason">{t.reason}</span>}</td>
                       <td className={`trust-word ${s.untrusted || trustView(b).value === null ? 'is-not' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? 'Not trusted' : s.untrusted ? 'Checking' : 'Trusted'}</td>
-                      <td className="mono big-cell">{value(v?.hr)}</td>
+                      <td className="mono big-cell">{value(v?.hr)}{s.untrusted && <span className="census-reading-age">{b.last_trusted?.captured_at ? `Last trusted · ${age(b.last_trusted.captured_at, now)} ago` : 'No trusted recording'}</span>}</td>
                       <td className="mono big-cell">{value(v?.spo2)}</td>
                       <td className="mono">{value(v?.systolic)}/{value(v?.diastolic)}</td>
                       <td>{check ? `${check.result === 'patient_ok' || check.status === 'patient_ok' ? 'OK' : 'NOT OK'} · ${time(Number(check.ts))} · ${staff(check.by)}` : '—'}</td>

@@ -70,3 +70,12 @@ it('keeps a confirmed B05 hub cut-off visible in the action history', async () =
   open();
   expect(await screen.findByText('Cut off MON-05 at the hub')).toBeInTheDocument();
 });
+
+it('puts bedside confirmation and the directive before signal evidence', async () => {
+  open();
+  const bedside = await screen.findByRole('heading', {name: 'Bedside check'});
+  const signals = screen.getByRole('heading', {name: 'Last trusted signals'});
+  const directive = screen.getByRole('heading', {name: 'What to do now'});
+  expect(bedside.compareDocumentPosition(signals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(directive.compareDocumentPosition(signals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
