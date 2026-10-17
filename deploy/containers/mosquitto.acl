@@ -1,0 +1,47 @@
+# Default deny. Derived from security_v2/sw_sec/policy.py; see README for exceptions.
+user simulator
+# Single replay connection, including scale runs; no per-monitor identity/containment.
+topic write ward/bed/+/vitals
+topic read ward/demo/control
+
+user brain
+topic write ward/bed/+/score/+
+topic write ward/bed/+/verdict
+topic read ward/bed/+/vitals
+topic read net/device/+/features
+topic read ward/bed/+/bedside
+topic read ward/demo/control
+
+user backend
+topic write ward/request
+topic write ward/demo/control
+topic write ward/action
+topic write ward/bed/+/bedside
+topic read ward/bed/+/vitals
+topic read ward/bed/+/score/+
+topic read ward/bed/+/verdict
+topic read ward/action
+topic read ward/alert
+topic read ward/bed/+/bedside
+topic read net/device/+/features
+topic read ward/request
+topic read ward/demo/control
+topic read ward/record
+topic read ward/chip/+
+
+user attacks
+# Deliberate demo authority; never features, verdicts, scores, actions or control.
+topic write ward/bed/B01/vitals
+topic write ward/bed/B02/vitals
+topic write ward/bed/B03/vitals
+topic write ward/bed/B04/vitals
+topic write ward/bed/B05/vitals
+topic write ward/bed/B06/vitals
+topic write ward/bed/B07/vitals
+topic write ward/bed/B08/vitals
+topic write ward/bed/B09/vitals
+topic write ward/bed/B10/vitals
+topic write ward/bed/B11/vitals
+topic write ward/bed/B12/vitals
+topic read ward/bed/+/vitals
+topic read ward/demo/control
