@@ -66,8 +66,9 @@ class BrainService:
             if key in self.controls: return False
             self.controls.append(key); self.last_control_ts=message['ts']
             self.reset()
+            self.run_started_ms=message['ts']
             if message['cmd']=='run':
-                self.active_run_id=message['run_id']; self.run_started_ms=message['ts']
+                self.active_run_id=message['run_id']
             return True
         if self.run_started_ms is not None and (now<self.run_started_ms or (kind!='vitals' and message.get('ts',message.get('window_start',now))<self.run_started_ms)): return False
         if kind=='net_features':
@@ -132,8 +133,8 @@ class BrainService:
         # Caller uses epoch-aligned deadlines. Negative starts are avoided during initial epoch fixtures.
         end=(int(now_ms)//5000)*5000; start=max(0,end-10000); verdicts=[]
         for bed,state in sorted(self.beds.items()):
-            if state.last_received_ms is None: continue
-            offline=now_ms-state.last_received_ms>=3000
+            if state.last_received_ms is None and not state.patient_not_ok: continue
+            offline=state.last_received_ms is None or now_ms-state.last_received_ms>=3000
             window=next((w for w in reversed(state.windows) if w['window_start']==start),None)
             results=self.suite.evaluate(window,state,now_ms)
             for model,value in results.items():

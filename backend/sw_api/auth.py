@@ -250,6 +250,6 @@ def check_origin(connection: HTTPConnection) -> None:
         content_type = connection.headers.get("content-type", "").split(";", 1)[0].lower()
         bearer = connection.headers.get("authorization", "").lower().startswith("bearer ")
         csrf = connection.headers.get("x-csrf-token", "")
-        if not bearer and content_type != "application/json" and not (cookie and compare_digest(cookie, csrf)):
+        if not bearer and content_type != "application/json" and not (cookie and cookie.isascii() and csrf.isascii() and compare_digest(cookie, csrf)):
             raise HTTPException(403, "JSON or a session CSRF token is required without Origin")
     _install_routes(connection)

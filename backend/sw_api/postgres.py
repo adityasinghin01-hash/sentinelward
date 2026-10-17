@@ -250,7 +250,7 @@ class PostgresStore(MemoryStore):
                                   "note": r["note"], "urgency": r["urgency"], "status": r["status"]})
         rows = await q("SELECT max(received_ts) AS last FROM vitals_1s")
         w.last_message_ms = rows[0]["last"] if rows else None
-        rows = await q("SELECT max(ts) AS reset_at FROM demo_runs WHERE cmd = 'reset'")
+        rows = await q("SELECT max(ts) AS reset_at FROM demo_runs WHERE cmd IN ('reset', 'run')")
         w.reset_at = rows[0]["reset_at"] if rows else None
         # RAM lookup tables and the unsent outbox.
         for m in w.actions:

@@ -61,11 +61,16 @@ class Runtime:
             task.add_done_callback(self._lookup_tasks.discard)
 
     async def _lookup(self, bed_id: str, cutoff: int, inclusive: bool) -> None:
+        generation = self.ingest.generation
         try:
             point = await self.store.trusted_point_async(bed_id, cutoff, inclusive)
         except Exception:  # noqa: BLE001 - database down: show untrusted last values, retry later
             LOG.exception("trusted-point lookup failed for %s", bed_id)
+            if generation != self.ingest.generation:
+                return
             self.state._lookups_in_flight.discard((bed_id, cutoff, inclusive))
+            return
+        if generation != self.ingest.generation:
             return
         self.state.set_pin(bed_id, cutoff, inclusive, point)
         self.push_bed(bed_id)
@@ -114,6 +119,8 @@ class Runtime:
 
     def reset(self) -> None:
         self.ingest.reset()
+        for lookup in list(self._lookup_tasks):
+            lookup.cancel()
         self.store.reset()
         self.state.reset()
         for bed_id in self.state.beds:
