@@ -1,0 +1,25 @@
+# SentinelWard AI-chip second opinion on the TEST LinuxONE (z17), inside IBM's lab container
+# `notebook` (torch 2.11 + torch_nnpa 1.5.0, device nnpa:0). Installed by deploy/chip/install_test.sh.
+[Unit]
+Description=SentinelWard AI-chip second opinion (CNN on IBM z17 NNPA), shown only
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+User=linux1
+Group=linux1
+SupplementaryGroups=docker
+# docker exec does not forward SIGTERM; clear any earlier copy before start and after stop.
+ExecStartPre=/usr/bin/docker start notebook
+ExecStartPre=-/usr/bin/pkill -f "^/opt/venv/bin/python -m sw_chip$"
+ExecStart=/usr/bin/docker exec --env-file /home/linux1/shared/chip/chip-remote.env \
+  -e PYTHONPATH=/home/ibm-user/shared/chip/repo/chip:/home/ibm-user/shared/chip/pylib \
+  -w /home/ibm-user/shared/chip notebook /opt/venv/bin/python -m sw_chip
+ExecStopPost=-/usr/bin/pkill -f "^/opt/venv/bin/python -m sw_chip$"
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
