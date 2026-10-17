@@ -125,7 +125,7 @@ def test_table_priorities(world):
 def test_low_priority_has_no_ladder(world):
     world.verdict("B04", "LOOSE_SENSOR", 0.9, reasons=["PPG flat line"], n=2)
     a = world.bus.alerts()[-1]
-    assert a["priority"] == "low" and "finger sensor loose" in a["text"] and "False alarm silenced" in a["text"]
+    assert a["priority"] == "low" and "finger sensor loose" in a["text"] and "Please refit the sensor" in a["text"]
     world.advance(120)
     assert world.bus.alerts()[-1]["ladder_step"] == 1
 

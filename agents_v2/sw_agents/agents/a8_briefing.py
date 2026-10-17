@@ -48,7 +48,7 @@ class A8Briefing(Agent):
         self.data_from: int | None = None
         self.blind_ms: dict[str, int] = {}
         self.last: dict[str, tuple[int, bool, str]] = {}
-        self.silenced = 0
+        self.sensor_fault_episodes = 0
         self.latest: dict | None = None
 
     def after_reset(self) -> None:
@@ -84,7 +84,7 @@ class A8Briefing(Agent):
         if prev is not None and prev[1]:
             self.blind_ms[bed] = self.blind_ms.get(bed, 0) + max(0, min(v["ts"] - prev[0], BLIND_GAP_CAP_MS))
         if v["verdict"] == "LOOSE_SENSOR" and (prev is None or prev[2] != "LOOSE_SENSOR"):
-            self.silenced += 1
+            self.sensor_fault_episodes += 1
         self.last[bed] = (v["ts"], blind, v["verdict"])
 
     def facts(self) -> dict:
@@ -114,7 +114,7 @@ class A8Briefing(Agent):
             "blind_time": blind,
             "alerts_sent": len(history), "alerts_acknowledged": len(acked),
             "median_ack_s": round(statistics.median(acked), 1) if acked else None,
-            "false_alarms_silenced": self.silenced,
+            "false_alarms_silenced": self.sensor_fault_episodes,  # legacy API name; no alarms are silenced
             "beds_mentioned": beds, "devices_mentioned": devices,
         }
 
@@ -134,7 +134,7 @@ class A8Briefing(Agent):
         parts.append("Blind time: " + (", ".join(f"{b['bed_id']} {b['minutes']} min" for b in f["blind_time"]) or "none") + ".")
         ack = f", median {f['median_ack_s']} s to acknowledge" if f["median_ack_s"] is not None else ""
         parts.append(f"Alerts to staff: {f['alerts_sent']}, acknowledged {f['alerts_acknowledged']}{ack}. "
-                     f"False alarms silenced: {f['false_alarms_silenced']}.")
+                     f"Loose-sensor episodes: {f['false_alarms_silenced']} (advice only; alarms remain active).")
         return " ".join(parts)
 
     # ------------------------------------------------------------------ write

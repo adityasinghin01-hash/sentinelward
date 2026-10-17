@@ -28,7 +28,7 @@ export function BriefingPage() {
   const rejected = /reject|fact.?check/i.test(b?.fallback_reason || '');
   const writer = granite ? 'Written by IBM Granite' : b?.generated_by === 'template' ? `Written by the template${rejected ? ' (Granite draft rejected by the fact check)' : ''}` : 'Writer not recorded';
   const prose = plainText(b?.summary || '').replace(/Blind time:/gi, 'Time without trusted signals:').replace(/Untrusted beds:/gi, 'Beds needing checks by hand:').replace(/Open biomed tickets:/gi, 'Open repair tickets:');
-  const paragraphs = prose.split(/\n\s*\n|\s+(?=Incidents:|Beds needing checks by hand:|Open repair tickets:|Time without trusted signals:|Alerts to staff:|False alarms silenced:)/).filter(Boolean);
+  const paragraphs = prose.split(/\n\s*\n|\s+(?=Incidents:|Beds needing checks by hand:|Open repair tickets:|Time without trusted signals:|Alerts to staff:|Loose-sensor episodes:|False alarms silenced:)/).filter(Boolean);
   return <div className="page pages-page briefing-page">
     <PageHeader title="Briefing and workload" description="A handover from the ward’s recorded facts, with each nurse’s recent alarm load.">
       <SegmentedControl label="Briefing or workload" value={tab} onChange={setTab} options={[

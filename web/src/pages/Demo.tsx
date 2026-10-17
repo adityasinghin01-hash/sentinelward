@@ -11,7 +11,7 @@ import {ActionFeed} from '../components/pages/ActionRecord';
 const SCENARIOS = [
   {id: 'full_ward_script', name: 'Full ward script', what: 'Twelve beds: a real emergency, a loose sensor, pressure drift, a replay attack, and a fake flatline.'},
   {id: 'emergency', name: 'Real emergency only', what: 'One patient deteriorates: an alert is sent and escalated until someone responds.'},
-  {id: 'loose_sensor', name: 'Loose sensor', what: 'A finger sensor comes loose: the sensor alarm is silenced and the nurse is asked to refit it.'},
+  {id: 'loose_sensor', name: 'Loose sensor', what: 'A finger sensor comes loose: the nurse is asked to refit it. Monitor alarms remain active.'},
   {id: 'drifting', name: 'Sensor drift', what: 'An arterial pressure line drifts away from the cuff reading and a repair ticket is opened.'},
   {id: 'replay_attack', name: 'Replay attack', what: 'Old readings are replayed over a monitor. The monitor is cut off and evidence is preserved.'},
   {id: 'fake_flatline', name: 'Fake flatline', what: 'A false flatline is injected while the patient’s other signals still show a pulse.'},

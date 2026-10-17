@@ -67,7 +67,7 @@ ACTION_LINE = {
     "TAMPERING": "Check pulse and breathing by hand. Use a portable monitor.",
     "UNSURE": "Please check by hand.",
     "DRIFTING": "Re-level and re-zero the line; take a cuff reading.",
-    "LOOSE_SENSOR": "False alarm silenced. Please refit the sensor.",
+    "LOOSE_SENSOR": "Possible sensor fault. Please refit the sensor; monitor alarms remain active.",
 }
 
 
