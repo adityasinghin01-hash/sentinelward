@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 from copy import deepcopy
 import numpy as np
-from scipy.signal import find_peaks
+from scipy.signal import butter, find_peaks, peak_widths, sosfiltfilt
 
 LABELS={'M1':'sensor_unusable','M2':'real_emergency','M3':'body_mismatch','M4':'replay','M5':'network_attack','M6':'drift'}
 
@@ -21,6 +21,60 @@ def waveform(window,channel):
     return np.array([np.nan if v is None else v for v in values],dtype=float)
 
 
+FS=125
+# QRS band (Pan & Tompkins 1985): 5-15 Hz keeps the sharp QRS and drops P/T waves and baseline wander.
+_QRS_SOS=butter(2,[5,15],btype='bandpass',fs=FS,output='sos')
+# Pulse band: 0.5-8 Hz keeps the pulse upstroke, drops baseline drift and the dicrotic-notch ripple.
+_PPG_SOS=butter(2,[.5,8],btype='bandpass',fs=FS,output='sos')
+
+
+def ecg_beats(x):
+    """R-peak sample indices from a 125 Hz single-lead ECG (no NaNs).
+
+    Band-pass 5-15 Hz -> derivative -> square -> 120 ms moving integration, then peaks at least
+    250 ms apart (max 240 bpm) above an adaptive threshold. Each beat is refined to the largest
+    |band-passed| sample within +-60 ms so T waves and noise are not counted as extra beats.
+    """
+    band=sosfiltfilt(_QRS_SOS,x)
+    energy=np.convolve(np.gradient(band)**2,np.ones(15)/15,mode='same')
+    if not np.any(energy>0): return np.array([],dtype=int),band
+    height=.30*float(np.percentile(energy,98))
+    candidates,_=find_peaks(energy,height=height,distance=int(.25*FS))
+    half=int(.06*FS); beats=[]
+    for c in candidates:
+        lo,hi=max(0,c-half),min(len(band),c+half+1)
+        r=lo+int(np.argmax(np.abs(band[lo:hi])))
+        if not beats or r-beats[-1]>=int(.25*FS): beats.append(r)
+    return np.array(beats,dtype=int),band
+
+
+def rhythm_rate(band):
+    """Beats per minute from the dominant repeat interval (autocorrelation, 30-200 bpm), or None.
+
+    Robust to dicrotic notches, small extra peaks and amplitude changes that break peak counting.
+    """
+    x=band-np.mean(band)
+    if not np.any(x): return None
+    ac=np.correlate(x,x,mode='full')[len(x)-1:]
+    ac=ac/ac[0]
+    lo,hi=int(FS*60/200),int(FS*60/30)
+    seg=ac[lo:hi]
+    peaks,props=find_peaks(seg,height=.3)
+    if not len(peaks): return None
+    # The first strong repeat is the beat interval (later ones are its multiples).
+    strongest=float(np.max(props['peak_heights']))
+    lag=int(peaks[np.argmax(props['peak_heights']>=.5*strongest)])+lo
+    # If alternate beats look alike, the strongest repeat can be every second beat: prefer a clear
+    # repeat at half that interval (still within 30-200 bpm).
+    half=lag//2
+    if half>=lo:
+        w=max(2,half//10)
+        near=ac[max(lo,half-w):half+w+1]
+        if len(near) and float(np.max(near))>=.3:
+            lag=max(lo,half-w)+int(np.argmax(near))
+    return float(60*FS/lag)
+
+
 def pulse_metrics(window,channel='ecg'):
     """Rate, beat times and approximate QRS width from observed samples only."""
     x=waveform(window,channel)
@@ -28,14 +82,22 @@ def pulse_metrics(window,channel='ecg'):
     x=np.nan_to_num(x,nan=float(np.nanmedian(x)))
     x=x-np.median(x)
     if channel=='ecg':
-        # Dominant polarity allows inverted single-lead ECG.
-        if abs(np.min(x))>abs(np.max(x)): x=-x
-        prominence=max(.08,float(np.ptp(x))*.3)
-    else: prominence=max(1e-6,float(np.ptp(x))*.25)
-    peaks,properties=find_peaks(x,distance=25 if channel=='ecg' else 30,prominence=prominence,width=1)
+        peaks,band=ecg_beats(x)
+        widths=peak_widths(np.abs(band),peaks,rel_height=.5)[0] if len(peaks) else np.array([])
+        widths=widths[widths>0]
+    else:
+        band=sosfiltfilt(_PPG_SOS,x)
+        spread=float(np.percentile(band,95)-np.percentile(band,5))  # robust to single spikes
+        peaks,properties=find_peaks(band,distance=int(.33*FS),prominence=max(1e-6,.35*spread),width=1)
+        widths=properties['widths']
     if len(peaks)<2: return {'rate':0.,'peaks':peaks,'regularity':None,'qrs_ms':None}
-    intervals=np.diff(peaks)/125
-    return {'rate':float(60/np.median(intervals)),'peaks':peaks,'regularity':float(np.std(intervals)/np.mean(intervals)), 'qrs_ms':float(np.median(properties['widths'])*8)}
+    intervals=np.diff(peaks)/FS
+    rate=float(60/np.median(intervals))
+    if channel!='ecg':
+        rhythm=rhythm_rate(band)
+        if rhythm is not None: rate=rhythm  # peaks still give pulse timing; the rhythm gives the rate
+    return {'rate':rate,'peaks':peaks,'regularity':float(np.std(intervals)/np.mean(intervals)),
+            'qrs_ms':float(np.median(widths)*1000/FS) if len(widths) else None}
 
 class QualityDetector:
     def evaluate(self,window,state,now_ms):

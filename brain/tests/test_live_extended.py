@@ -22,13 +22,15 @@ def test_m3_uses_this_beds_baseline_and_explains_arrival_shift():
     for i in range(4):
         result = model(waves(start=i*10000), state(), i*10000+10000)
     assert result['score'] < .2
-    shifted = model(waves(delay_ms=480, start=40000), state(), 50000)
+    model(waves(delay_ms=480, start=40000), state(), 50000)  # one window alone is not enough
+    shifted = model(waves(delay_ms=480, start=50000), state(), 60000)  # persists: 2 of the last 3
     assert shifted['score'] > .8
     assert 'usual' in shifted['reason']
     assert 180 <= shifted['extra']['baseline_pat_ms'] <= 220
     other = model(waves(delay_ms=480, start=40000, bed='B02'), state(), 50000)
     assert other['extra']['baseline_pat_ms'] is None
-    assert other['score'] is None
+    assert other['extra']['baseline_warming'] is True
+    assert other['score'] < .2  # rates agree; timing is not compared until this bed has a baseline
 
 
 def test_m3_flat_ecg_with_present_pulse_and_rate_disagreement():
@@ -131,9 +133,9 @@ def test_integrated_six_live_scores_include_null_warmup_and_no_line(frame):
     verdict = service.tick(10000)[0]
     assert all(isinstance(verdict['scores'][m],float) for m in ('M1','M4','M5'))
     assert verdict['scores']['M2'] is None
-    assert verdict['scores']['M3'] is None
+    assert verdict['scores']['M3'] is not None  # rate agreement checked while the timing baseline warms
     assert verdict['scores']['M6'] is None
-    assert verdict['verdict'] == 'UNSURE'  # patient pulse-arrival baseline is still warming
+    assert verdict['verdict'] == 'NORMAL'  # a learning bed with agreeing signals does not raise an alert
 
 
 def test_drifting_plus_network_is_tampering_and_low_cuff_is_emergency():
@@ -255,3 +257,25 @@ def test_warmup_publishes_all_six_scores_with_null_ineligibility_every_five_seco
                 assert observation['extra']['eligible'] is False
                 assert observation['extra']['unavailable_reason']
         assert service.invalid_outgoing==0
+
+
+def test_m3_single_jittery_window_does_not_fire_but_persistent_mismatch_does():
+    model = BodyMismatch()
+    for i in range(4):
+        model(waves(start=i*10000), state(), i*10000+10000)
+    once = model(waves(ppg_rate=110, start=40000), state(), 50000)
+    assert once['score'] < .5  # one disagreeing window is beat-detection jitter, not an attack
+    assert once['extra']['raw_score'] >= .5
+    again = model(waves(ppg_rate=110, start=50000), state(), 60000)
+    assert again['score'] >= .5  # 2 of the last 3 windows disagree: a real body mismatch
+
+
+def test_m3_timing_one_beat_apart_is_the_same_timing():
+    # At 100 bpm one beat is 600 ms: a pulse measured 648 ms after a beat is the pulse of the
+    # previous beat arriving 48 ms after this one, not a 540 ms timing shift.
+    model = BodyMismatch()
+    for i in range(4):
+        model(waves(delay_ms=48, start=i*10000, ecg_rate=100, ppg_rate=100), state(), i*10000+10000)
+    later = model(waves(delay_ms=648, start=40000, ecg_rate=100, ppg_rate=100), state(), 50000)
+    later = model(waves(delay_ms=648, start=50000, ecg_rate=100, ppg_rate=100), state(), 60000)
+    assert later['score'] < .5

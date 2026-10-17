@@ -23,7 +23,7 @@ def test_normal_requires_all_applicable_checks_but_not_m2_or_m6(m3_score, expect
     assert decide('B01', 0, 10000, scores, alarm=True)['verdict'] == 'EMERGENCY'
 
 
-@pytest.mark.parametrize('seconds,expected', [(10, 'UNSURE'), (40, 'NORMAL')])
+@pytest.mark.parametrize('seconds,expected', [(10, 'NORMAL'), (40, 'NORMAL')])  # rate agreement is checked from the first window
 def test_no_line_no_alarm_bed_publishes_applicability_and_can_become_normal(frame, seconds, expected):
     bus = MemoryBus()
     service = BrainService(bus)
@@ -44,10 +44,8 @@ def test_no_line_no_alarm_bed_publishes_applicability_and_can_become_normal(fram
         assert published['reason']
         assert published['extra']['unavailable_reason']
         assert wire['scores'][model] is None
-    if seconds == 10:
-        assert verdict['scores']['M3'] is None
-    else:
-        assert verdict['scores']['M3'] < .5
+    assert verdict['scores']['M3'] < .5  # checked from the first window (rates agree)
+    if seconds == 40:
         assert service.beds['B01'].last_trusted_ts == 40000
 
 
@@ -108,7 +106,10 @@ def test_m6_only_line_samples_in_current_window_make_it_applicable(next_window_a
     detector = PressureDrift()
     state = BedState('B01')
     state.messages.append({'message': {'ts': 0, 'abp': [100.] * 125, 'nibp': None}, 'received_ms': 0})
-    assert not detector({'bed_id': 'B01', 'window_start': 0}, state, 10000)['extra'].get('not_applicable', False)
+    first = detector({'bed_id': 'B01', 'window_start': 0}, state, 10000)
+    # Line present but no paired cuff yet: no drift evidence either way, so it must not block NORMAL.
+    assert first['extra']['not_applicable'] is True
+    assert 'cuff' in first['reason']
     state.messages.append({'message': {'ts': 19000, 'abp': None, 'nibp': None}, 'received_ms': 19000})
     if next_window_abp:
         state.messages.append({'message': {'ts': 20000, 'abp': [100.] * 125, 'nibp': None}, 'received_ms': 20000})

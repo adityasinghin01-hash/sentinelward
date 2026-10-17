@@ -65,8 +65,8 @@ def test_control_clears_memory_and_new_vitals_are_scored(frame, cmd):
     verdicts = service.tick(40000)
     assert_published_tick(bus, verdicts)
     assert verdicts[0]['scores']['M4'] == 0.
-    assert verdicts[0]['scores']['M3'] is None  # New patient baseline is warming.
-    assert verdicts[0]['verdict'] == 'UNSURE'  # Previous alarm is gone.
+    assert verdicts[0]['scores']['M3'] is not None  # Rate agreement is checked while the timing baseline warms.
+    assert verdicts[0]['verdict'] == 'NORMAL'  # Previous alarm is gone and the fresh signals agree.
 
 
 @pytest.mark.parametrize('cmd', ['reset', 'run'])

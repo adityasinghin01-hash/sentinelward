@@ -9,13 +9,19 @@ from .detectors import pulse_metrics, result
 
 
 class BodyMismatch:
+    # A rate/timing disagreement must persist (median of the last 3 windows, i.e. 2 of 3) before it
+    # counts as a body mismatch; one jittery window of beat detection must not raise an alert.
+    PERSIST = 3
+
     def __init__(self):
         self.baselines = {}
         self.seen = {}
+        self.recent = {}
 
     def reset(self):
         self.baselines.clear()
         self.seen.clear()
+        self.recent.clear()
 
     def __call__(self, window, state, now_ms):
         if not window:
@@ -24,7 +30,11 @@ class BodyMismatch:
         if ecg is None or ppg is None:
             return result(None, 'Not enough observed ECG and pulse samples', eligible=False, path='live_rate_and_pat')
         rates = {'ecg_rate_bpm':ecg['rate'], 'ppg_rate_bpm':ppg['rate']}
+        bed = window['bed_id']
+        recent = self.recent.setdefault(bed, deque(maxlen=self.PERSIST))
         if (ecg['rate'] < 20) != (ppg['rate'] < 20):
+            # One signal flat while the other beats (fake flatline or a lead off): strong, immediate evidence.
+            recent.append(.99)
             return result(.99, 'Heartbeat and pulse disagree: one signal has no usable beats', **rates, path='live_rate_and_pat')
         mismatch = min(1., abs(ecg['rate']-ppg['rate']) / max(20., .25 * max(ecg['rate'],ppg['rate'])))
         pats = []
@@ -32,21 +42,33 @@ class BodyMismatch:
             after = (ppg['peaks'] - beat) * 8
             after = after[(after >= 80) & (after <= 700)]
             if len(after): pats.append(float(after[0]))
-        bed = window['bed_id']
         baseline = self.baselines.setdefault(bed, deque(maxlen=60))
         usual = float(np.median(baseline)) if len(baseline) >= 3 else None
         pat = float(np.median(pats)) if len(pats) >= 3 else None
-        timing_score = min(1., abs(pat-usual)/200) if pat is not None and usual is not None else 0.
-        score = max(mismatch, timing_score)
+        # When the pulse takes longer than one beat to reach the finger, it can be paired with the
+        # previous or next heartbeat; a difference of exactly one beat interval is the same timing.
+        rr_ms = 60000/ecg['rate'] if ecg['rate'] >= 20 else None
+        def timing_gap(a, b):
+            d = abs(a-b)
+            return min(d, abs(a-b-rr_ms), abs(a-b+rr_ms)) if rr_ms else d
+        timing_score = min(1., timing_gap(pat, usual)/200) if pat is not None and usual is not None else 0.
+        raw = max(mismatch, timing_score)
+        recent.append(raw)
+        score = float(np.median(recent))
+        # Rate agreement is real evidence from the first window; only the timing comparison waits for
+        # this patient's baseline, so a learning bed with agreeing rates is checked, not "unknown".
         extra = dict(**rates, path='live_rate_and_pat', pat_ms=pat, baseline_pat_ms=usual,
-                     baseline_samples=len(baseline), baseline_warming=usual is None, eligible=usual is not None or score>=.5)
+                     baseline_samples=len(baseline), baseline_warming=usual is None, eligible=True,
+                     raw_score=raw, persistence_windows=len(recent))
         # Admit only non-overlapping, mutually consistent observations; anomalies cannot train themselves away.
         start = window.get('window_start', 0)
         if (getattr(state,'baseline_admission_allowed',True) and pat is not None and
                 mismatch < .2 and timing_score < .2 and start >= self.seen.get(bed, -10000)+10000):
             baseline.append(pat)
             self.seen[bed] = start
-        if timing_score >= .5:
+        if score < .5:
+            reason = 'Heartbeat and pulse agree' + ('; learning this patient’s pulse timing' if usual is None else '')
+        elif timing_score >= .5:
             reason = f"Pulse arrives {pat:.0f} ms after the heartbeat; this patient's usual is {usual:.0f} ms"
         elif mismatch >= .5:
             reason = f"ECG rate {ecg['rate']:.0f} bpm differs from pulse rate {ppg['rate']:.0f} bpm"
@@ -101,17 +123,18 @@ class PressureDrift:
             self.seen[bed] = cuff['ts']
         current = self.current.get(bed)
         if current is None:
-            return result(None, 'Arterial line present; waiting for a paired cuff reading', eligible=False,
+            return result(None, 'Arterial line present; waiting for a paired cuff reading', eligible=False, not_applicable=True,
                           baseline_samples=len(baseline), path='live_patient_gap')
         if now_ms-current['cuff_ts'] > 300000:
-            return result(None, 'Cuff reading is too old for a pressure comparison', eligible=False,
+            return result(None, 'Cuff reading is too old for a pressure comparison', eligible=False, not_applicable=True,
                           baseline_samples=len(baseline), path='live_patient_gap')
         usual = current['baseline_gap_mmhg']
         reason = (f"Line/cuff gap {current['gap_mmhg']:.0f} mmHg; this patient's usual is {usual:.0f} mmHg"
                   if usual is not None else 'Learning this patient’s usual arterial-line/cuff gap')
         return result(current['score'], reason, **{k:v for k,v in current.items() if k!='score'},
                       baseline_samples=len(baseline), baseline_warming=usual is None, eligible=usual is not None,
-                      path='live_patient_gap')
+                      # No cuff baseline yet = no drift evidence either way; it must not block NORMAL.
+                      not_applicable=usual is None, path='live_patient_gap')
 
     evaluate = __call__
 
