@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+evidence/
+state/
+*.key
+*.env
+credentials.json
+accounts.json
+admin.conf
