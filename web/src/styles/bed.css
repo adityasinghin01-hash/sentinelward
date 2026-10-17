@@ -1,19 +1,32 @@
-/* ===== S3 Bed detail ===== */
-.bed-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--border); margin-bottom: 12px; }
-.bed-header h1 { margin: 0; font-size: 22px; font-weight: 600; }
-.bed-header .patient { font-size: 14px; }
+/* Bed header: same state words + colours as the ward tile, one plain cause sentence */
+.bed-header { border-radius: 14px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 14px; overflow: hidden; }
+.bed-head-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 12px 16px; }
+.bed-header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+.bed-header .patient { font-size: 14px; color: var(--text-2); }
 .bed-header .back { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); text-decoration: none; font-size: 14px; }
+.bed-header .back:hover { color: var(--text); }
 .bed-header-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
-.bed-header.alarm-bar-high { border-color: var(--st-emergency); box-shadow: inset 6px 0 0 var(--st-emergency); }
-.bed-header.alarm-bar-medium { border-color: var(--st-check); box-shadow: inset 6px 0 0 var(--st-check); }
-.bed-header.alarm-bar-low { border-color: var(--st-maint); box-shadow: inset 6px 0 0 var(--st-maint); }
-.bed-header.untrusted { background: var(--stripes), var(--surface); }
-.go-now { margin: 0 0 12px; padding: 10px 14px; border-radius: 8px; background: var(--st-emergency); color: var(--st-emergency-ink); font-weight: 600; background-image: var(--stripes); }
+.bed-band { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; padding: 12px 16px; background: var(--surface-sunken); border-top: 1px solid var(--border); color: var(--text); }
+.bed-band b { font-size: 14px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.bed-cause { font-size: 15px; font-weight: 500; }
+.bed-band-foot { margin-left: auto; font-size: 13px; opacity: .85; }
+.bed-header.tone-ok .bed-band svg { color: var(--st-ok); fill: var(--st-ok); width: 10px; height: 10px; }
+.bed-header.tone-emergency { border-color: var(--st-emergency); }
+.bed-header.tone-emergency .bed-band { background: var(--st-emergency); color: var(--st-emergency-ink); border-color: var(--st-emergency); }
+.bed-header.tone-both { border-color: var(--st-emergency); }
+.bed-header.tone-both .bed-band { background: linear-gradient(90deg, var(--st-emergency) 0 82%, var(--st-security) 82% 100%); color: var(--st-emergency-ink); border-color: var(--st-emergency); }
+.bed-header.tone-security { border-color: var(--st-security); }
+.bed-header.tone-security .bed-band { background: var(--st-security); color: var(--st-security-ink); border-color: var(--st-security); }
+.bed-header.tone-check { border-color: var(--st-check); }
+.bed-header.tone-check .bed-band { background: var(--st-check); color: var(--st-check-ink); border-color: var(--st-check); }
+.bed-header.tone-maint .bed-band { box-shadow: inset 4px 0 0 var(--st-maint); }
+.bed-header.tone-nodata { border-style: dashed; }
+/* ===== S3 Bed detail ===== */
 .bed-layout { display: grid; grid-template-columns: minmax(0, 65fr) minmax(0, 35fr); gap: 14px; align-items: start; }
 .bed-main .panel + .panel, .bed-side .panel + .panel { margin-top: 12px; }
 .bed-main .waveform + .waveform { margin-top: 6px; }
-.striped-panel .waveform { opacity: .9; }
-.last-good.big, .bed-main .data-age { font-size: 13px; padding: 6px 10px; margin-bottom: 8px; }
+.untrusted-panel .waveform { opacity: .7; }
+.last-good.big, .bed-main .data-age { font-size: 13px; padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; background: var(--surface-sunken); color: var(--text-2); border-left: 4px solid var(--st-nodata); }
 .big-vitals { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 10px; margin-top: 12px; }
 .big-vitals .vital strong { font-size: 56px; }
 .big-vitals .vital.bp strong { font-size: 32px; padding-top: 14px; }

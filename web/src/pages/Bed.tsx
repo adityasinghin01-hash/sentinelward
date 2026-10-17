@@ -7,6 +7,8 @@ import {useCommand, useNow, useResource} from '../lib/hooks';
 import {age, bedState, can, displayVitals, modelChecks, score01, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
 import type {BedDetail, HistoryPoint, Score} from '../lib/types';
 import {ActionList, Badge, Empty, Feedback, Panel, ResourceState, Tip, Trust} from '../components/ui';
+import {tileView} from '../components/ward/tile';
+import {AlertTriangle as BandAlert, ShieldAlert as BandShield, Activity as BandActivity, Unplug as BandUnplug, Circle as BandCircle} from 'lucide-react';
 import {Chip, Fact, Meter} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
@@ -216,14 +218,21 @@ export function BedPage() {
   const clinical = can(role, 'clinical');
   const bedActions = actions.filter(a => a.bed_id === bedId || a.device_id === detail.device_id).slice(0, 10);
   const frozenAt = detail.last_trusted?.captured_at;
+  const tv = tileView(detail, alerts, now);
+  const vv = verdictView(detail);
+  const cause = tv.key === 'ALARM_OPEN' ? 'An emergency alert is open on this bed. Go now and check the patient by hand.'
+    : tv.group === 'emergency' ? vv.headline.replace(' — ', '. ').replace(/^./, c => c.toUpperCase())
+    : tv.key === 'UNSURE' ? `The checks disagree, so the patient must be checked by hand.${vv.why ? ' ' + vv.why.replace(/^Blocked by: /, 'Reason: ') : ''}`
+    : tv.reason || 'All checks agree. Keep monitoring.';
+  const BandIcon = tv.tone === 'ok' ? BandCircle : tv.tone === 'security' || tv.tone === 'both' ? BandShield : tv.tone === 'maint' ? BandActivity : tv.tone === 'nodata' ? BandUnplug : BandAlert;
 
   return (
     <div className="page bed-page">
-      <div className={`bed-header alarm-bar-${state.tone} ${state.untrusted ? 'untrusted' : ''}`}>
+      <div className={`bed-header tone-${tv.tone}`}>
+        <div className="bed-head-row">
         <Link to="/ward" className="back" title="Back to all beds"><ArrowLeft size={16} aria-hidden="true" /> Ward</Link>
         <h1>Bed {detail.bed_id.replace(/^B0?/, '')}</h1>
         <span className="patient">{!hidden && detail.patient ? `${detail.patient.initials} · ${detail.patient.age ?? '—'} ${detail.patient.sex ?? ''}` : ''}</span>
-        <Badge tone={state.tone} icon={detail.verdict === 'NORMAL' ? 'check' : detail.verdict === 'DEVICE_ATTACK' ? 'shield' : 'status'}>{state.label}</Badge>
         <Tip text="Monitor ID, as the IT security screen shows it."><span className="mono muted">{detail.device_id}</span></Tip>
         <div className="bed-header-actions">
 
@@ -244,20 +253,26 @@ export function BedPage() {
             </button>
           )}
         </div>
+        </div>
+        <div className="bed-band" role={tv.group === 'emergency' ? 'alert' : undefined}>
+          <BandIcon size={18} aria-hidden="true" />
+          <b>{tv.word}</b>
+          <span className="bed-cause">{cause}</span>
+          {tv.footer && !/cut off/i.test(tv.reason) && <span className="bed-band-foot">{tv.footer}</span>}
+        </div>
       </div>
       <Feedback message={alertCmd.feedback || callCmd.feedback} failed={alertCmd.failed || callCmd.failed} />
       <ResourceState loading={false} error={res.error} retry={() => void res.reload()} />
-      {(detail.verdict === 'BOTH' || (detail.verdict === 'EMERGENCY' && detail.isolated)) && <p className="go-now" role="alert">{verdictView(detail).headline}</p>}
 
       <div className="bed-layout">
         <div className="bed-main">
           <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
                  caption={state.untrusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'Most recent samples from the monitor, about 25 per second.'}
-                 aside={<Trust bed={detail} />} className={state.untrusted ? 'striped-panel' : ''}>
+                 aside={<Trust bed={detail} />} className={state.untrusted ? 'untrusted-panel' : ''}>
             {state.untrusted && (
-              <div className="last-good big">▨ UNTRUSTED · {frozenAt ? `last good ${time(frozenAt, true)} · ${age(frozenAt, now)} ago` : 'no trusted reading yet · check by hand'}</div>
+              <div className="last-good big">Not trusted · showing the last good recording{frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ' (none yet: check by hand)'}</div>
             )}
-            {state.offline && <div className="data-age">◷ NO DATA · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'not yet received'}</div>}
+            {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
             <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} />
             <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} />
             <div className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
