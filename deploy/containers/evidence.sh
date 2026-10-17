@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Judges' evidence for criterion 3 (containers, security, scalability, compute) on LinuxONE.
-# Writes plain-text captures to ../evidence/containers/ for screenshots. Prints no secrets.
+# Writes plain-text captures to ../evidence/containers/ (or $SW_EVIDENCE_OUT) for screenshots. Prints no secrets.
 set -euo pipefail
 cd "$(dirname "$0")"
-out=../evidence/containers
+out=${SW_EVIDENCE_OUT:-../evidence/containers}
 mkdir -p "$out"
 {
   echo "# $(date -u +%FT%TZ)  $(uname -m)  $(grep -m1 'Type:' /proc/sysinfo 2>/dev/null || true)"

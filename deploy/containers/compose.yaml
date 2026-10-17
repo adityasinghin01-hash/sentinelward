@@ -25,7 +25,7 @@ x-app: &app
 
 services:
   hub:
-    image: eclipse-mosquitto:2.0.18
+    image: eclipse-mosquitto:2.0.22  # 2.0.18 has no s390x build
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - hubdata:/mosquitto/data
@@ -62,7 +62,8 @@ services:
       SW_API_PORT: "8000"
       SW_FRONTEND_DIST: /srv/web/dist
     volumes:
-      - ${SW_FRONTEND_DIR:-../../web/dist}:/srv/web/dist:ro
+      # world-readable copy made by ./sync-frontend.sh (the api runs as uid 10001, not the file owner)
+      - ${SW_FRONTEND_DIR:-./web-dist}:/srv/web/dist:ro
     ports: ["127.0.0.1:8001:8000"]
     depends_on:
       hub: {condition: service_started}
@@ -73,7 +74,8 @@ services:
   brain:
     <<: *app
     command: ["python", "-m", "sw_brain"]
-    mem_limit: 512m
+    # Measured: 384 MiB at the end of a full 20-min 12-bed run (per-bed message history); 2x headroom.
+    mem_limit: 768m
     cpus: 1.0
 
   sim:
@@ -91,7 +93,8 @@ services:
     command: ["python", "-m", "sw_attacks", "--runs-dir", "/runs/attacks",
               "--schedule", "/app/attacks/schedule.yaml"]
     volumes: [runs:/runs]
-    mem_limit: 128m
+    # 128m was OOM-killed 13 min into a run (1200-s vitals history per bed); bare metal: 238 MB RSS.
+    mem_limit: 384m
     cpus: 0.25
 
 networks:

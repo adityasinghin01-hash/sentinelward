@@ -1,2 +1,4 @@
 db_password.txt
 .env.containers
+web-dist/
+evidence-out/
