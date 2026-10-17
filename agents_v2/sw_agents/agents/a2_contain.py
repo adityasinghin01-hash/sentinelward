@@ -212,7 +212,15 @@ class A2Contain(Agent):
                     self._save()
                     return
                 if act:
-                    self.e.mark_undone([c["set_id"], c.get("disable_id")], act["action_id"])
+                    self.e.mark_undone([target], act["action_id"])
+                    # The pair (set_bed_untrusted, disable_client) is undone together. Log the second undo
+                    # explicitly so the action log / screens show both as undone (one hub change only).
+                    for other in (c["set_id"], c.get("disable_id")):
+                        if other and other != target and other not in self.e.undone:
+                            act2 = self.e.act("A2", "enable_client", bed_id=bed, device_id=device, undoes=other,
+                                              approved_by=by, result=result,
+                                              detail=f"{other} undone together with {target} (same release, no second hub change)")
+                            self.e.mark_undone([other], act2["action_id"] if act2 else act["action_id"])
                 self.contained.pop(device, None)
                 if by is not None:
                     self.released_by_person.add(device)

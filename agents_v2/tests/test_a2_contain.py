@@ -72,13 +72,15 @@ def test_undo_restores_and_person_decision_is_respected(world):
     untrusted = world.bus.actions("set_bed_untrusted")[0]
     world.request("undo_action", cut["action_id"], by="staff:sam")
     en = world.bus.actions("enable_client")
-    assert len(en) == 1
+    assert len(en) == 2  # one hub change; the pair is logged as undone
     assert (en[0]["undoes"], en[0]["approved_by"], en[0]["device_id"], en[0]["result"]) == (
         cut["action_id"], "staff:sam", "MON-05", "ok")
+    assert en[1]["undoes"] == untrusted["action_id"] and "no second hub change" in en[1]["detail"]
     assert world.broker.calls == [("disable", "MON-05"), ("enable", "MON-05")]
-    assert world.e.undone[cut["action_id"]] == world.e.undone[untrusted["action_id"]] == en[0]["action_id"]
+    assert world.e.undone[cut["action_id"]] == en[0]["action_id"]
+    assert world.e.undone[untrusted["action_id"]] == en[1]["action_id"]
     world.request("undo_action", untrusted["action_id"], by="staff:sam")  # both were undone together
-    assert len(world.bus.actions("enable_client")) == 1
+    assert len(world.bus.actions("enable_client")) == 2
     # the attack verdict lingers: A2 does not override IT's decision
     world.verdict("B05", "TAMPERING", 0.95, n=3)
     assert len(world.bus.actions("disable_client")) == 1

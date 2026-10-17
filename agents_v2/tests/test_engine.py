@@ -107,7 +107,7 @@ def test_demo_reset_clears_everything(world):
     world.demo("reset")
     assert world.a["A1"].current == {} and world.a["A3"].open == {} and world.a["A6"].open == {}
     assert world.a["A2"].contained == {} and world.a["A4"].watch == {} and world.a["A5"].reports == {}
-    assert world.bus.actions("enable_client")[-1]["detail"].startswith("Re-enabled MON-05")
+    assert any(a["detail"].startswith("Re-enabled MON-05") for a in world.bus.actions("enable_client"))
     assert world.e.latest_verdict == {}
     assert not [k for k in world.e.timers if k.startswith(("ladder:", "watch:"))]
     assert set(world.e.timers) == {"a7:tick", "a8:periodic"}

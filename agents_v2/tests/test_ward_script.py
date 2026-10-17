@@ -60,7 +60,7 @@ def test_ward_script_key_moments(world):
     at("15:30")
     w.verdict("B05", "NORMAL", 1.0)
     w.request("undo_action", cut_b05["action_id"], by="staff:sam")
-    en = w.bus.actions("enable_client")[-1]
+    en = [a for a in w.bus.actions("enable_client") if a["undoes"] == cut_b05["action_id"]][-1]
     assert en["undoes"] == cut_b05["action_id"] and "MON-05" not in w.a["A2"].contained
     # T+17:00 B12 second sender -> UNSURE -> hand-check; T+18:00 Patient OK -> NORMAL
     at("17:00")
