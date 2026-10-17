@@ -123,6 +123,9 @@ class BrainService:
             data[channel+'_valid']=[v is not None for v in data[channel]]
         # Arterial line only when present in some second; absent seconds stay missing.
         data['abp']=[v for c in chunks for v in (c.get('abp') or [None]*125)] if any(c.get('abp') for c in chunks) else None
+        # doc 00 v1.3: optional second ECG lead; absent seconds stay missing, absent everywhere = None.
+        data['ecg2']=[v for c in chunks for v in (c.get('ecg2') or [None]*125)] if any(c.get('ecg2') for c in chunks) else None
+        data['ecg_leads']=next((list(c['ecg_leads']) for c in reversed(chunks) if c.get('ecg2') and c.get('ecg_leads')),None)
         return data
     def tick(self,now_ms):
         generation=self._run_generation

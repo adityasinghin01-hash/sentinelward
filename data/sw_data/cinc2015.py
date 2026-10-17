@@ -10,7 +10,7 @@ import wfdb
 from sw_data import ALARM_CODES, ALARM_PRIORITY, CINC_ALARM_T_S, FS_OUT, BedError
 from sw_data.beats import hr_from_ecg
 from sw_data.beds import BedSpec, Paths, SourceData
-from sw_data.dsp import clean_missing, ecg_to_mv, pick_channel, pick_ecg, stats_table, window_resample
+from sw_data.dsp import clean_missing, ecg_to_mv, pick_channel, pick_ecg, pick_ecg2, stats_table, window_resample
 
 DATASET_LABEL = "PhysioNet/CinC 2015"
 
@@ -53,6 +53,7 @@ def _picks(names: list[str], want_resp: bool) -> tuple[dict[str, Optional[int]],
     ecg_idx, ecg_note = pick_ecg(names)
     picks = {
         "ecg": ecg_idx,
+        "ecg2": pick_ecg2(names, ecg_idx)[0],   # v1.3: optional second ECG lead (lead V, else next lead)
         "ppg": pick_channel(names, ["PLETH"]),
         "abp": pick_channel(names, ["ABP", "ART"]),
     }
@@ -103,13 +104,16 @@ def build_source(spec: BedSpec, paths: Paths) -> SourceData:
             continue
         x = clean_missing(rec.p_signal[:, idx])
         unit = units[idx]
-        if key == "ecg":
-            notes.append(ecg_note)
+        if key in ("ecg", "ecg2"):
+            notes.append(ecg_note if key == "ecg" else pick_ecg2(names, picks["ecg"])[1])
             x, note, _warn = ecg_to_mv(x, unit)
             if note:
                 notes.append(note)
                 if unit.strip().lower() in {"uv", "µv", "μv"}:
                     unit = "mV"
+        if key == "ecg2" and not np.isfinite(x[:n]).any():
+            notes.append(f"second ECG lead {names[idx]} is empty; ecg2 left out")
+            continue
         try:
             waves[key] = window_resample(x, fs, 0, n)
         except ValueError as exc:

@@ -288,6 +288,11 @@ class WardRun:
             if bed.drift is not None and ch == bed.drift.channel:
                 seg = seg + offsets_for_second(bed.drift, k, pack.fs)
             waves[ch] = round_samples(seg, self.script.rounding[ch])
+        # v1.3 (doc 00, addition only): a second ECG lead, sent only when the pack has one.
+        extra: dict[str, Any] = {}
+        seg2 = pack.wave("ecg2", p)
+        if seg2 is not None:
+            extra = {"ecg2": round_samples(seg2, self.script.rounding["ecg"]), "ecg_leads": list(pack.ecg_leads)}
 
         nibp = None
         reading = pack.cuff_by_second.get(p)
@@ -305,6 +310,7 @@ class WardRun:
                 hr=to_int(pack.numeric("hr", p)), spo2=to_int(pack.numeric("spo2", p)),
                 rr=to_int(pack.numeric("rr", p)), nibp=nibp,
                 monitor_alarm=None if chosen is None else {"code": chosen.code, "priority": chosen.priority},
+                **extra,
             )
             errors = list(sw_common.validate(message))
         except Exception as exc:  # make_vitals refusing its input counts as invalid too

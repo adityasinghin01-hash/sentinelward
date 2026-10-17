@@ -99,6 +99,9 @@ point them away) during T10, or they will score the extra beds.
   channel the pack doesn't have is `null`. NaN samples become `None` before validation, so the
   message is the same JSON whether or not `encode` would also have mapped them; they are sent as `null`
   and the rest of that second is sent normally.
+- v1.3: when the pack has `ecg2`, every message also carries `ecg2` (125 samples, rounded like ECG, NaN as
+  `null`) and `ecg_leads` (lead names from the pack json, e.g. `["II", "V"]`; VitalDB `SNUADC/ECG_V5` is sent as
+  `V5`). Packs without `ecg2` send neither key, so the message is exactly the v1 message.
 - hr, spo2 and rr are the pack's value for that second rounded to an integer (half up). NaN gives
   `null`, and 0 stays 0.
 - `monitor_alarm` (`code`, `priority`) is set only in the message for the alarm's second

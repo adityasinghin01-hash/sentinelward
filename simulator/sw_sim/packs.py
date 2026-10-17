@@ -17,7 +17,7 @@ import numpy as np
 
 log = logging.getLogger("sw_sim.packs")
 
-WAVE_CHANNELS = ("ecg", "ppg", "abp")
+WAVE_CHANNELS = ("ecg", "ecg2", "ppg", "abp")   # ecg2: optional second ECG lead (doc 00 v1.3)
 NUMERIC_CHANNELS = ("hr", "spo2", "rr")
 
 
@@ -59,6 +59,7 @@ class BedPack:
     numerics: dict[str, np.ndarray]
     cuff_by_second: dict[int, CuffReading]
     alarms_by_second: dict[int, tuple[Alarm, ...]]
+    ecg_leads: tuple[str, ...] = ()   # v1.3: lead names of ecg (+ ecg2), e.g. ("II", "V")
 
     def has(self, channel: str) -> bool:
         """True if the pack carries this waveform channel."""
@@ -81,6 +82,27 @@ class BedPack:
 
 def _finite(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def lead_name(channel_name: object, fallback: str) -> str:
+    """Short ECG lead name from the pack json: "II", "V"; VitalDB "SNUADC/ECG_V5" -> "V5"."""
+    if not isinstance(channel_name, str) or not channel_name.strip():
+        return fallback
+    short = channel_name.strip().rsplit("/", 1)[-1]
+    if short.upper().startswith("ECG_") and len(short) > 4:
+        short = short[4:]
+    return short
+
+
+def _ecg_leads(meta: dict, waves: dict[str, np.ndarray]) -> tuple[str, ...]:
+    channels = (meta.get("source") or {}).get("channels") if isinstance(meta.get("source"), dict) else None
+    channels = channels if isinstance(channels, dict) else {}
+    out = []
+    for ch, fallback in (("ecg", "ECG"), ("ecg2", "ECG2")):
+        if ch in waves:
+            info = channels.get(ch)
+            out.append(lead_name(info.get("name") if isinstance(info, dict) else None, fallback))
+    return tuple(out)
 
 
 def load_pack(folder: str | Path, name: str) -> BedPack:
@@ -174,6 +196,7 @@ def load_pack(folder: str | Path, name: str) -> BedPack:
         name=name, bed_id=str(meta["bed_id"]), device_id=str(meta["device_id"]), fs=fs,
         duration_s=duration_s, n_seconds=n_seconds, waves=waves, numerics=numerics,
         cuff_by_second=cuff_by_second, alarms_by_second={s: tuple(a) for s, a in alarms.items()},
+        ecg_leads=_ecg_leads(meta, waves),
     )
 
 

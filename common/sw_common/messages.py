@@ -551,8 +551,30 @@ _SPECS: dict[str, tuple[tuple[str, Checker], ...]] = {
     ),
 }
 
+def _lead_names(errs: list, path: str, x: Any, strict: bool) -> None:
+    # v1.3: names of the ECG leads sent, e.g. ["II", "V"] (ecg first, then ecg2).
+    if x is None:
+        return
+    if not isinstance(x, (list, tuple)):
+        errs.append(f"{path}: expected null or a list of lead names, got {_describe(x)}")
+        return
+    for i, v in enumerate(x):
+        if type(v) is not str or not v.strip():
+            errs.append(f"{path}[{i}]: expected a non-empty string, got {_short(v)}")
+
+
+# v1.3 (doc 00, addition only): fields that may be left out. When present they are checked,
+# and strict mode treats them as known. Old consumers simply ignore them.
+_OPTIONAL: dict[str, tuple[tuple[str, Checker], ...]] = {
+    "vitals": (
+        ("ecg2", _signal),        # second ECG lead: null or FS entries (finite number or null), mV
+        ("ecg_leads", _lead_names),
+    ),
+}
+
 _KNOWN: dict[str, frozenset[str]] = {
-    t: frozenset(("v", "type", *(name for name, _ in spec))) for t, spec in _SPECS.items()
+    t: frozenset(("v", "type", *(name for name, _ in spec), *(name for name, _ in _OPTIONAL.get(t, ()))))
+    for t, spec in _SPECS.items()
 }
 
 
@@ -631,6 +653,9 @@ def validate(message: Any, strict: bool = False) -> list[str]:
             check(errs, f"{mtype}.{name}", message[name], strict)
         else:
             errs.append(f"{mtype}.{name}: required field is missing")
+    for name, check in _OPTIONAL.get(mtype, ()):
+        if name in message:
+            check(errs, f"{mtype}.{name}", message[name], strict)
     cross = _CROSS.get(mtype)
     if cross is not None:
         cross(errs, message)

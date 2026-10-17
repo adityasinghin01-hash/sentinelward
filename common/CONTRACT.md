@@ -1,6 +1,6 @@
 # SentinelWard message contract
 
-**Version: v1 + v1.1 additions (request, demo_control, record)**
+**Version: v1 + v1.1 additions (request, demo_control, record) + v1.3 addition (optional second ECG lead)**
 
 v1 is locked. v1.1 adds three message types and three topics; every message still carries `"v": 1`.
 `sw_common.validate()` checks exactly these rules. The section at the end lists how the checker
@@ -48,6 +48,10 @@ reads the points this contract doesn't spell out.
 - `hr`, `spo2`, `rr`: integer or null. `nibp`: null except in the message right after a new cuff reading; when
   present, all four keys.
 - `monitor_alarm`: null, or `code` in ASYSTOLE, BRADY, TACHY, VTACH, VFIB with `priority` high, medium or low.
+- v1.3 (addition only, optional): `ecg2` = a second ECG lead, null or a list of exactly `fs` entries (finite
+  number or null), mV; `ecg_leads` = null or a list of non-empty strings naming the leads, `ecg` first
+  (e.g. `["II", "V"]`). Both may be left out; old consumers ignore them. When present they are checked, and
+  `strict=True` treats them as known fields.
 
 ## 2) score
 

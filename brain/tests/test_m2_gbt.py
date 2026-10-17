@@ -97,3 +97,100 @@ def test_result_is_cached_per_bed_and_window():
     gbt.evaluate(w, 'VTACH')
     gbt.evaluate({**w, 'bed_id': 'B02'}, 'VTACH')
     assert len(calls) == 2
+
+
+# ---- doc 00 v1.3: second ECG lead -> 2-lead model "M2-gbt2-2026-10-17"
+
+from sw_brain.m2gbt import ARTIFACT_2, MODEL_VERSION_2, SHA256_2
+
+ECG2 = [0.4 * np.exp(-((i % 125 - 24) / 4) ** 2) - 0.01 * np.cos(i) for i in range(125)]
+
+
+def two_lead(frame):
+    def make(sec=0, **updates):
+        return frame(sec, ecg2=[float(v) for v in ECG2], ecg_leads=['II', 'V'], **updates)
+    return make
+
+
+def test_pinned_2lead_artifact_loads_and_uses_ecg2_features():
+    model = GbtM2()._load2()
+    assert model.spec['model_version'] == MODEL_VERSION_2 == 'M2-gbt2-2026-10-17'
+    assert set(model.spec['thresholds']) == TYPES
+    assert model.spec['trained_on']['machine'] == 's390x' and model.spec['leads'] == 2
+    assert any(n.startswith('ecg2_') for n in model.names)
+    assert len(SHA256_2) == 64 and SHA256_2 != SHA256
+    from m2gbt.features import window_features
+    t = np.arange(1250) / 125
+    feats = window_features(np.sin(2 * np.pi * t).tolist(), None, None, 'VTACH', ecg2=np.cos(2 * np.pi * t).tolist())
+    assert set(model.names) <= set(feats)
+
+
+@pytest.mark.parametrize('code', sorted(TYPES))
+def test_ecg2_window_uses_2lead_model_and_alarm_stays_emergency(frame, code):
+    service, verdict, m2 = run_alarm(two_lead(frame), code)
+    assert service.beds['B01'].prealarm_window['ecg_leads'] == ['II', 'V']
+    assert len(service.beds['B01'].prealarm_window['ecg2']) == 1250
+    assert m2['model_version'] == 'M2-gbt2-2026-10-17'
+    assert m2['extra']['path'] == 'gbt_prealarm' and m2['extra']['features']['ecg_leads_used'] == 2
+    assert 0 <= m2['score'] <= 1
+    assert verdict['verdict'] in {'EMERGENCY', 'BOTH'} and verdict['priority'] == 'high'
+
+
+def test_without_ecg2_the_1lead_model_runs(frame):
+    service, _, m2 = run_alarm(frame, 'VTACH')
+    assert service.beds['B01'].prealarm_window['ecg2'] is None
+    assert m2['model_version'] == 'M2-gbt-2026-10-17' and m2['extra']['features']['ecg_leads_used'] == 1
+
+
+def test_mostly_missing_ecg2_uses_1lead_model(frame):
+    def make(sec=0, **updates):
+        # ecg2 only in 4 of the 10 pre-alarm seconds -> under half present
+        return frame(sec, ecg2=[float(v) for v in ECG2] if sec < 4 else None, ecg_leads=['II', 'V'], **updates)
+    service, _, m2 = run_alarm(make, 'VTACH')
+    w = service.beds['B01'].prealarm_window
+    assert sum(v is not None for v in w['ecg2']) == 4 * 125
+    assert m2['model_version'] == 'M2-gbt-2026-10-17'
+
+
+def test_2lead_score_equals_direct_model_call(frame):
+    from m2gbt.features import vector, window_features
+    service, _, m2 = run_alarm(two_lead(frame), 'VTACH', abp=[80.0 + (i % 125 < 40) * 30 for i in range(125)])
+    w = service.beds['B01'].prealarm_window
+    model = GbtM2()._load2()
+    direct = model.predict_proba(vector(window_features(w['ecg'], w['ppg'], w['abp'], 'VTACH', ecg2=w['ecg2']), model.names))
+    assert m2['score'] == pytest.approx(direct, abs=0)
+
+
+def test_low_2lead_probability_cannot_suppress_alarm(frame):
+    class Zero:
+        names = []; spec = {'thresholds': {c: .5 for c in TYPES}}
+        def predict_proba(self, x): return 0.0
+    _, verdict, m2 = run_alarm(two_lead(frame), 'VFIB', EmergencyDetector(gbt=GbtM2(model2=Zero())))
+    assert m2['model_version'] == 'M2-gbt2-2026-10-17' and m2['score'] == 0.0
+    assert m2['extra']['positive'] is False
+    assert verdict['verdict'] == 'EMERGENCY' and verdict['priority'] == 'high'
+
+
+def test_tampered_2lead_artifact_falls_back_to_1lead_model(frame, tmp_path):
+    bad = tmp_path / 'm2b.json'
+    bad.write_bytes(ARTIFACT_2.read_bytes() + b' ')
+    _, verdict, m2 = run_alarm(two_lead(frame), 'BRADY', EmergencyDetector(gbt=GbtM2(path2=bad)))
+    assert m2['model_version'] == 'M2-gbt-2026-10-17' and m2['extra']['path'] == 'gbt_prealarm'
+    assert 'SHA-256' in m2['extra']['features']['two_lead_unavailable_reason']
+    assert verdict['verdict'] == 'EMERGENCY'
+
+
+def test_both_artifacts_tampered_fall_back_to_live_rule(frame, tmp_path):
+    bad1, bad2 = tmp_path / 'a.json', tmp_path / 'b.json'
+    bad1.write_bytes(ARTIFACT.read_bytes() + b' '); bad2.write_bytes(ARTIFACT_2.read_bytes() + b' ')
+    _, verdict, m2 = run_alarm(two_lead(frame), 'VTACH', EmergencyDetector(gbt=GbtM2(path=bad1, path2=bad2)))
+    assert m2['model_version'] == 'M2-live-2026-10-17' and m2['extra']['path'] == 'live_ecg_rule'
+    assert verdict['verdict'] == 'EMERGENCY'
+
+
+def test_ecg2_messages_pass_brain_input_validation(frame):
+    service = BrainService(MemoryBus())
+    assert service.receive('ward/bed/B01/vitals', json.dumps(two_lead(frame)(0)), received_ms=0) is True
+    bad = two_lead(frame)(1); bad['ecg2'] = bad['ecg2'][:124]
+    assert service.receive('ward/bed/B01/vitals', json.dumps(bad), received_ms=1000) is False
+    assert service.invalid_incoming == 1

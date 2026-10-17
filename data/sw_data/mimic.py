@@ -14,7 +14,7 @@ import wfdb
 from sw_data import BedError
 from sw_data.beds import BedSpec, Paths, SourceData
 from sw_data.dsp import (clean_missing, cuff_readings, ecg_to_mv, first_valid_window, pick_channel,
-                         pick_ecg, per_minute_fractions, stats_table, to_second_grid, window_resample)
+                         pick_ecg, pick_ecg2, per_minute_fractions, stats_table, to_second_grid, window_resample)
 
 DATASET_LABEL = "MIMIC-III WDB matched subset"
 PIECE_RE = re.compile(r"^\d+_\d{4}$")
@@ -213,7 +213,8 @@ def numerics_on_grid(nd: dict[str, Any], duration_s: int) -> dict[str, np.ndarra
 
 def _wave_picks(names: list[str], want_resp: bool) -> tuple[dict[str, Optional[int]], str]:
     ecg_idx, ecg_note = pick_ecg(names)
-    picks = {"ecg": ecg_idx, "ppg": pick_channel(names, ["PLETH"]), "abp": pick_channel(names, ["ABP", "ART"])}
+    picks = {"ecg": ecg_idx, "ecg2": pick_ecg2(names, ecg_idx)[0],   # v1.3: optional second ECG lead
+             "ppg": pick_channel(names, ["PLETH"]), "abp": pick_channel(names, ["ABP", "ART"])}
     if want_resp:
         picks["resp"] = pick_channel(names, ["RESP"])
     return picks, ecg_note
@@ -267,13 +268,16 @@ def build_source(spec: BedSpec, paths: Paths) -> SourceData:
     for key, idx in present.items():
         x = clean_missing(rec.p_signal[:, col[idx]])
         unit = units[idx]
-        if key == "ecg":
-            notes.append(ecg_note)
+        if key in ("ecg", "ecg2"):
+            notes.append(ecg_note if key == "ecg" else pick_ecg2(names, picks["ecg"])[1])
             x, note, _warn = ecg_to_mv(x, unit)
             if note:
                 notes.append(note)
                 if unit.strip().lower() in {"uv", "µv", "μv"}:
                     unit = "mV"
+        if key == "ecg2" and not np.isfinite(x[n0 - a:n0 - a + n]).any():
+            notes.append(f"second ECG lead {names[idx]} is empty in the window; ecg2 left out")
+            continue
         try:
             waves[key] = window_resample(x, fs, n0 - a, n)
         except ValueError as exc:

@@ -31,3 +31,25 @@ Notes
 4. B08: ART reads about −14 mmHg in its last 2 min (file min 251–253), outside doc 12's 20-minute run.
    B09: cuff MAP 64 at 363 s and 57 at 513 s (doc 12's T+06:06 / T+08:36); HR reads 0 for 82 s (real glitch).
 5. B11 SpO2 is 60.8 % missing (not required). Server pytest: 51 pass, 6 VitalDB tests fail by design (big-endian guard).
+
+## v1.3 packs with a second ECG lead (built 17 Oct 2026): `~/sw/packs-v13`
+
+Same beds, windows and commands as above, loader 1.3.0 (doc 00 v1.3 adds the optional `ecg2`). B01–B07, B11, B12 built
+on LinuxONE; B08–B10 on the Mac and copied (sha256 identical). `verify` 12/12 PASS on the server. Every array that was
+already in `~/sw/packs` has the same sha256 in `~/sw/packs-v13`; the only new array is `ecg2`. `~/sw/packs` is unchanged.
+The 2015 and MIMIC beds get lead V as `ecg2`; our three VitalDB files have only `SNUADC/ECG_II`, so B08–B10 have no `ecg2`.
+
+| bed | device | source | window | duration_s | channels | missing % | cuff | alarms | status |
+|---|---|---|---|---|---|---|---|---|---|
+| B01 | MON-01 | MIMIC p000109/3407610_0006 | piece +7200 s | 1320 | ecg ecg2 ppg resp hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 resp 0.0 hr 0.0 spo2 0.0 rr 0.0 | 1 | - | OK |
+| B02 | MON-02 | MIMIC p000052/3533390_0011 | piece +0 s | 1320 | ecg ecg2 ppg resp hr spo2 rr | ecg 0.1 ecg2 0.0 ppg 0.0 resp 0.0 hr 0.0 spo2 0.0 rr 0.7 | 2 | - | OK |
+| B03 | MON-03 | 2015 v221l | whole record | 330 | ecg ecg2 ppg abp hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 abp 0.0 hr 0.0 spo2 100.0 rr 100.0 | 0 | VTACH@300s T | OK |
+| B04 | MON-04 | 2015 a123l | whole record | 330 | ecg ecg2 ppg abp hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 abp 0.0 hr 0.0 spo2 100.0 rr 100.0 | 0 | ASYSTOLE@300s F | OK |
+| B05 | MON-05 | MIMIC p000107/3860035_0044 | piece +0 s | 1320 | ecg ecg2 ppg hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 1.1 hr 0.0 spo2 0.4 rr 0.0 | 2 | - | OK |
+| B06 | MON-06 | MIMIC p000154/3783784_0006 | piece +0 s | 1320 | ecg ecg2 ppg hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 hr 0.0 spo2 1.1 rr 0.0 | 1 | - | OK |
+| B07 | MON-07 | 2015 f543l | whole record | 330 | ecg ecg2 ppg abp hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 abp 0.0 hr 0.3 spo2 100.0 rr 100.0 | 0 | VFIB@300s T | OK |
+| B08 | MON-08 | VitalDB 5552 | minute 231.0 | 1320 | ecg ppg abp hr spo2 rr | ecg 0.0 ppg 0.0 abp 0.0 hr 1.9 spo2 1.9 rr 1.9 | 6 | - | OK |
+| B09 | MON-09 | VitalDB 912 | minute 38.0 | 1320 | ecg ppg abp hr spo2 rr | ecg 0.0 ppg 0.0 abp 0.0 hr 1.1 spo2 1.8 rr 0.0 | 7 | - | OK |
+| B10 | MON-10 | VitalDB 4277 | minute 12.0 | 1320 | ecg ppg abp hr spo2 rr | ecg 0.0 ppg 0.0 abp 0.0 hr 0.0 spo2 0.0 rr 10.2 | 5 | - | OK |
+| B11 | MON-11 | MIMIC p000160/3531764_0003 | piece +0 s | 1320 | ecg ecg2 ppg abp hr spo2 rr | ecg 0.0 ecg2 0.0 ppg 0.0 abp 0.3 hr 0.0 spo2 60.8 rr 0.3 | 2 | - | OK |
+| B12 | MON-12 | MIMIC p000298/3129212_0016 | piece +0 s | 1320 | ecg ecg2 ppg hr spo2 rr | ecg 2.1 ecg2 3.5 ppg 0.6 hr 0.0 spo2 0.0 rr 0.0 | 0 | - | OK |

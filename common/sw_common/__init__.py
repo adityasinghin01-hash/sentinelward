@@ -73,7 +73,7 @@ from .topics import (
 if TYPE_CHECKING:
     from .bus import Bus
 
-__version__ = "1.1.0"
+__version__ = "1.3.0"
 
 
 def __getattr__(name: str) -> Any:
