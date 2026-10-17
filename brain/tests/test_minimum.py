@@ -79,7 +79,7 @@ def test_first_match_all_verdicts_and_numeric_trust(expected,overrides):
     assert result['trust']==pytest.approx(1-max(scores[m]['score'] for m in ('M3','M4','M5')))
 
 
-def test_saved_m2_threshold_preserves_research_emergency_and_no_line_unknown():
+def test_saved_m2_threshold_preserves_model_emergency_and_no_line_unknown():
     scores={f'M{i}':{'score':.05,'reason':'clean','extra':{'eligible':True}} for i in range(1,7)}
     scores['M2']={'score':.62,'reason':'VTACH supported','extra':{'eligible':True,'positive':True,'threshold':.61}}
     assert decide('B01',0,10000,scores)['verdict']=='EMERGENCY'

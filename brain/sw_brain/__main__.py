@@ -6,10 +6,9 @@ def main():
     # Bound native-library parallelism within the single shared service process.
     for key in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'): os.environ.setdefault(key,'1')
     from .io import MQTTBus
-    from .research import Research
     from .service import BrainService
     logging.basicConfig(level=os.environ.get('SW_LOG_LEVEL','INFO'))
-    bus=MQTTBus(); service=BrainService(bus,research=Research()); bus.connect()
+    bus=MQTTBus(); service=BrainService(bus); bus.connect()
     next_epoch_ms=(int(time.time()*1000)//5000+1)*5000
     deadline=time.monotonic()+(next_epoch_ms-int(time.time()*1000))/1000
     try:
@@ -23,6 +22,8 @@ def main():
                     deadline=time.monotonic()+(next_epoch_ms-int(time.time()*1000))/1000
             time.sleep(.02)
     except KeyboardInterrupt: pass
-    finally: bus.close()
+    finally:
+        service.suite.detectors['M2'].model.close()
+        bus.close()
 
 if __name__=='__main__': main()

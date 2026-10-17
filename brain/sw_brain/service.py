@@ -7,7 +7,7 @@ import logging
 from sw_common import make_score
 from sw_common.topics import BEDSIDE_SUB, DEMO_CONTROL_TOPIC, NET_SUB, VITALS_SUB, score_topic, verdict_topic
 from .io import decode,publish_checked
-from .windows import VitalsWindowAssembler
+from .windows import VitalsWindowAssembler,assemble_window
 from .detectors import DetectorSuite,LABELS,confirmed_low_pressure
 from .decision import decide
 
@@ -34,8 +34,8 @@ class BedState:
     last_trusted_ts: int | None=None
 
 class BrainService:
-    def __init__(self,bus,*,suite=None,research=None):
-        self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite(research)
+    def __init__(self,bus,*,suite=None):
+        self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite()
         self.beds={}; self.snapshots={}; self.last_trusted_snapshots={}; self.last_verdicts={}; self.controls=deque(maxlen=128)
         self._run_generation=0
         self.last_tick_ms=None
@@ -90,7 +90,7 @@ class BrainService:
                 state.prealarm_window=None
                 state.alarm_ts=message['ts']
                 if len(state.chunks)==10 and state.chunks[0]['ts']==message['ts']-10000 and state.chunks[-1]['ts']==message['ts']-1000:
-                    state.prealarm_window=self._window_from_chunks(state, list(state.chunks))
+                    state.prealarm_window=assemble_window(list(state.chunks))
             state.last_alarm_code=alarm['code']
         sequence_issue=state.last_seq is not None and (message['seq']<=state.last_seq or message['ts']<=state.last_ts)
         record={'message':message,'received_ms':now,'payload_bytes':receipt.payload_bytes,'sender_id':sender_id,'sequence_issue':sequence_issue}
@@ -109,13 +109,6 @@ class BrainService:
         verdict=self.last_verdicts.get(bed,{})
         trusted=verdict.get('verdict')=='NORMAL'
         return deepcopy(self.snapshots.get(bed) if trusted else self.last_trusted_snapshots.get(bed,self.snapshots.get(bed)))
-    @staticmethod
-    def _window_from_chunks(state,chunks):
-        data={'bed_id':state.bed_id,'device_id':chunks[0]['device_id'],'window_start':chunks[0]['ts'],'window_s':10,'sample_rate_hz':125,'monitor_alarms':[],'seq_first':chunks[0]['seq'],'seq_last':chunks[-1]['seq']}
-        for channel in ('ecg','ppg'):
-            data[channel]=[v for c in chunks for v in (c[channel] or [None]*125)]
-            data[channel+'_valid']=[v is not None for v in data[channel]]
-        return data
     def tick(self,now_ms):
         generation=self._run_generation
         # Caller uses epoch-aligned deadlines. Negative starts are avoided during initial epoch fixtures.
@@ -128,7 +121,7 @@ class BrainService:
             for model,value in results.items():
                 # Controls clear memory without stopping scoring. Discard work from an old run.
                 if generation!=self._run_generation: return []
-                envelope=make_score(bed_id=bed,model=model,model_version=model+'-live-2026-10-17',window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
+                envelope=make_score(bed_id=bed,model=model,model_version=value['extra'].get('model_version',model+'-live-2026-10-17'),window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
                 self._publish(score_topic(bed,model),envelope)
             if generation!=self._run_generation: return []
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
