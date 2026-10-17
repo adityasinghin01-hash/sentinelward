@@ -5,15 +5,16 @@ from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, field
 from math import isfinite
-import re
+
+from .io import BEDS, DEVICES
 
 
 def _validate_chunk(message):
     if not isinstance(message, dict) or type(message.get('v')) is not int or message['v'] != 1 or message.get('type') != 'vitals':
         raise ValueError('Expected v1 vitals')
-    for name, pattern in [('bed_id', r'B(0[1-9]|1[0-2])'),
-                          ('device_id', r'MON-(0[1-9]|1[0-2])')]:
-        if not isinstance(message.get(name), str) or re.fullmatch(pattern, message[name]) is None:
+    # Accepted IDs follow SW_BRAIN_MAX_BED (io.set_max_bed); default B01-B12 / MON-01-MON-12.
+    for name, accepted in [('bed_id', BEDS), ('device_id', DEVICES)]:
+        if not isinstance(message.get(name), str) or message[name] not in accepted:
             raise ValueError('Invalid ' + name)
     for name in ('seq', 'ts'):
         if type(message.get(name)) is not int or message[name] < 0:

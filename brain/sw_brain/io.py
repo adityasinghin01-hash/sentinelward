@@ -13,8 +13,36 @@ from typing import Protocol
 import sw_common
 from sw_common.topics import topic_for, topic_matches
 
-BEDS = set(sw_common.BED_IDS)
-DEVICES = {sw_common.device_for_bed(bed) for bed in BEDS}
+WARD_MAX_BED = len(sw_common.BED_IDS)  # 12: the ward's B01-B12
+CONTRACT_MAX_BED = 99                  # sw_common accepts two-digit IDs B01-B99 / MON-01-MON-99
+
+
+def max_bed_from_env(environ=None):
+    """SW_BRAIN_MAX_BED (default 12): highest accepted bed number, 1..99."""
+    raw = (os.environ if environ is None else environ).get('SW_BRAIN_MAX_BED', '').strip()
+    if not raw:
+        return WARD_MAX_BED
+    if not raw.isdigit() or not 1 <= int(raw) <= CONTRACT_MAX_BED:
+        raise ValueError(f'SW_BRAIN_MAX_BED must be an integer 1..{CONTRACT_MAX_BED}, got {raw!r}')
+    return int(raw)
+
+
+# Mutated in place by set_max_bed so modules that imported these sets see the change.
+BEDS: set = set()
+DEVICES: set = set()
+
+
+def set_max_bed(max_bed):
+    """Accept beds B01..B<max_bed> and their monitors MON-01..MON-<max_bed>."""
+    if type(max_bed) is not int or not 1 <= max_bed <= CONTRACT_MAX_BED:
+        raise ValueError(f'max bed must be an integer 1..{CONTRACT_MAX_BED}')
+    beds = {f'B{i:02d}' for i in range(1, max_bed + 1)}
+    BEDS.clear(); BEDS.update(beds)
+    DEVICES.clear(); DEVICES.update(sw_common.device_for_bed(bed) for bed in beds)
+    return max_bed
+
+
+set_max_bed(max_bed_from_env())
 MODELS = set(sw_common.MODEL_IDS)
 ALARMS = set(sw_common.ALARM_CODES)
 PRIORITIES = sw_common.VERDICT_PRIORITY
