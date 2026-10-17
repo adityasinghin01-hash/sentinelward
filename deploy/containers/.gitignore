@@ -1,3 +1,4 @@
 db_password.txt
 .env.containers
 frontend-dist/
+evidence-out/
