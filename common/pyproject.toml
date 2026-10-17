@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sw_common"
+version = "1.1.0"
+description = "SentinelWard shared message contract: topics, builders, validator and MQTT bus (team TessNova)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["paho-mqtt>=2.1"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.setuptools]
+packages = ["sw_common"]
+
+[tool.setuptools.package-data]
+sw_common = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["live: needs a real MQTT broker; runs only when MQTT_TEST_HOST is set"]
