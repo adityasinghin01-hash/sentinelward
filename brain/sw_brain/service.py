@@ -44,6 +44,12 @@ class BrainService:
         for topic,qos in [(VITALS_SUB,0),(NET_SUB,1),(BEDSIDE_SUB,1),(DEMO_CONTROL_TOPIC,1)]: bus.subscribe(topic,self.receive,qos=qos)
     def reset(self):
         self._run_generation+=1
+        # Old retained verdicts would show a bed that has not joined this run as UNSURE, or replay an old alarm to a fresh subscriber.
+        stale=set(self.beds)|set(self.last_verdicts)|{f'B{i:02d}' for i in range(1,13)}
+        clear=getattr(self.bus,'clear_retained',None)
+        for bed in sorted(stale if clear else ()):
+            try: clear(verdict_topic(bed))
+            except Exception as exc: log.warning('Could not clear retained verdict for %s: %s',bed,exc)
         self.beds.clear(); self.assembler.reset(); self.suite.reset(); self.last_tick_ms=None
         self.last_verdicts.clear(); self.active_run_id=None; self.run_started_ms=None
     def receive(self,topic,payload,received_ms=None,sender_id=None,received_mono_ms=None):

@@ -39,7 +39,8 @@ def test_preview_public_and_ward_never_seen(bus, clock):
         assert len(body["beds"]) == 12
         bed = body["beds"][0]
         assert bed["patient"]["initials"]
-        assert bed["verdict"] == "UNSURE" and bed["reason"] == "Awaiting verdict"
+        assert bed["verdict"] is None and bed["reason"] == "No monitor connected yet"
+        assert bed["display"] == "empty" and bed["priority"] == "none" and bed["requested_action"] == "None"
         assert bed["trust_score"] == 0 and bed["is_trusted"] is False
         assert bed["vitals"] is None and bed["last_updated_at"] is None
         assert bed["connected"] is False and bed["last_trusted"] is None

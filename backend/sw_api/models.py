@@ -115,7 +115,7 @@ class RawBed(BaseModel):
     bed_id: str
     device_id: str
     patient: Patient | None = None
-    verdict: Verdict
+    verdict: Verdict | None
     priority: Literal["none", "low", "medium", "high"]
     trust_score: float = Field(ge=0, le=100)
     is_trusted: bool
@@ -128,7 +128,7 @@ class RawBed(BaseModel):
     vitals: Vitals | None
     waveform: Waveform
     last_trusted: TrustedSnapshot | None
-    display: Literal["live", "last_trusted", "offline"]
+    display: Literal["live", "last_trusted", "offline", "empty"]
     offline_since: int | None
     manual: dict[str, Any] | None = None
     last_bedside_check: dict[str, Any] | None = None

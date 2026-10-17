@@ -1,6 +1,9 @@
 """Approved first-match policy; numeric confidence and trust are uncalibrated."""
 from sw_common import make_verdict
 
+# Plain names so an UNSURE verdict says which check held it back.
+CHECK_NAMES={'M1':'Sensor check','M2':'Emergency check','M3':'Body-match check','M4':'Replay check','M5':'Network check','M6':'Drift check'}
+
 
 def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_trusted_ts=None,patient_not_ok=False,confirmed_low_pressure=False):
     values={m:r['score'] for m,r in results.items()}
@@ -26,7 +29,10 @@ def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_t
     elif positive('M1') and not positive('M2') and (eligible('M2') or (not applicable('M2') and eligible('M3'))) and all(eligible(m) and values[m]<.5 for m in ('M4','M5')) and (not positive('M3') or results['M1'].get('extra',{}).get('channels',{}).get('ppg',{}).get('score',1)<.5): verdict='LOOSE_SENSOR'; confidence=values['M1']; reasons=[results['M1']['reason']]
     elif positive('M5') and physiology: verdict='DEVICE_ATTACK'; confidence=values['M5']; reasons=[results['M5']['reason']]
     elif offline: verdict='UNSURE'; confidence=1.; reasons=['Monitor offline for at least 3 seconds; last values retained']
-    elif not all_clean: verdict='UNSURE'; confidence=.5; reasons=['Some checks are unavailable, warming up or inconclusive']
+    elif not all_clean:
+        # Inconclusive checks (a score) first, then checks still waiting for data.
+        blocking=sorted((m for m in values if not clean(m)),key=lambda m:(not eligible(m),m))
+        verdict='UNSURE'; confidence=.5; reasons=[f"{CHECK_NAMES.get(m,m)}: {results[m]['reason']}" for m in blocking] or ['Some checks are unavailable, warming up or inconclusive']
     else: verdict='NORMAL'; confidence=1-max([values[m] for m in values if eligible(m)] or [0.]); reasons=['All applicable live checks are clear']
     if verdict=='NORMAL': last_trusted_ts=None
     return make_verdict(bed_id=bed_id,ts=now_ms,window_start=window_start,verdict=verdict,confidence=float(confidence),trust=float(trust),last_trusted_ts=last_trusted_ts,reasons=[s[:120] for s in reasons[:3]],scores=values)

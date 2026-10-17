@@ -111,9 +111,12 @@ def publish_checked(bus, topic, data, qos=1, retain=False):
 
 class MemoryBus:
     def __init__(self):
-        self.published = []; self.subscriptions = []; self.invalid_outgoing = 0
+        self.published = []; self.subscriptions = []; self.invalid_outgoing = 0; self.cleared = []
     def subscribe(self, topic, callback, qos=1):
         self.subscriptions.append((topic, callback, qos))
+    def clear_retained(self, topic):
+        self.cleared.append(topic)
+        return True
     def publish(self, topic, data, qos=1, retain=False):
         try:
             encode(topic, data)
@@ -224,6 +227,10 @@ class MQTTBus:
         if not self.bus.publish(data):
             raise RuntimeError('MQTT publish dropped')
         return True
+
+    def clear_retained(self, topic):
+        # Zero-length retained payload = MQTT's clear signal; shared Bus.publish only sends messages.
+        return self.bus._client.publish(topic, b'', qos=1, retain=True).rc == 0
 
     def close(self):
         self.bus.close()

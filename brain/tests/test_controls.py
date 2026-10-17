@@ -119,3 +119,13 @@ def test_reset_allows_same_run_id_again(frame):
     assert control(service, 'run', ts=21000)
     assert service.active_run_id == 'test'
     assert not service.beds
+
+
+@pytest.mark.parametrize('cmd', ['reset', 'run'])
+def test_control_clears_retained_verdicts_of_every_ward_bed(frame, cmd):
+    bus = MemoryBus()
+    service = BrainService(bus)
+    feed(service, frame)
+    service.tick(10000)
+    assert control(service, cmd, ts=21000)
+    assert bus.cleared == [f'ward/bed/B{i:02d}/verdict' for i in range(1, 13)]

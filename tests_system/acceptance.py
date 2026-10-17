@@ -186,7 +186,7 @@ def main():
     except Exception as exc:  # noqa: BLE001
         checks.append(result("session", "FAIL", f"operator login failed: {exc}"))
     if args.start_run and cookie:
-        http_json("/api/demo/run", "POST", {"scenario": "full", "speed": 1, "start_at_s": args.start_at}, cookie)
+        http_json("/api/demo/run", "POST", {"scenario": "full_ward_script", "speed": 1, "start_at_s": args.start_at}, cookie)
         time.sleep(12)  # let windows fill
     counts, invalid = listen(args.listen)
     checks.append(check_flow(counts, args.listen))

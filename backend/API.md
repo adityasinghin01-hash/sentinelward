@@ -49,10 +49,14 @@ TAMPERING verdict with `last_trusted_ts`; waveforms shortened here, real ones ha
 ```
 
 - `display`: `live` (trusted), `last_trusted` (frozen at the newest trusted values), `offline` (no
-  vitals for 5 s; `offline_since` = last arrival). `vitals` is never null once a bed has sent data.
-- A bed with no verdict yet shows `verdict:"UNSURE"`, `reason:"Awaiting verdict"`, `trust_score:0`,
-  `is_trusted:false` (display only, never stored as a verdict). Never-seen beds have `vitals:null`,
-  `last_updated_at:null`, `connected:false`.
+  vitals for 5 s; `offline_since` = last arrival), `empty` (no monitor has sent data this run).
+  `vitals` is never null once a bed has sent data.
+- A bed with no verdict yet shows `verdict:null`, `priority:"none"`, `trust_score:0`,
+  `is_trusted:false`, `requested_action:"None"` and `reason:"No monitor connected yet"` (with
+  `display:"empty"`) or `"Waiting for the first check (about 10 s)"` (data arriving, first window
+  not full). Never-seen beds have `vitals:null`, `last_updated_at:null`, `connected:false`.
+- An `UNSURE` verdict's reasons name the check that held it back, e.g. `"Body-match check: ECG rate
+  109 bpm differs from pulse rate 135 bpm"`; inconclusive checks come first, then waiting ones.
 - Absent waveform channels are `[]`. `manual` (`{reading_id,bed_id,ts,by,hr,spo2,sys,dia,rr,notes}`)
   is separate from `vitals`.
 

@@ -26,19 +26,22 @@ def bed(state: WardState, bed_id: str, preview: bool = False) -> dict:
     snapshot = None
     if view.latest is not None and view.latest_trusted:
         snapshot = {"captured_at": shown_ts, "vitals": vitals(view.latest), "waveform": waveform(state, bed_id, shown_ts, trusted=bool(view.latest_trusted))}
+    # No verdict yet is not a doubt about the patient: an empty bed or a monitor still filling its first window.
+    empty = verdict is None and view.latest is None
+    waiting = "No monitor connected yet" if empty else "Waiting for the first check (about 10 s)"
     payload = {
         "bed_id": bed_id, "device_id": entry.cfg.device_id,
-        "verdict": verdict["verdict"] if verdict else "UNSURE",
-        "priority": verdict["priority"] if verdict else "medium",
+        "verdict": verdict["verdict"] if verdict else None,
+        "priority": verdict["priority"] if verdict else "none",
         "trust_score": 100 * verdict["trust"] if verdict else 0,
         "is_trusted": trusted, "connected": view.display != OFFLINE,
         "isolated": device["isolated"],
-        "reason": "; ".join(verdict["reasons"]) if verdict else "Awaiting verdict",
-        "requested_action": "Check patient at bedside" if verdict and verdict["priority"] in ("high", "medium") else "Continue monitoring",
+        "reason": "; ".join(verdict["reasons"]) if verdict else waiting,
+        "requested_action": ("Check patient at bedside" if verdict["priority"] in ("high", "medium") else "Continue monitoring") if verdict else "None",
         "acknowledged": any(a["bed_id"] == bed_id and a["status"] == "acked" for a in state.alerts.values()) and not bool(state.open_alerts(bed_id)),
         "last_updated_at": entry.last_rx_ms,
         "vitals": vitals(view.latest), "waveform": waveform(state, bed_id, shown_ts, trusted=bool(view.latest_trusted)),
-        "last_trusted": snapshot, "display": view.display, "offline_since": view.offline_since,
+        "last_trusted": snapshot, "display": "empty" if empty else view.display, "offline_since": view.offline_since,
     }
     if not preview:
         payload.update(patient=entry.cfg.patient(), manual=entry.manual, last_bedside_check=entry.last_bedside,

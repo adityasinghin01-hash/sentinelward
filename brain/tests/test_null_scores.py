@@ -84,3 +84,14 @@ def test_pressure_missing_cuff_warmup_and_expired_comparison_are_null():
         assert observation['score'] is None
         assert observation['extra']['eligible'] is False
         assert observation['extra']['unavailable_reason']
+
+
+def test_unsure_reason_names_the_blocking_checks_inconclusive_first():
+    scores = {f'M{i}': {'score': 0., 'reason': 'Observed clear', 'extra': {'eligible': True}}
+              for i in range(1, 7)}
+    scores['M2'] = {'score': None, 'reason': 'Waiting for 10 seconds of ECG', 'extra': {'eligible': False}}
+    scores['M3'] = {'score': .74, 'reason': 'ECG rate 109 bpm differs from pulse rate 135 bpm', 'extra': {'eligible': True}}
+    verdict = decide('B04', 0, 10000, scores)
+    assert verdict['verdict'] == 'UNSURE'
+    assert verdict['reasons'] == ['Body-match check: ECG rate 109 bpm differs from pulse rate 135 bpm',
+                                  'Emergency check: Waiting for 10 seconds of ECG']
