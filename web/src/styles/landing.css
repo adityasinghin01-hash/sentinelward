@@ -191,3 +191,7 @@
 
 /* Login role preset (used by the sign-in page) */
 .role-card.is-preset { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+
+.l-role-playback { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin: 8px 0 16px; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: 500 14px/20px var(--font-sans); }
+.l-role-playback:hover:not(:disabled) { background: var(--control-hover); }
+.l-role-playback:disabled { opacity: 1; color: var(--text-2); }

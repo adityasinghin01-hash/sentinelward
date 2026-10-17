@@ -2,6 +2,7 @@ import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Activity, AlertTriangle, Ban, Circle, Radar, ShieldAlert, ShieldCheck, WifiOff} from 'lucide-react';
 import {useWard} from '../lib/store';
+import {hasConfirmedCutOff} from '../lib/deviceStatus';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {age, can, certDeadline, countdown, score01, time} from '../lib/domain';
 import type {Action, AgentRecord, BedDetail, Device, NetFeatures} from '../lib/types';
@@ -23,9 +24,11 @@ function senders(d: Device) {
   return typeof n === 'number' ? `${n} ${n === 1 ? 'sender' : 'senders'}` : 'Count unavailable';
 }
 function DeviceStatus({d}: {d: Device}) {
+  const actions = useWard(s => s.actions);
+  const cutOff = hasConfirmedCutOff(actions, d);
   return <Chip className={`device-status ${d.isolated ? 'status-cutoff' : d.online ? 'status-online' : 'status-quiet'}`}>
     {d.isolated ? <Ban size={13} aria-hidden="true" /> : d.online ? <Circle size={9} aria-hidden="true" /> : <WifiOff size={13} aria-hidden="true" />}
-    {d.isolated ? 'Data untrusted · device flagged' : d.online ? 'Online' : 'Not heard'}
+    {cutOff ? 'Cut off' : d.isolated ? 'Data untrusted · device flagged' : d.online ? 'Online' : 'Not heard'}
   </Chip>;
 }
 function DeviceState({view, device}: {view: TileView | null; device: Device}) {

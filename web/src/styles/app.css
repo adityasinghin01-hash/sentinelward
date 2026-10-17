@@ -38,11 +38,11 @@
 .clock { font-size: 13px; }
 .privacy-chip { width: 24px; display: inline-flex; justify-content: center; color: var(--text-3); }
 .account-trigger { min-height: 36px; padding: 0 8px; border-color: transparent; background: transparent; font-size: 13px; gap: 6px; }
-.alarm-strip { min-height: 48px; padding: 4px 24px; gap: 12px; background: var(--st-emergency); color: var(--st-emergency-ink); }
+.alarm-strip { min-height: 44px; padding: 2px 24px; gap: 12px; background: var(--st-emergency-soft); color: var(--st-emergency-text); border-bottom: 2px solid var(--st-emergency); }
 .alarm-strip > strong { font-size: 12px; letter-spacing: .02em; }
 .alarm-beds { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .alarm-strip .alarm-beds a { display: inline-flex; justify-content: center; align-items: center; min-width: 56px; min-height: 40px; padding: 0 12px; border: 1px solid currentColor; border-radius: 8px; text-decoration: none; font-family: var(--font-mono); color: inherit; }
-.alarm-strip .alarm-beds a:hover { background: var(--st-emergency-ink); color: var(--st-emergency); }
+.alarm-strip .alarm-beds a:hover { background: var(--st-emergency); color: var(--st-emergency-ink); }
 .it-strip { min-height: 48px; background: var(--surface); border-color: var(--st-security); }
 .it-strip > svg { color: var(--st-security); }
 .it-strip a { display: inline-flex; align-items: center; min-height: 40px; }

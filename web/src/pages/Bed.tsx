@@ -4,6 +4,7 @@ import type {FormEvent} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, X} from 'lucide-react';
 import {useWard} from '../lib/store';
+import {hasConfirmedCutOff} from '../lib/deviceStatus';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {age, bedState, can, displayVitals, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
 import type {BedDetail, HistoryPoint} from '../lib/types';
@@ -21,6 +22,9 @@ const CHECK_EVERY_MS = 5 * 60_000; // suggested hand-check interval for an untru
 function num(v: unknown) { return typeof v === 'number' && Number.isFinite(v) ? v : null; }
 
 function Witnesses({detail}: {detail: BedDetail}) {
+  const actions = useWard(s => s.actions);
+  const cutOff = hasConfirmedCutOff(actions, {device_id: detail.device_id, isolated: detail.device?.isolated ?? detail.isolated,
+    isolated_since: detail.device?.isolated_since ?? null});
   const m3 = detail.scores?.M3?.extra ?? {};
   const m5 = detail.scores?.M5?.extra ?? {};
   const f = (m5.features as Record<string, unknown>) ?? {};
@@ -48,7 +52,7 @@ function Witnesses({detail}: {detail: BedDetail}) {
             <Fact label="Sequence gaps / repeats" hint="Missing or repeated message numbers. Repeats can mean old data is being replayed."
                   value={`${gaps === null ? '—' : gaps} / ${dups === null ? '—' : dups}`} />
             <Fact label="Device link" hint="Whether the hub hears this monitor now, and whether its data has been flagged."
-                  value={detail.device?.isolated ? 'Data untrusted · device flagged' : detail.device?.online ? 'Online' : 'Not heard'} />
+                  value={cutOff ? 'Cut off by IT' : detail.device?.isolated ? 'Data untrusted · device flagged' : detail.device?.online ? 'Online' : 'Not heard'} />
             <Fact label="Finding" hint="Plain summary from the network check (M5)." value={plainEvidence(detail.scores?.M5?.reason || 'No score yet')} />
           </dl>
         </div>
@@ -173,6 +177,7 @@ export function BedPage() {
   const frozenAt = detail.last_trusted?.captured_at;
   const flags = vitalFlags(detail);
   const tv = tileView(detail, alerts, now);
+  const awaitingFirstSignal = detail.display === 'empty' && !detail.last_updated_at && tv.key === 'NO_SIGNAL' && !openAlert;
   const vv = verdictView(detail);
   const cause = tv.key === 'ALARM_OPEN' ? 'An emergency alert is open on this bed. Go now and check the patient by hand.'
     : tv.group === 'emergency' ? vv.headline.replace(' — ', '. ').replace(/^./, c => c.toUpperCase())
@@ -218,42 +223,12 @@ export function BedPage() {
       <Feedback message={alertCmd.feedback || callCmd.feedback} failed={alertCmd.failed || callCmd.failed} />
       <ResourceState loading={false} error={res.error} retry={() => void res.reload()} />
 
-      <div className="bed-priority">
-        <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
-        <Panel title="What to do now" className="bed-next-step"><BedDirective detail={detail} /></Panel>
-      </div>
       <div className="bed-layout">
-        <div className="bed-main">
-          <Panel title={state.untrusted ? detail.last_trusted ? 'Last trusted signals' : 'Last values received · not trusted' : 'Live signals'}
-                 caption={state.untrusted ? detail.last_trusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'No trusted recording is available; these are the last values received, flagged as not trusted.' : 'Most recent samples from the monitor, about 25 per second.'}
-                 aside={<Trust bed={detail} />} className={`bed-signals ${state.untrusted ? 'untrusted-panel' : ''}`}>
-            {state.untrusted && (
-              <div className="last-good big">{detail.last_trusted ? `Not trusted · showing the last good recording${frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ''}` : 'Not trusted · showing the last values received; no trusted recording is available. Check by hand.'}</div>
-            )}
-            {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
-            <div role="group" aria-label="Vital signs" className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
-              <Tip text="Heart rate in beats per minute. A dash means no reading; zero is a real measurement."><div className={`vital ${flags.hr ? 'outside-limit' : ''}`}><span>HR <small>bpm</small></span><strong>{value(v?.hr)}{flags.hr && <i className="bed-vital-arrow" title="Outside alert limits">{flags.hr === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
-              <Tip text="Blood oxygen saturation from the finger sensor, in percent."><div className={`vital ${flags.spo2 ? 'outside-limit' : ''}`}><span>SpO₂ <small>%</small></span><strong>{value(v?.spo2)}{flags.spo2 && <i className="bed-vital-arrow" title="Outside alert limits">↓</i>}</strong></div></Tip>
-              <Tip text="Blood pressure, systolic / diastolic in mmHg."><div className={`vital bp ${flags.sys ? 'outside-limit' : ''}`}><span>BP <small>mmHg</small></span><strong>{value(v?.systolic)}<span>/</span>{value(v?.diastolic)}{flags.sys && <i className="bed-vital-arrow" title="Outside alert limits">{flags.sys === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
-              <Tip text="Breathing rate in breaths per minute, newest value in the 30-minute history."><div className="vital rr"><span>RR <small>/min</small></span><strong>{value(trend.rr)}</strong></div></Tip>
-            </div>
-            <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
-            <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
-            {state.untrusted && detail.vitals && (
-              <div className="incoming" title="What the monitor is sending now. Not trusted: do not act on these numbers.">
-                <span className="eyebrow">Incoming (not trusted)</span>
-                <span className="mono">HR {value(detail.vitals.hr)} · SpO₂ {value(detail.vitals.spo2)} · BP {value(detail.vitals.systolic)}/{value(detail.vitals.diastolic)}</span>
-              </div>
-            )}
-          </Panel>
-          <Panel title="30-minute trend" caption="Each signal has its own scale. Shaded periods are not trusted." className="bed-trends"
-                 aside={<span className="bed-meta mono">5 min intervals</span>}>
-            <TrendChart ts={trend.ts} series={trend.series} untrusted={trend.untrusted} label={`30-minute trend of heart rate, SpO2 and blood pressure for ${bedId}`} />
-            {hist.error && <p className="tiny">History unavailable: {hist.error}</p>}
-          </Panel>
-          <Witnesses detail={detail} />
+        <div className="bed-priority">
+          <BedsidePanel detail={detail} untrusted={state.untrusted || detail.verdict === 'UNSURE'} />
         </div>
         <aside className="bed-side">
+          <Panel title="What to do now" className="bed-next-step"><BedDirective detail={detail} /></Panel>
           <WhyPanel detail={detail} now={now} explanation={tv.key === 'ALARM_OPEN' ? cause : undefined} />
           <Panel title="Recent verdicts" caption="Newest first · checked about every 5 seconds" className="bed-verdicts">
             {detail.recent_verdicts.length === 0 ? <p className="tiny">No verdicts received yet.</p> : (
@@ -275,6 +250,38 @@ export function BedPage() {
             </Panel>
           )}
         </aside>
+        <div className="bed-main">
+          <Panel title={awaitingFirstSignal ? 'No monitor data yet' : state.untrusted ? detail.last_trusted ? 'Last trusted signals' : 'Last values received · not trusted' : 'Live signals'}
+                 caption={awaitingFirstSignal ? 'This monitor has not sent a reading to the ward yet.' : state.untrusted ? detail.last_trusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'No trusted recording is available; these are the last values received, flagged as not trusted.' : 'Most recent samples from the monitor, about 25 per second.'}
+                 aside={awaitingFirstSignal ? undefined : <Trust bed={detail} />} className={`bed-signals ${state.untrusted && !awaitingFirstSignal ? 'untrusted-panel' : ''}`}>
+            {awaitingFirstSignal ? <Empty title="Waiting for the first reading" detail="Readings and waveforms will appear when the monitor starts sending. Bedside checks can still be recorded above." /> : <>
+            {state.untrusted && (
+              <div className="last-good big">{detail.last_trusted ? `Not trusted · showing the last good recording${frozenAt ? ` from ${time(frozenAt, true)} (${age(frozenAt, now)} ago)` : ''}` : 'Not trusted · showing the last values received; no trusted recording is available. Check by hand.'}</div>
+            )}
+            {state.offline && <div className="data-age">No signal · {detail.last_updated_at ? `${age(detail.last_updated_at, now)} since the last reading` : 'nothing received yet'}</div>}
+            <div role="group" aria-label="Vital signs" className={`big-vitals ${state.untrusted || state.offline ? 'greyed' : ''} tone-text-${state.tone}`}>
+              <Tip text="Heart rate in beats per minute. A dash means no reading; zero is a real measurement."><div className={`vital ${flags.hr ? 'outside-limit' : ''}`}><span>HR <small>bpm</small></span><strong>{value(v?.hr)}{flags.hr && <i className="bed-vital-arrow" title="Outside alert limits">{flags.hr === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
+              <Tip text="Blood oxygen saturation from the finger sensor, in percent."><div className={`vital ${flags.spo2 ? 'outside-limit' : ''}`}><span>SpO₂ <small>%</small></span><strong>{value(v?.spo2)}{flags.spo2 && <i className="bed-vital-arrow" title="Outside alert limits">↓</i>}</strong></div></Tip>
+              <Tip text="Blood pressure, systolic / diastolic in mmHg."><div className={`vital bp ${flags.sys ? 'outside-limit' : ''}`}><span>BP <small>mmHg</small></span><strong>{value(v?.systolic)}<span>/</span>{value(v?.diastolic)}{flags.sys && <i className="bed-vital-arrow" title="Outside alert limits">{flags.sys === 'high' ? '↑' : '↓'}</i>}</strong></div></Tip>
+              <Tip text="Breathing rate in breaths per minute, newest value in the 30-minute history."><div className="vital rr"><span>RR <small>/min</small></span><strong>{value(trend.rr)}</strong></div></Tip>
+            </div>
+            <Waveform samples={wave?.ecg || []} large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
+            <Waveform samples={wave?.ppg || []} label="PLETH" large frozen={state.untrusted || state.offline} frozenLabel={detail.last_trusted ? undefined : 'Last samples received, held still.'} />
+            {state.untrusted && detail.vitals && (
+              <div className="incoming" title="What the monitor is sending now. Not trusted: do not act on these numbers.">
+                <span className="eyebrow">Incoming (not trusted)</span>
+                <span className="mono">HR {value(detail.vitals.hr)} · SpO₂ {value(detail.vitals.spo2)} · BP {value(detail.vitals.systolic)}/{value(detail.vitals.diastolic)}</span>
+              </div>
+            )}
+            </>}
+          </Panel>
+          <Panel title="30-minute trend" caption="Each signal has its own scale. Shaded periods are not trusted." className="bed-trends"
+                 aside={<span className="bed-meta mono">5 min intervals</span>}>
+            <TrendChart ts={trend.ts} series={trend.series} untrusted={trend.untrusted} label={`30-minute trend of heart rate, SpO2 and blood pressure for ${bedId}`} />
+            {hist.error && <p className="tiny">History unavailable: {hist.error}</p>}
+          </Panel>
+          <Witnesses detail={detail} />
+        </div>
       </div>
     </div>
   );

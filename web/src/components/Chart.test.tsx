@@ -29,3 +29,7 @@ it('does not connect across a missing reading', () => {
   expect(context.lineTo).toHaveBeenCalledTimes(2);
   spy.mockRestore();
 });
+it('describes the historical range and missing latest sample accessibly', () => {
+  render(<TrendChart ts={[1, 2, 3]} label="Pressure history" series={[{label: 'BP', color: '', unit: 'mmHg', values: [110, 130, null]}]} />);
+  expect(screen.getByRole('img')).toHaveAccessibleDescription(/BP: minimum 110 mmHg, maximum 130 mmHg, latest not available/);
+});

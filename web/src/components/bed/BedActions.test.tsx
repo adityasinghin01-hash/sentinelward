@@ -7,10 +7,12 @@ const action: Action = {id:'act_123', occurred_at:Date.now(), actor:'A2', action
 afterEach(() => {cleanup(); vi.unstubAllGlobals();});
 it('explains who acted and why while keeping the audit record in Details', () => {
   render(<BedActions actions={[action, {...action,id:'act_124',actor:'A3',action_code:'hash_file',undoable:false,action:`inc_abc/messages.jsonl: 200 bytes, sha256 ${'a'.repeat(64)}`}]} />);
-  expect(screen.getByText(/Network agent cut off the monitor/)).toHaveTextContent(/tampering/i);
+  expect(screen.getByText('B05 · Cut off MON-05 at the hub')).toBeInTheDocument();
+  expect(screen.getByText(/Network agent/)).toBeInTheDocument();
+  expect(screen.getByText('Monitor may be hacked')).toBeInTheDocument();
   const raw = screen.getByText(/inc_abc\/messages.jsonl/);
   expect(raw.closest('details')).not.toHaveAttribute('open');
-  expect(screen.getByText('Evidence agent recorded a fingerprint of the captured messages.')).toBeInTheDocument();
+  expect(screen.getByText('B05 · Fingerprinted the signal record')).toBeInTheDocument();
 });
 it('requires confirmation before the existing undo write and focuses Cancel', async () => {
   useWard.setState({session:{role:'it',name:'it',display_name:'IT',token:'t'}});

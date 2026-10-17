@@ -38,6 +38,7 @@ export function BriefingPage() {
     {tab === 'briefing' ? <div className="briefing-reading">
       {brief.error && !b ? <Empty title="No briefing available" detail="The handover could not be loaded. The briefing agent publishes a summary during each run." /> :
         <ResourceState loading={brief.loading && !b} error={b ? brief.error : ''} retry={() => void brief.reload()} />}
+      {!b && !brief.loading && !brief.error && <Empty title="No briefing yet" detail="The handover will appear when the briefing agent publishes it." />}
       {b && <>
         <div className="briefing-period"><FileText size={16} aria-hidden="true" /><span>{f?.shift_start ? `Shift since ${f.shift_start}` : `Since ${since ? dateTime(since) : 'time not recorded'}`}{f?.data_from ? ` · ward data from ${f.data_from}` : ''}</span></div>
         <Stats items={[

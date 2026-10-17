@@ -2,6 +2,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Download, FileCheck2, Save, Send, Sparkles} from 'lucide-react';
 import {useWard} from '../lib/store';
+import {useUnsavedChanges} from '../lib/useUnsavedChanges';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {bytes, can, certDeadline, certFields, countdown, dateTime, evidenceView, longFields, reportReady, reportValue, staff} from '../lib/domain';
 import type {AgentRecord, ReportField} from '../lib/types';
@@ -80,6 +81,7 @@ export function ReportPage() {
   const review = useCommand();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [dirty, setDirty] = useState(false);
+  useUnsavedChanges(dirty);
   const [confirm, setConfirm] = useState(false);
   const rec = rep.data;
   // Load the agent's draft, and reload it when a new version arrives, unless the person is mid-edit.
@@ -203,6 +205,7 @@ export function ReportPage() {
             <p className="tiny">{missing} field{missing === 1 ? '' : 's'} need information · {String(d.status ?? 'draft').replace(/_/g, ' ')}</p>
           </Panel>
           <div className="report-actions">
+            {dirty && <p className="tiny" role="status">Unsaved edits · save this draft before leaving.</p>}
             <Button pending={save.pending} disabled={!editor || !dirty} onClick={() => void onSave()}
                     title={!editor ? (isSent ? 'Already sent: the draft is read-only.' : 'Only IT security edits the report.') : dirty ? 'Save your changes to the draft (audited).' : 'No unsaved changes.'}>
               <Save size={14} aria-hidden="true" /> Save draft

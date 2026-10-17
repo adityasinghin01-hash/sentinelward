@@ -7,7 +7,7 @@ import {useNow, useCommand} from '../lib/hooks';
 import {age, staff, openAlerts} from '../lib/domain';
 import type {Alert, Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
-import {ActionList, Feedback, Button, StateChip} from '../components/ui';
+import {ActionList, Empty, Feedback, Button, StateChip} from '../components/ui';
 import {alertLine, orderBeds, tileView} from '../components/ward/tile';
 import type {TileGroup, TileView} from '../components/ward/tile';
 
@@ -75,6 +75,7 @@ export function WardPage() {
   const actions = useWard(s => s.actions);
   const hidden = useWard(s => s.hidden);
   const error = useWard(s => s.error);
+  const receivedAt = useWard(s => s.receivedAt);
   const now = useNow();
   const navigate = useNavigate();
   const grid = useRef<HTMLDivElement>(null);
@@ -121,7 +122,8 @@ export function WardPage() {
       {error && <p className="notice" role="status">{error} The last received information stays on screen.</p>}
       <div className="ward-layout">
         {beds.length === 0 ? (
-          <div className="bed-grid" aria-busy="true">{Array.from({length: 12}, (_, i) => <div key={i} className="skeleton-tile" />)}</div>
+          receivedAt || error ? <Empty title="No bed data yet" detail="Beds will appear when the ward hub reports them." /> :
+          <div className="bed-grid" aria-busy="true" aria-label="Loading ward beds"><span className="sr-only" role="status">Loading ward beds…</span>{Array.from({length: 12}, (_, i) => <div key={i} className="skeleton-tile" />)}</div>
         ) : (
           <div className="bed-grid" ref={grid} onKeyDown={onKey} aria-label="Beds. Use arrow keys to move, Enter to open.">
             {visible.map(b => <BedTile key={b.bed_id} bed={b} hidden={hidden} now={now} alerts={alerts} />)}

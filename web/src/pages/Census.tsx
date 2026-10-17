@@ -30,7 +30,7 @@ export function CensusPage() {
         </div>
       )}
       <Panel title={`${rows.length} beds`} caption="Select a row to open the bed. Remote viewers are the ones a hacker fools, so trust is a column.">
-        {rows.length === 0 ? <Empty title="No beds admitted" detail="Beds appear as soon as the ward hub reports them." /> : (
+        {rows.length === 0 ? <Empty title="No bed data yet" detail="Beds appear as soon as the ward hub reports them." /> : (
           <div className="table-wrap">
             <table className="table">
               <thead><tr>

@@ -33,7 +33,7 @@ beforeEach(() => {
   });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); motionChange = undefined; });
-const cards = () => screen.getAllByRole('button');
+const cards = () => within(screen.getByRole('group', {name: 'B07 role views'})).getAllByRole('button');
 const selected = () => cards().findIndex(card => card.getAttribute('aria-pressed') === 'true');
 
 describe('one incident, five role views', () => {
@@ -44,6 +44,18 @@ describe('one incident, five role views', () => {
     ['13:49', '13:54', '14:04', '14:05'].forEach(time => expect(screen.getByText(time)).toBeInTheDocument());
     expect(screen.getByText(/Night ward run N, build 4348467/)).toBeInTheDocument();
     expect(screen.getByText(/no automatic repair ticket/i)).toBeInTheDocument();
+  });
+  it('allows explicit pause and play without changing the selected role', () => {
+    render(<RoleViews />);
+    act(() => intersect(true));
+    act(() => vi.advanceTimersByTime(2800));
+    fireEvent.click(screen.getByRole('button', {name: 'Pause role views'}));
+    expect(vi.getTimerCount()).toBe(0);
+    act(() => vi.advanceTimersByTime(8400));
+    expect(selected()).toBe(1);
+    fireEvent.click(screen.getByRole('button', {name: 'Play role views'}));
+    act(() => vi.advanceTimersByTime(2800));
+    expect(selected()).toBe(2);
   });
   it('cycles only onscreen and stops on hover, then resumes on leave', () => {
     render(<RoleViews />);
