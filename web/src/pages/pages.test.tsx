@@ -34,14 +34,14 @@ describe('S4 alerts', () => {
   it('acknowledges the selected alert through the alert route', async () => {
     as('nurse'); useWard.setState({alerts: [alert]});
     at('/alerts', '/alerts', <AlertsPage />);
-    fireEvent.click(screen.getByText('Bed 5 — go now'));
+    fireEvent.click(screen.getByText('Possible emergency · go now'));
     fireEvent.click(screen.getByRole('button', {name: 'Acknowledge'}));
     await waitFor(() => expect(writes[0]).toMatchObject({method: 'POST', url: '/api/alerts/al_1/ack'}));
   });
   it('does not let IT acknowledge clinical alerts', () => {
     as('it'); useWard.setState({alerts: [alert]});
     at('/alerts', '/alerts', <AlertsPage />);
-    fireEvent.click(screen.getByText('Bed 5 — go now'));
+    fireEvent.click(screen.getByText('Possible emergency · go now'));
     expect(screen.getByRole('button', {name: 'Acknowledge'})).toBeDisabled();
   });
 });
