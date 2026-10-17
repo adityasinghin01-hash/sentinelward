@@ -211,9 +211,11 @@ def test_cuff_persists_to_next_tick_and_reset_rejects_old_controls(frame):
     assert service.tick(10000)[0]['verdict']=='EMERGENCY'
     def control(cmd,ts):
         return service.receive('ward/demo/control',json.dumps({'v':1,'type':'demo_control','ts':ts,'cmd':cmd,'run_id':'one','start_at_s':0}),received_ms=ts)
-    control('reset',20000)
-    control('run',10000)
-    assert service.running is False
+    assert control('reset',20000)
+    assert control('run',10000) is False
+    assert service.active_run_id is None
+    assert service.receive('ward/bed/B01/vitals',json.dumps(frame(21)),received_ms=21000)
+    assert service.tick(25000)[0]['verdict']=='UNSURE'
 
 
 def test_warmup_publishes_all_six_scores_with_null_ineligibility_every_five_seconds(frame):

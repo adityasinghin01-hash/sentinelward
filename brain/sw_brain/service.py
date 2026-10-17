@@ -36,13 +36,16 @@ class BedState:
 class BrainService:
     def __init__(self,bus,*,suite=None,research=None):
         self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite(research)
-        self.beds={}; self.snapshots={}; self.last_trusted_snapshots={}; self.last_verdicts={}; self.running=True; self.controls=deque(maxlen=128)
+        self.beds={}; self.snapshots={}; self.last_trusted_snapshots={}; self.last_verdicts={}; self.controls=deque(maxlen=128)
+        self._run_generation=0
         self.last_tick_ms=None
         self.invalid_incoming=0; self.invalid_outgoing=0
         self.last_control_ts=-1; self.run_started_ms=None; self.active_run_id=None
         for topic,qos in [(VITALS_SUB,0),(NET_SUB,1),(BEDSIDE_SUB,1),(DEMO_CONTROL_TOPIC,1)]: bus.subscribe(topic,self.receive,qos=qos)
     def reset(self):
+        self._run_generation+=1
         self.beds.clear(); self.assembler.reset(); self.suite.reset(); self.last_tick_ms=None
+        self.last_verdicts.clear(); self.active_run_id=None; self.run_started_ms=None
     def receive(self,topic,payload,received_ms=None,sender_id=None,received_mono_ms=None):
         try: receipt=decode(topic,payload,received_ms,sender_id,received_mono_ms)
         except ValueError as exc:
@@ -51,17 +54,15 @@ class BrainService:
         message=receipt.data; kind=message['type']; now=receipt.received_ms
         if kind not in {'vitals','net_features','bedside_check','demo_control'}: return False
         if kind=='demo_control':
-            if message['cmd']=='run' and self.active_run_id==message['run_id'] and self.running: return False
+            if message['cmd']=='run' and self.active_run_id==message['run_id']: return False
             if message['ts']<self.last_control_ts: return False
             key=(message['cmd'],message['run_id'],message['ts'],message['start_at_s'])
             if key in self.controls: return False
             self.controls.append(key); self.last_control_ts=message['ts']
-            if message['cmd']=='reset': self.reset(); self.running=False
-            else:
-                if self.active_run_id==message['run_id'] and self.running: return False
-                self.reset(); self.running=True; self.active_run_id=message['run_id']; self.run_started_ms=message['ts']
+            self.reset()
+            if message['cmd']=='run':
+                self.active_run_id=message['run_id']; self.run_started_ms=message['ts']
             return True
-        if not self.running: return False
         if self.run_started_ms is not None and (now<self.run_started_ms or (kind!='vitals' and message.get('ts',message.get('window_start',now))<self.run_started_ms)): return False
         if kind=='net_features':
             bed='B'+message['device_id'][4:]
@@ -116,7 +117,7 @@ class BrainService:
             data[channel+'_valid']=[v is not None for v in data[channel]]
         return data
     def tick(self,now_ms):
-        if not self.running: return []
+        generation=self._run_generation
         # Caller uses epoch-aligned deadlines. Negative starts are avoided during initial epoch fixtures.
         end=(int(now_ms)//5000)*5000; start=max(0,end-10000); verdicts=[]
         for bed,state in sorted(self.beds.items()):
@@ -125,15 +126,20 @@ class BrainService:
             window=next((w for w in reversed(state.windows) if w['window_start']==start),None)
             results=self.suite.evaluate(window,state,now_ms)
             for model,value in results.items():
+                # Controls clear memory without stopping scoring. Discard work from an old run.
+                if generation!=self._run_generation: return []
                 envelope=make_score(bed_id=bed,model=model,model_version=model+'-live-2026-10-17',window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
                 self._publish(score_topic(bed,model),envelope)
+            if generation!=self._run_generation: return []
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
             verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
+            if generation!=self._run_generation: return []
             if verdict['verdict']=='NORMAL':
                 state.last_trusted_ts=int(now_ms)
                 self.last_trusted_snapshots[bed]=deepcopy(state.last_message)
             self.last_verdicts[bed]=verdict
             self._publish(verdict_topic(bed),verdict,retain=True)
+            if generation!=self._run_generation: return []
             verdicts.append(verdict)
         self.last_tick_ms=end
         return verdicts

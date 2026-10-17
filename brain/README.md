@@ -2,6 +2,8 @@
 
 One Python process consumes the locked doc-00 v1 MQTT messages, assembles per-bed 10-second windows every 5 seconds, publishes M1–M6 score envelopes and retained verdicts. Scores increase with suspicion. Every live detector uses `M<n>-live-2026-10-17`.
 
+Scoring starts with the service and continues whenever vitals arrive, including after a demo `reset`. Both `reset` and `run` clear inference memory and advance a generation token that discards in-flight results; `run` also records the run ID. Display snapshots survive these controls.
+
 The approved decision precedence is BOTH, EMERGENCY, TAMPERING, DRIFTING, LOOSE_SENSOR, DEVICE_ATTACK, UNSURE, NORMAL. Confidence and trust are **uncalibrated** heuristic numbers. Trust is `1 - max(eligible M3, M4, M5)`; no eligible integrity check gives numeric 1 but the verdict remains UNSURE. Missing data never establishes normal physiology.
 
 M1 checks observed ECG/PPG missingness, flat lines, clipping, implausible amplitudes and high frequency/powerline energy. M2 checks observed ECG rates, QRS width and regularity against the alarm code. For VTACH with a complete preceding window it attempts the hash-verified primary research seed 20261015 and that seed's threshold, then falls back to live rules when unavailable. M4 compares normalized, non-overlapping windows only with this bed's recent history and checks sequence repeats/regressions and authenticated sender metadata. Its optional research opinion remains in `extra`; unverified channel order prevents that research path.
