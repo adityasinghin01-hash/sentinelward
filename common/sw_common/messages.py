@@ -427,7 +427,7 @@ def _scores(errs: list, path: str, x: Any, strict: bool) -> None:
         if not _is_model_id(k):
             errs.append(f"{path}: unknown model key {_short(k)} (expected M1..M6)")
             continue
-        _chk_num(errs, f"{path}.{k}", v, unit=True)
+        _chk_num(errs, f"{path}.{k}", v, nullable=True, unit=True)  # null = model not eligible
 
 
 def _recipients(errs: list, path: str, x: Any, strict: bool) -> None:
@@ -470,7 +470,7 @@ _SPECS: dict[str, tuple[tuple[str, Checker], ...]] = {
         ("model_version", _NAME),
         ("window_start", _window_start),
         ("window_s", _int(lo=1)),  # example is 10; the contract does not fix the value
-        ("score", _num(unit=True)),
+        ("score", _num(nullable=True, unit=True)),  # doc 00: missing = null (model not eligible)
         ("label", _NAME),  # the contract lists no labels, so any non-empty string passes
         ("reason", _str(nonempty=False, max_len=REASON_MAX_CHARS)),
         ("extra", _object),
