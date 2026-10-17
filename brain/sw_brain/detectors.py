@@ -188,16 +188,86 @@ def confirmed_low_pressure(state,now_ms):
     return False
 
 class ReplayDetector:
-    def __init__(self): self.history={}
-    def reset(self): self.history.clear()
-    def evaluate(self,window,state,now_ms):
-        recent=[r for r in state.messages if now_ms-10000<=r['received_ms']<=now_ms]
-        evidence=[r for r in recent if r.get('sequence_issue')]
+    def __init__(self): self.history={}; self.pending_sender_checks={}
+    def reset(self): self.history.clear(); self.pending_sender_checks.clear()
+    @staticmethod
+    def transport(state,now_ms):
+        # Compare whole envelopes, including alarms/numerics/optional leads. The
+        # first arriving publisher need not be the real monitor. A matching frame
+        # from either connection proves a copy; conflicting claims remain strong.
+        records=[r for r in state.messages if now_ms-45000<=r['received_ms']<=now_ms]
+        recent=[r for r in records if now_ms-10000<=r['received_ms']<=now_ms]
+        by_seq={}; by_ts={}; copies=set(); conflicts=set()
+        for r in records:
+            m=r['message']; seq=m['seq']; ts=m['ts']
+            for previous in (by_seq.get(seq),by_ts.get(ts)):
+                if previous is None: continue
+                if previous['message']==m:
+                    if not previous.get('sequence_issue') or not r.get('sequence_issue'):
+                        copies.update((id(previous),id(r)))
+                else:
+                    conflicts.update((id(previous),id(r)))
+            by_seq.setdefault(seq,r); by_ts.setdefault(ts,r)
+        issues=[r for r in recent if r.get('sequence_issue')]
+        # A current identical copy is transport abuse. Old or unverified sequence
+        # regressions still count as replay, even without authenticated identity.
+        unexplained=[r for r in issues if id(r) not in copies or abs(r['received_ms']-r['message']['ts'])>3000]
+        conflict=any(id(r) in conflicts for r in recent)
         senders={r['sender_id'] for r in recent if r.get('sender_id') is not None}
-        metadata_score=.98 if evidence else (.6 if len(senders)>1 else 0.)
-        extra={'eligible':bool(recent),'path':'live_fingerprint_and_transport','sequence_events':len(evidence),'senders':len(senders),'sender_identity_available':bool(senders),'independent_evidence':bool(evidence or len(senders)>1)}
+        # Keep a bounded witness of a flood, then require the SAME connection to
+        # continue at monitor pace in at least two completed seconds. A flood's
+        # many copies of one sequence do not also count as paced impersonation.
+        buckets={}
+        for r in records:
+            sender=r.get('sender_id')
+            if sender is not None:
+                buckets.setdefault(sender,{}).setdefault(r['received_ms']//1000,[]).append(r)
+        combined=False
+        for seconds in buckets.values():
+            floods=[sec for sec,rows in seconds.items() if len(rows)>5]
+            if not floods: continue
+            last_flood=max(floods)
+            paced=[sec for sec,rows in seconds.items() if last_flood<sec<now_ms//1000 and
+                   sec*1000>=now_ms-10000 and 1<=len(rows)<=2 and
+                   any(id(r) in copies and abs(r['received_ms']-r['message']['ts'])<=3000 for r in rows)]
+            if len(paced)>=2: combined=True
+        strong=conflict or bool(unexplained) or combined
+        established=next((r.get('sender_id') for r in state.messages if
+                          r['received_ms']<now_ms-10000 and not r.get('sequence_issue') and
+                          r.get('sender_id') is not None),None)
+        unverified_sender=any(r.get('sender_id')!=established and id(r) not in copies for r in recent)
+        copy_only=(bool(issues) and established is not None and not conflict and not unexplained and
+                   not unverified_sender and all(id(r) in copies for r in issues))
+        return dict(recent=recent,sequence_events=len(issues),senders=len(senders),
+                    sender_identity_available=bool(senders),content_conflict=conflict,
+                    unexplained_sequence=bool(unexplained),flood_and_paced_sender=combined,
+                    duplicate_only=copy_only,independent_evidence=strong)
+
+    def evaluate(self,window,state,now_ms):
+        extra=self.transport(state,now_ms)
+        recent=extra.pop('recent')
+        metadata_score=.98 if extra['independent_evidence'] else (.6 if extra['senders']>1 else 0.)
+        extra.update(eligible=bool(recent),path='live_fingerprint_and_transport')
+        # A brief paced impersonation requests a hand-check. Do not silently
+        # clear that doubt when packets age out, nor create a nurse task for a
+        # flood that belongs to IT. New traffic after a check reopens the doubt.
+        bed=state.bed_id
+        if .5<=metadata_score<.8 and len(recent)<=50:
+            self.pending_sender_checks[bed]=max(r['received_ms'] for r in recent)
+        pending=self.pending_sender_checks.get(bed)
+        if pending is not None and pending<=getattr(state,'patient_ok_ts',-1)<=now_ms:
+            self.pending_sender_checks.pop(bed,None); pending=None
+        if pending is not None:
+            metadata_score=max(metadata_score,.6)
+            extra.update(eligible=True,pending_sender_check=True)
+        reason=('Conflicting frame content for the same sequence or timestamp' if extra['content_conflict'] else
+                'Old or unverified regressed sequence' if extra['unexplained_sequence'] else
+                'Flood followed by paced impersonation from the same sender' if extra['flood_and_paced_sender'] else
+                'Second authenticated sender; bedside confirmation pending' if pending is not None else
+                'Second authenticated sender on this bed' if extra['senders']>1 else
+                'No replay evidence in available bed history')
         if not window:
-            return result(metadata_score,'Repeated or regressed sequence' if evidence else 'Waiting for a full waveform window',**extra)
+            return result(metadata_score,reason,**extra)
         history=self.history.setdefault(state.bed_id,deque(maxlen=120))
         fingerprint=[]
         for channel in ('ecg','ppg'):
@@ -216,12 +286,39 @@ class ReplayDetector:
         extra.update(fingerprint_similarity=similarity,reference_window_start=best['window_start'] if best else None,waveform_replay=replay,independent_evidence=extra['independent_evidence'] or replay)
         if getattr(state,'baseline_admission_allowed',True) and not replay and not metadata_score and not any(ref['window_start']==window['window_start'] for _,ref in history): history.append((fingerprint,window))
         value=max(metadata_score,.99 if replay else min(.3,max(0.,similarity*.2)))
-        reason='Near-identical waveform seen earlier on this bed' if replay else ('Repeated or regressed sequence' if evidence else ('Second authenticated sender on this bed' if len(senders)>1 else 'No replay evidence in available bed history'))
+        if replay:
+            reason='Near-identical waveform seen earlier on this bed'
+            extra['duplicate_only']=False
         return result(value,reason,**extra)
+
+class NetworkAttack:
+    """M5 keeps the extractor rules; verified live copies are weak at normal pace."""
+    @staticmethod
+    def features(records):
+        from .extended import NetworkAttack as ReceiptNetworkAttack
+        return ReceiptNetworkAttack.features(records)
+
+    def evaluate(self,window,state,now_ms):
+        from .extended import NetworkAttack as ReceiptNetworkAttack
+        value=ReceiptNetworkAttack().evaluate(window,state,now_ms)
+        transport=ReplayDetector.transport(state,now_ms)
+        # Topic-7 repeats of the same verified copies are not independent evidence.
+        # Preserve excess repeats, floods, conflicts, old and unverified replays.
+        topic=value['extra'].get('topic7_features',{})
+        if (transport['duplicate_only'] and value['score'] is not None and
+                value['extra']['features']['msg_rate']<=5 and
+                (topic.get('msgs_per_s') or 0)<=5 and
+                (topic.get('seq_repeats') or 0)<=transport['sequence_events']):
+            value=result(.6 if value['extra']['senders']>1 else 0.,
+                         'Identical live copies; second sender needs bedside confirmation' if value['extra']['senders']>1 else
+                         'Identical live packet copies; no changed data',**value['extra'])
+        return value
+
+    __call__=evaluate
 
 class DetectorSuite:
     def __init__(self,m2_model=None):
-        from .extended import BodyMismatch,NetworkAttack,PressureDrift
+        from .extended import BodyMismatch,PressureDrift
         self.detectors={'M1':QualityDetector(),'M2':EmergencyDetector(m2_model),'M3':BodyMismatch(),'M4':ReplayDetector(),'M5':NetworkAttack(),'M6':PressureDrift()}
     def reset(self):
         for detector in self.detectors.values():
