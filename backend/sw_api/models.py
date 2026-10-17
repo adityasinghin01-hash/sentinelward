@@ -132,6 +132,8 @@ class RawBed(BaseModel):
     offline_since: int | None
     manual: dict[str, Any] | None = None
     last_bedside_check: dict[str, Any] | None = None
+    assignment: dict[str, Any] | None = None
+    nurse_call: dict[str, Any] | None = None
 
 
 class WardResponse(BaseModel):
@@ -171,9 +173,176 @@ class HealthResponse(BaseModel):
     ok: bool
     mqtt_connected: bool
     db_ok: bool
-    storage: Literal["memory"]
+    storage: Literal["memory", "postgresql"]
     durable: bool = False
     beds_online: int
     last_message_ts: int | None
     invalid_messages: int
     pending_publications: int
+    db_queued_rows: int = 0
+
+
+# --------------------------------------------------------------------------- Phase B inputs
+
+_ID = r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,127}$"
+
+
+class ManualReading(BedCommand):
+    """record_manual_reading; heartRate is the screen's name for hr. At least one value is required."""
+    type: Literal["record_manual_reading"] | None = None
+    heartRate: float | None = Field(default=None, ge=0, le=400)
+    hr: float | None = Field(default=None, ge=0, le=400)
+    spo2: float | None = Field(default=None, ge=0, le=100)
+    sys: float | None = Field(default=None, ge=0, le=400)
+    dia: float | None = Field(default=None, ge=0, le=400)
+    rr: float | None = Field(default=None, ge=0, le=200)
+
+    @model_validator(mode="after")
+    def one_value(self):
+        if self.heartRate is not None and self.hr is not None and self.heartRate != self.hr:
+            raise ValueError("heartRate and hr disagree")
+        if all(v is None for v in (self.heartRate, self.hr, self.spo2, self.sys, self.dia, self.rr)):
+            raise ValueError("at least one of hr, spo2, sys, dia, rr is required")
+        return self
+
+
+class CallNurse(BedCommand):
+    type: Literal["call_bedside_nurse"] | None = None
+    requestedBy: str | None = None  # ignored: the caller is the logged-in person
+    urgency: Literal["routine", "urgent"] = "routine"
+
+
+class Assign(BedCommand):
+    type: Literal["assign_clinician"] | None = None
+    clinicianId: str = Field(pattern=_ID)
+
+
+class AssignmentStatus(BedCommand):
+    type: Literal["update_assignment"] | None = None
+    status: Literal["assigned", "on_my_way", "reviewing", "complete"]
+
+
+class FleetHunt(Input):
+    type: Literal["fleet_hunt"] | None = None
+    model: str = Field(default="all", min_length=1, max_length=128)
+    notes: str = Field(default="", max_length=4000)
+
+
+class IncidentCommand(BedCommand):
+    type: Literal["capture_evidence", "contain_incident", "resolve_incident"] | None = None
+    incidentId: str | None = None
+    reason: str = Field(default="", max_length=4000)
+
+
+class ReviewReport(Input):
+    type: Literal["review_report"] | None = None
+    incidentId: str | None = None
+    notes: str = Field(default="", max_length=4000)
+
+
+class CreateTicket(Input):
+    type: Literal["create_ticket"] | None = None
+    bedId: str
+    issue: str = Field(min_length=1, max_length=2000)
+    notes: str = Field(default="", max_length=4000)
+
+
+class UpdateTicket(Input):
+    type: Literal["update_ticket"] | None = None
+    ticketId: str | None = None
+    status: Literal["open", "assigned", "resolved"] | None = None
+    note: str | None = Field(default=None, max_length=4000)
+
+    @model_validator(mode="after")
+    def something(self):
+        if self.status is None and self.note is None:
+            raise ValueError("status or note is required")
+        return self
+
+
+class SaveReport(Input):
+    """save_report: the screen sends {report: CertReportDraft}; {data: {...}} is also accepted."""
+    model_config = ConfigDict(strict=False, extra="ignore")
+    type: Literal["save_report"] | None = None
+    incidentId: str | None = None
+    report: dict[str, Any] | None = None
+    data: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def one_body(self):
+        if (self.report is None) == (self.data is None):
+            raise ValueError("send exactly one of report or data")
+        return self
+
+
+class MarkSent(Input):
+    type: Literal["mark_report_sent"] | None = None
+    incidentId: str | None = None
+    sentBy: str | None = None  # ignored: the sender is the logged-in person
+
+
+# --------------------------------------------------------------------------- Phase B outputs
+
+class RecordOut(BaseModel):
+    record_id: str
+    kind: Literal["ticket", "report", "incident", "briefing", "workload"]
+    ts: int
+    by: str
+    version: int
+    data: dict[str, Any]
+    updated_ts: int | None
+    updated_by: str | None
+
+
+class BedDetail(RawBed):
+    scores: dict[str, dict[str, Any]]
+    recent_verdicts: list[dict[str, Any]]
+    device: dict[str, Any]
+    open_alerts: list[dict[str, Any]]
+
+
+class HistoryPoint(BaseModel):
+    ts: int
+    hr: float | None
+    spo2: float | None
+    rr: float | None
+    sys: float | None
+    dia: float | None
+    map: float | None
+    abp_mean: float | None
+    verdict: str | None
+    trusted: bool
+
+
+class HistoryResponse(BaseModel):
+    bed_id: str
+    points: list[HistoryPoint]
+
+
+class BlindTime(BaseModel):
+    bed_id: str
+    minutes: float = Field(ge=0)
+
+
+class BriefingResponse(BaseModel):
+    since: str
+    generated_by: str
+    summary: str
+    incidents: int = Field(ge=0)
+    untrusted_beds: int = Field(ge=0)
+    open_tickets: int = Field(ge=0)
+    blind_time: list[BlindTime]
+    record_id: str
+    ts: int
+
+
+class NurseLoad(BaseModel):
+    nurse_id: str
+    nurse_name: str
+    alarms_last_2h: int = Field(ge=0)
+
+
+class WorkloadResponse(BaseModel):
+    nurses: list[NurseLoad]
+    record_id: str | None = None
+    ts: int | None = None

@@ -41,7 +41,8 @@ def bed(state: WardState, bed_id: str, preview: bool = False) -> dict:
         "last_trusted": snapshot, "display": view.display, "offline_since": view.offline_since,
     }
     if not preview:
-        payload.update(patient=entry.cfg.patient(), manual=entry.manual, last_bedside_check=entry.last_bedside)
+        payload.update(patient=entry.cfg.patient(), manual=entry.manual, last_bedside_check=entry.last_bedside,
+                       assignment=entry.assignment, nurse_call=entry.nurse_call)
     return payload
 
 
@@ -61,3 +62,17 @@ def action_log(actions: list[dict], limit: int) -> dict:
                          "bed_id": a.get("bed_id"), "device_id": a.get("device_id"), "approved_by": a.get("approved_by"),
                          "mode": "person" if a["by"].startswith("staff:") else "automatic", "undoable": undoable(a, actions),
                          "references_action_id": a.get("undoes")} for a in ordered]}
+
+
+def bed_detail(state: WardState, bed_id: str) -> dict:
+    """GET /api/beds/<id>: the bed payload plus scores, recent verdicts, device and open alerts."""
+    entry = state.beds[bed_id]
+    payload = bed(state, bed_id)
+    payload.update(scores=dict(sorted(entry.scores.items())), recent_verdicts=list(entry.recent_verdicts),
+                   device=state.device_brief(entry.cfg.device_id), open_alerts=state.open_alerts(bed_id))
+    return payload
+
+
+def record(rec: dict) -> dict:
+    """A stored record as returned by the record endpoints."""
+    return {k: rec.get(k) for k in ("record_id", "kind", "ts", "by", "version", "data", "updated_ts", "updated_by")}

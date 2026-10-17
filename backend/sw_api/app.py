@@ -1,4 +1,6 @@
-"""Phase A app lifecycle, dependency injection, REST and real WebSocket endpoint."""
+"""App lifecycle, dependency injection, the core REST routes and the real WebSocket endpoint.
+
+The remaining routes live in routes/ and share the same auth dependencies."""
 from __future__ import annotations
 
 import asyncio
@@ -12,12 +14,13 @@ from sw_common import Bus
 
 from . import commands, presenters
 from .auth import COOKIE_NAME, ROLE_FRONTEND, Sessions, check_origin
-from .config import Clock, ConfigError, Settings, UserConfig, load_users, load_ward
+from .config import Clock, Settings, UserConfig, load_users, load_ward
 from .ingest import Ingest
 from .models import (Acknowledge, ActionsResponse, Bedside, DemoReceipt, DemoRun, DeviceEntry, Escalate,
                      HealthResponse, Isolate, Receipt, SessionInput, SessionResponse, Undo, WardResponse)
+from .routes import Deps, clinical, records, security
 from .state import WardState
-from .store import MemoryStore
+from .store import MemoryStore, Store
 from .ws import Hub
 
 LOG = logging.getLogger(__name__)
@@ -26,21 +29,60 @@ LOG = logging.getLogger(__name__)
 class Runtime:
     """All mutable clinical state belongs to the application's asyncio loop."""
 
-    def __init__(self, settings: Settings, bus, store: MemoryStore, clock: Clock):
-        self.settings, self.bus, self.store, self.clock = settings, bus, store, clock
+    def __init__(self, settings: Settings, bus, store: Store | None, clock: Clock):
+        self.settings, self.bus, self.clock = settings, bus, clock
         users = load_users(settings.users_yaml)
         self.state = WardState(load_ward(settings.ward_yaml, users), clock)
+        if store is None:
+            if settings.use_memory_store:
+                store = MemoryStore()
+            else:
+                from .postgres import PostgresStore
+                store = PostgresStore(settings.pg_dsn, self.state.ward, settings.schema_sql, clock)
+        self.store = store
+        self._lookup_tasks: set[asyncio.Task] = set()
         self.sessions = Sessions(users, settings, clock)
         self.hub = Hub(clock)
         self.ingest = Ingest(self)
         self._feed_connected: bool | None = None
 
     def resolve_pins(self) -> None:
-        for bed_id, cutoff, inclusive in self.state.take_pin_lookups():
-            self.state.set_pin(bed_id, cutoff, inclusive, self.store.trusted_point(bed_id, cutoff, inclusive))
+        """Answer "newest trusted point before the cutoff" lookups RAM could not (never waits for SQL)."""
+        lookups = self.state.take_pin_lookups()
+        if not lookups:
+            return
+        if self.store.sync_lookups:
+            for bed_id, cutoff, inclusive in lookups:
+                self.state.set_pin(bed_id, cutoff, inclusive, self.store.trusted_point(bed_id, cutoff, inclusive))
+            return
+        for lookup in lookups:
+            task = asyncio.get_running_loop().create_task(self._lookup(*lookup))
+            self._lookup_tasks.add(task)
+            task.add_done_callback(self._lookup_tasks.discard)
+
+    async def _lookup(self, bed_id: str, cutoff: int, inclusive: bool) -> None:
+        try:
+            point = await self.store.trusted_point_async(bed_id, cutoff, inclusive)
+        except Exception:  # noqa: BLE001 - database down: show untrusted last values, retry later
+            LOG.exception("trusted-point lookup failed for %s", bed_id)
+            self.state._lookups_in_flight.discard((bed_id, cutoff, inclusive))
+            return
+        self.state.set_pin(bed_id, cutoff, inclusive, point)
+        self.push_bed(bed_id)
+
+    async def resolve_pins_now(self) -> None:
+        """Like resolve_pins, but wait for the database answers (used by reads)."""
+        if self.store.sync_lookups:
+            self.resolve_pins()
+            return
+        for lookup in self.state.take_pin_lookups():
+            await self._lookup(*lookup)
+        if self._lookup_tasks:  # lookups already started by ingest: wait briefly for their answers
+            await asyncio.wait(list(self._lookup_tasks), timeout=0.5)
 
     def push_bed(self, bed_id: str, critical: bool = True) -> None:
-        payload = presenters.bed(self.state, bed_id)
+        """Send the bed's current payload to every WebSocket client."""
+        presenters.bed(self.state, bed_id)  # registers any pin lookup this view needs
         self.resolve_pins()
         payload = presenters.bed(self.state, bed_id)
         self.hub.broadcast({"type": "bed.updated", "payload": payload}, critical)
@@ -79,24 +121,33 @@ class Runtime:
 
     def health(self) -> dict:
         stats = self.bus.stats()
-        return {"ok": self.bus.is_connected, "mqtt_connected": self.bus.is_connected, "db_ok": False,
-                "storage": "memory", "durable": False, "beds_online": self.state.beds_online(),
+        db_ok = self.store.db_ok
+        writer = getattr(self.store, "writer", None)
+        return {"ok": self.bus.is_connected and (db_ok or not self.store.durable),
+                "mqtt_connected": self.bus.is_connected, "db_ok": db_ok,
+                "storage": self.store.storage, "durable": self.store.durable,
+                "db_queued_rows": writer.queued if writer is not None else 0,
+                "beds_online": self.state.beds_online(),
                 "last_message_ts": self.state.last_message_ms,
                 "invalid_messages": self.ingest.invalid + stats.get("invalid", 0),
                 "pending_publications": len(self.store.pending_publications())}
 
 
-def create_app(*, settings: Settings | None = None, bus=None, store: MemoryStore | None = None, clock: Clock | None = None) -> FastAPI:
+def create_app(*, settings: Settings | None = None, bus=None, store: Store | None = None, clock: Clock | None = None) -> FastAPI:
     """Build an injectable app; external connections start only during lifespan."""
     settings = settings or Settings.from_env()
-    if not settings.use_memory_store:
-        raise ConfigError("Phase A supports SW_PG_DSN=memory only; PostgreSQL arrives in Phase B")
     clock = clock or Clock()
     bus = bus if bus is not None else Bus(settings.mqtt_host, settings.mqtt_port, "sw-api", username=settings.mqtt_user, password=settings.mqtt_pass)
-    runtime = Runtime(settings, bus, store or MemoryStore(), clock)
+    runtime = Runtime(settings, bus, store, clock)
 
     @asynccontextmanager
     async def lifespan(app):
+        warm = await runtime.store.start()
+        if warm is not None:
+            runtime.state.warm_start(warm)
+            runtime.ingest.reset_at = warm.reset_at
+            LOG.info("warm start: %d beds with data, %d actions, %d records", len(warm.vitals),
+                     len(warm.actions), len(warm.records))
         runtime.ingest.start()
         async def ticker():
             while True:
@@ -115,10 +166,17 @@ def create_app(*, settings: Settings | None = None, bus=None, store: MemoryStore
             with suppress(asyncio.CancelledError):
                 await task
             runtime.publish_pending()
-            if runtime.store.pending_publications():
-                LOG.warning("Memory outbox has %d unsent publications at shutdown; Phase A is not durable", len(runtime.store.pending_publications()))
+            for lookup in list(runtime._lookup_tasks):
+                lookup.cancel()
+            await asyncio.gather(*runtime._lookup_tasks, return_exceptions=True)
+            pending = len(runtime.store.pending_publications())
+            if pending:
+                LOG.warning("%d publications unsent at shutdown (%s)", pending,
+                            "kept in the database outbox" if runtime.store.durable else "lost: memory store")
+            await runtime.store.close()
 
-    app = FastAPI(title="SentinelWard API — Phase A", version="1.2.0", lifespan=lifespan)
+    app = FastAPI(title="SentinelWard API", version="1.2.0", lifespan=lifespan,
+                  description="REST + /ws for the SentinelWard screens. See API.md for examples.")
     app.state.runtime = runtime
 
     @app.middleware("http")
@@ -158,13 +216,13 @@ def create_app(*, settings: Settings | None = None, bus=None, store: MemoryStore
     @app.get("/api/ward", response_model=WardResponse, response_model_exclude_unset=True)
     async def ward(identity=Depends(user)):
         presenters.ward(runtime.state)
-        runtime.resolve_pins()
+        await runtime.resolve_pins_now()
         return presenters.ward(runtime.state)
 
     @app.get("/api/ward/preview", response_model=WardResponse, response_model_exclude_unset=True)
     async def preview():
         presenters.ward(runtime.state, preview=True)
-        runtime.resolve_pins()
+        await runtime.resolve_pins_now()
         return presenters.ward(runtime.state, preview=True)
 
     @app.get("/api/devices", response_model=list[DeviceEntry])
@@ -242,7 +300,7 @@ def create_app(*, settings: Settings | None = None, bus=None, store: MemoryStore
             return
         await websocket.accept()
         presenters.ward(runtime.state)
-        runtime.resolve_pins()
+        await runtime.resolve_pins_now()
         client = runtime.hub.subscribe(presenters.ward(runtime.state)["beds"])
         async def send():
             while True:
@@ -276,6 +334,11 @@ def create_app(*, settings: Settings | None = None, bus=None, store: MemoryStore
             for task in tasks:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
+
+    deps = Deps(runtime=runtime, user=user, roles=roles, require_bed=require_bed)
+    clinical.register(app, deps)
+    security.register(app, deps)
+    records.register(app, deps)
 
     # Last route: serve a prebuilt SPA on the same origin, preserving API 404s.
     if settings.frontend_dist.is_dir() and (settings.frontend_dist / "index.html").is_file():

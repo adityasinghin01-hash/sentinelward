@@ -137,8 +137,10 @@ class BedState:
         self.alarm: dict | None = None
         self.manual: dict | None = None
         self.last_bedside: dict | None = None
-        self.assignment: dict[str, Any] = {"nurse": cfg.nurse, "status": "assigned" if cfg.nurse else None,
-                                           "ts": None, "by": None}
+        # From ward.yaml until staff assign someone on a screen: {clinician_id, staff_id, status, ts, by}.
+        self.assignment: dict[str, Any] | None = ({"clinician_id": cfg.nurse, "staff_id": cfg.nurse,
+                                                   "status": "assigned", "ts": None, "by": None}
+                                                  if cfg.nurse else None)
         self.nurse_call: dict | None = None
         self.pin_key: tuple[int, bool] | None = None  # (cutoff, inclusive) the cached pin was found for
         self.pin: Point | None = None
@@ -191,6 +193,8 @@ class WardState:
         self.records: OrderedDict[str, dict] = OrderedDict()
         self._iso_device: dict[str, str] = {}  # isolating action_id -> device_id
         self._enabled: dict[str, tuple[str, dict[str, int]]] = {}  # enable action_id -> what it cleared
+        self._applied: set[str] = set()  # action_ids whose effect is in force
+        self._undone: dict[str, tuple] = {}  # undo action_id -> what it reversed (for a late failure)
         self._lookups: dict[tuple[str, int, bool], None] = {}
         self._lookups_in_flight: set[tuple[str, int, bool]] = set()
         self.last_message_ms: int | None = None
@@ -255,6 +259,10 @@ class WardState:
             bed.pin_key, bed.pin = (cutoff, inclusive), point
             if point is not None:
                 self._remember_trusted_wave(bed, point)
+
+    def trusted_now(self, bed: BedState) -> bool:
+        """A verdict exists, it is trusted, and no isolation is in force."""
+        return self._trusted_now(bed)
 
     def _trusted_now(self, bed: BedState) -> bool:
         return bed.verdict is not None and self._untrusted_cutoff(bed) is None
@@ -501,18 +509,33 @@ class WardState:
         return True, mark
 
     def on_action(self, msg: dict) -> tuple[bool, list[TrustMark]]:
-        """Apply an action (isolation bookkeeping); returns (new action, trust marks)."""
+        """Apply an action (isolation bookkeeping); returns (new or changed action, trust marks).
+
+        Agents publish the same action_id again when its result changes (pending -> ok/failed):
+        the newest version replaces the stored one, and a late failure reverses the effect.
+        """
         self.last_message_ms = self.clock.ms()
         aid = msg["action_id"]
-        if aid in self.actions:
-            return False, []
-        self.actions[aid] = msg
-        while len(self.actions) > MAX_ACTIONS:
-            self.actions.popitem(last=False)
+        failed = msg.get("result") in FAILED_RESULTS
+        cur = self.actions.get(aid)
+        if cur is not None:
+            if msg["ts"] < cur["ts"] or msg == cur:
+                return False, []
+            self.actions[aid] = msg
+            if aid in self._applied:
+                return True, (self._revert(aid, msg["ts"]) if failed else [])
+            if failed:
+                return True, []
+        else:
+            self.actions[aid] = msg
+            while len(self.actions) > MAX_ACTIONS:
+                old_id, _ = self.actions.popitem(last=False)
+                self._applied.discard(old_id)
+            if failed:
+                return True, []
+        self._applied.add(aid)
         marks: list[TrustMark] = []
-        if msg.get("result") in FAILED_RESULTS:
-            return True, marks
-        undone_dev = self._undo(msg["undoes"]) if msg.get("undoes") else None
+        undone_dev = self._undo(msg["undoes"], aid) if msg.get("undoes") else None
         dev_id = msg.get("device_id")
         if dev_id is None and msg.get("bed_id"):
             dev_id = device_for_bed(msg["bed_id"])
@@ -539,17 +562,50 @@ class WardState:
             marks.append(interval_mark)
         return True, marks
 
-    def _undo(self, original_id: str) -> str | None:
+    def _undo(self, original_id: str, undo_id: str) -> str | None:
         """Reverse an isolation or an enable_client; returns the affected device or None."""
         dev_id = self._iso_device.get(original_id)
         if dev_id is not None:
-            self.devices[dev_id].isolations.pop(original_id, None)
+            ts = self.devices[dev_id].isolations.pop(original_id, None)
+            if ts is not None:
+                self._undone[undo_id] = ("isolation", original_id, dev_id, ts)
             return dev_id
         enabled = self._enabled.pop(original_id, None)
         if enabled is not None:  # undoing an enable_client puts its isolations back in force
             self.devices[enabled[0]].isolations.update(enabled[1])
+            self._undone[undo_id] = ("enable", original_id, enabled[0], enabled[1])
             return enabled[0]
         return None
+
+    def _revert(self, aid: str, ts: int) -> list[TrustMark]:
+        """An action already applied was later reported failed: put the ward back as it was."""
+        self._applied.discard(aid)
+        devices: set[str] = set()
+        dev_id = self._iso_device.get(aid)
+        if dev_id is not None:
+            self.devices[dev_id].isolations.pop(aid, None)
+            devices.add(dev_id)
+        enabled = self._enabled.pop(aid, None)
+        if enabled is not None:
+            self.devices[enabled[0]].isolations.update(enabled[1])
+            devices.add(enabled[0])
+        undone = self._undone.pop(aid, None)
+        if undone is not None:
+            kind, original_id, undone_dev, payload = undone
+            dev = self.devices[undone_dev]
+            if kind == "isolation":
+                dev.isolations[original_id] = payload
+            else:
+                self._enabled[original_id] = (undone_dev, payload)
+                for iso_id in payload:
+                    dev.isolations.pop(iso_id, None)
+            devices.add(undone_dev)
+        marks = []
+        for device_id in devices:
+            mark = self._sync_trust_interval(self.beds[self.devices[device_id].bed_id], ts)
+            if mark is not None:
+                marks.append(mark)
+        return marks
 
     def on_alert(self, msg: dict) -> bool:
         """Keep the latest state of each alert; returns True if this version is now the latest."""
@@ -632,7 +688,7 @@ class WardState:
             bed.manual = reading
 
     def set_assignment(self, bed_id: str, assignment: dict) -> None:
-        """Replace the bed's nurse assignment {nurse, status, ts, by}."""
+        """Replace the bed's assignment {clinician_id, staff_id, status, ts, by}."""
         self.beds[bed_id].assignment = assignment
 
     def set_nurse_call(self, bed_id: str, call: dict | None) -> None:
@@ -650,7 +706,7 @@ class WardState:
             "nurse": bed.cfg.nurse, "latest": v.latest, "latest_trusted": v.latest_trusted,
             "display": v.display, "last_trusted_ts": v.last_trusted_ts, "offline_since": v.offline_since,
             "verdict": bed.verdict, "alarm_priority": bed.alarm.get("priority") if bed.alarm else None,
-            "manual": bed.manual, "assignment": dict(bed.assignment), "nurse_call": bed.nurse_call,
+            "manual": bed.manual, "assignment": copy.deepcopy(bed.assignment), "nurse_call": bed.nurse_call,
         }
 
     def ward_body(self) -> dict[str, Any]:
@@ -819,8 +875,8 @@ class WardState:
                 self.add_manual(reading)
         for a in warm.assignments:
             if a["bed_id"] in self.beds:
-                self.set_assignment(a["bed_id"], {"nurse": a["nurse"], "status": a["status"],
-                                                  "ts": a["ts"], "by": a["by"]})
+                self.set_assignment(a["bed_id"], {"clinician_id": a["clinician_id"], "staff_id": a["staff_id"],
+                                                  "status": a["status"], "ts": a["ts"], "by": a["by"]})
         for call in warm.nurse_calls:
             if call["bed_id"] in self.beds and call["status"] == "open":
                 self.set_nurse_call(call["bed_id"], call)

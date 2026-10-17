@@ -66,3 +66,34 @@ def demo(runtime, cmd: str, scenario: str = "full_ward_script", speed: int = 1, 
         runtime.reset()
     publish(runtime, [message])
     return receipt(runtime, accepted=True, run_id=run_id)
+
+
+def staff_action(runtime, user: UserConfig, action: str, bed_id: str | None, detail: str) -> dict:
+    """Publish (via the outbox) and apply one staff action, e.g. manual_reading or mark_report_sent."""
+    device_id = runtime.state.beds[bed_id].cfg.device_id if bed_id in runtime.state.beds else None
+    message = make_action(action_id=identifier("act"), by=user.staff_id, action=action, bed_id=bed_id,
+                          device_id=device_id, detail=detail[:240], ts=runtime.clock.ms())
+    publish(runtime, [message])
+    runtime.state.on_action(message)
+    return message
+
+
+def manual_reading(runtime, user: UserConfig, bed_id: str, values: dict, notes: str) -> dict:
+    """Store a manual reading apart from monitor values, publish the manual_reading action."""
+    ts = runtime.clock.ms()
+    reading = {"reading_id": identifier("man"), "bed_id": bed_id, "ts": ts, "by": user.staff_id,
+               **{k: values.get(k) for k in ("hr", "spo2", "sys", "dia", "rr")}, "notes": notes}
+    runtime.store.save_manual(reading)
+    runtime.state.add_manual(reading)
+    shown = ", ".join(f"{k}={reading[k]:g}" for k in ("hr", "spo2", "sys", "dia", "rr") if reading[k] is not None)
+    staff_action(runtime, user, "manual_reading", bed_id, f"Manual reading {shown}" + (f": {notes}" if notes else ""))
+    runtime.push_bed(bed_id)
+    return receipt(runtime, command_id=reading["reading_id"])
+
+
+def edit_record(runtime, user: UserConfig, record_id: str, changes: dict) -> dict:
+    """Apply audited staff edits to a record's data fields; returns the record."""
+    rec, audits = runtime.state.patch_record(record_id, changes, user.staff_id)
+    if audits:
+        runtime.store.save_record(rec, audits)
+    return rec

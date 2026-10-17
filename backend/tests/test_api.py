@@ -192,7 +192,7 @@ def test_demo_control_reset_barrier_outbox_and_health(bus, clock):
         health = client.get("/api/health").json()
         assert health["mqtt_connected"] and health["db_ok"] is False
         assert health["storage"] == "memory" and health["beds_online"] == 0
-        assert client.get("/api/workload").status_code == 404  # Phase B
+        assert client.get("/api/workload").json() == {"nurses": []}
         assert client.post("/api/demo/run", json={"speed": 3}).status_code == 422
 
 

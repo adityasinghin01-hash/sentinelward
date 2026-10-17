@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS nurse_calls (
     actor           text NOT NULL,
     note            text NOT NULL,
     urgency         text NOT NULL,           -- routine or urgent
-    status          text NOT NULL,           -- open or cancelled
+    status          text NOT NULL,           -- open, or replaced by a newer call
     closed_ts       bigint,
     closed_by       text
 );
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS assignments (
     bed_id          text NOT NULL,
     ts              bigint NOT NULL,
     nurse           text NOT NULL,           -- staff:<name>
-    status          text NOT NULL,           -- assigned, accepted, on_the_way, at_bedside, released
+    status          text NOT NULL,           -- assigned, on_my_way, reviewing, complete
     actor           text NOT NULL
 );
 CREATE INDEX IF NOT EXISTS assignments_bed_ts ON assignments (bed_id, ts);
@@ -230,3 +230,36 @@ CREATE TABLE IF NOT EXISTS demo_runs (
     PRIMARY KEY (run_id, cmd)
 );
 CREATE INDEX IF NOT EXISTS demo_runs_ts ON demo_runs (ts);
+
+-- Upgrades (idempotent) -----------------------------------------------------------------
+-- Retry-safe uniqueness: a batch that is written twice (after a failed commit) changes nothing.
+
+ALTER TABLE vitals_1s ADD COLUMN IF NOT EXISTS second bigint;          -- ts / 1000, one row per bed per second
+CREATE UNIQUE INDEX IF NOT EXISTS vitals_1s_bed_second ON vitals_1s (bed_id, second);
+ALTER TABLE scores ALTER COLUMN score DROP NOT NULL;                    -- missing score = NULL (model not eligible)
+CREATE UNIQUE INDEX IF NOT EXISTS scores_bed_model_ts ON scores (bed_id, model, ts);
+CREATE UNIQUE INDEX IF NOT EXISTS verdicts_bed_ts_unique ON verdicts (bed_id, ts);
+CREATE UNIQUE INDEX IF NOT EXISTS alert_history_unique ON alert_history (alert_id, ts, status, ladder_step);
+CREATE UNIQUE INDEX IF NOT EXISTS bedside_checks_unique ON bedside_checks (bed_id, ts, actor, result);
+CREATE UNIQUE INDEX IF NOT EXISTS net_features_device_ts_unique ON net_features (device_id, ts);
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS msgs_per_s double precision;
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS bytes_per_s double precision;
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS malformed double precision;
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS seq_gaps double precision;
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS seq_repeats double precision;
+ALTER TABLE net_features ADD COLUMN IF NOT EXISTS stale_ms double precision;
+ALTER TABLE manual_readings ADD COLUMN IF NOT EXISTS notes text NOT NULL DEFAULT '';
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS clinician_id text;     -- as sent by the screen
+ALTER TABLE assignments ALTER COLUMN nurse DROP NOT NULL;               -- staff ID when the clinician is a configured user
+ALTER TABLE record_audit ADD COLUMN IF NOT EXISTS seq bigserial;        -- keeps audit order within one millisecond
+CREATE INDEX IF NOT EXISTS demo_runs_run_ts ON demo_runs (run_id, ts);
+
+-- Publications not yet accepted by the hub survive a restart and are retried in order.
+CREATE TABLE IF NOT EXISTS outbox (
+    publication_id  text PRIMARY KEY,
+    seq             bigserial,
+    ts              bigint NOT NULL,
+    msg             jsonb NOT NULL,
+    sent_ts         bigint
+);
+CREATE INDEX IF NOT EXISTS outbox_pending ON outbox (seq) WHERE sent_ts IS NULL;

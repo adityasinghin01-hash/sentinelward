@@ -1,95 +1,135 @@
-# SentinelWard backend — Phase A
+# SentinelWard backend (`sw_api`)
 
-Phase A provides the live memory ward, validated MQTT ingestion, authenticated screen commands,
-WebSocket fan-out and same-origin serving of an **already built** frontend. PostgreSQL, remaining
-routes and the Node contract harness are Phase B. `schema.sql` is the existing draft and is not
-applied by Phase A. Memory state, sessions and pending publications disappear on process exit.
+FastAPI + WebSocket + PostgreSQL server for the 13 SentinelWard screens and the Demo button. It
+subscribes to every hub message (MQTT, via `sw_common.Bus`), keeps the live ward in memory, stores
+everything in PostgreSQL in one-second batches, serves `/api/...` and pushes live bed updates on
+`/ws`. It enforces safety rule 1: a patient is never shown blank. Endpoint reference: [API.md](API.md)
+and the OpenAPI page at `/docs`.
 
-From the repository root on Python 3.12+ (LinuxONE: Ubuntu 24.04, s390x):
+## Run it
+
+From the repository root (LinuxONE: Ubuntu 24.04, s390x, Python 3.12, Ubuntu's `libpq5`):
 
 ```sh
 python3 -m venv .venv
-.venv/bin/pip install ./common './backend[test]'
-SW_PG_DSN=memory .venv/bin/sw-api
+.venv/bin/pip install ./common ./backend          # add './backend[test]' on a dev machine
+SW_PG_DSN=postgresql://sentinelward@localhost/sentinelward .venv/bin/sw-api
 ```
 
-Use the server's `python3-pytest` package if pytest is already provided there; the test extra is
-only for development. Runtime dependencies are plain Uvicorn, FastAPI/Pydantic, paho-mqtt, PyYAML,
-`websockets` and sw_common. The declared pure psycopg dependency is reserved for Phase B; it uses
-system libpq, never psycopg-binary/pool. No uvloop/httptools required. One worker only: memory state
-and sessions belong to that process. Runtime selects `asyncio`, `h11`, `websockets-sansio` explicitly.
-
-Open `http://127.0.0.1:8000/` when `frontend/dist/index.html` exists. Source checkout defaults to the
-sibling frontend directory; installed wheels should set `SW_FRONTEND_DIST` to the actual build.
-The backend does not build or change frontend files. SPA routes fall back to index.html; missing
-API and asset paths keep their 404s. API reference is at `/docs` and [API.md](API.md).
+`SW_PG_DSN=memory` runs without a database (development only: nothing survives a restart). The
+database must exist; `schema.sql` (idempotent) is applied at every start-up and ward.yaml is synced
+into `beds`/`patients`. Create it once:
 
 ```sh
-ssh -N -L 8000:127.0.0.1:8000 user@linuxone-host
+sudo -u postgres createuser sentinelward
+sudo -u postgres createdb -O sentinelward sentinelward
 ```
 
-| Setting | Default / meaning |
-| --- | --- |
-| `MQTT_HOST`, `MQTT_PORT` | `127.0.0.1`, `1883`; reconnects automatically |
-| `MQTT_USER`, `MQTT_PASS` | Optional credentials; password requires user |
-| `SW_API_HOST`, `SW_API_PORT` | `127.0.0.1`, `8000` |
-| `SW_PG_DSN` | `memory`; other values fail explicitly until Phase B |
-| `SW_WARD_YAML`, `SW_USERS_YAML` | Bundled 12-bed ward and fake demo identities/PINs |
-| `SW_DEMO_ROLE_LOGIN` | `on`; accepts frontend `{role}` selection; `off` requires PIN |
-| `SW_SESSION_TTL_S` | `28800`; expiring opaque session |
-| `SW_FRONTEND_DIST` | Source checkout's `frontend/dist`; override for wheel installs |
+Dependencies: fastapi, pydantic, plain uvicorn (selected explicitly: `asyncio` loop, `h11`,
+`websockets-sansio`), `websockets` (pure Python, needed for the WebSocket protocol), psycopg 3 in
+pure-Python mode with the system libpq (no psycopg-binary, no psycopg_pool), paho-mqtt, PyYAML and
+sw_common. No uvloop or httptools. Run one worker: the live ward and sessions belong to the process.
 
-PIN login and demo role login both set `sw_session` (HttpOnly, SameSite=Lax, Path=/; Secure under
-HTTPS). HTTP and WS also accept Bearer and `?token=`. Cookie browser writes and WS require a matching
-Origin when supplied. Role aliases: frontend `operator` = admin, `biomedical` = biomed. Staff identity
-comes from the session, never from command bodies. Preview and health are public.
+When `frontend/dist/index.html` exists the backend also serves the built screens at `/`, so screens,
+API and WebSocket share one origin on port 8000. Set `SW_FRONTEND_DIST` for wheel installs.
 
-MQTT callbacks copy payloads and call `loop.call_soon_threadsafe`. All state mutation and WS fan-out
-happen on the event loop; Phase A makes no SQL calls. Memory stores one scalar point per second,
-original non-waveform event payloads, audit replacements and queued publications. Requests are saved
-before publication and do not optimistically isolate a device, acknowledge an alert, or undo actions.
-An accepted receipt means queued work, not execution. Disconnected publications remain in our outbox;
-reset clears pending run work and increments an ingest generation barrier. Pre-reset source timestamps
-are rejected, including retained verdicts. MQTT QoS1 can redeliver; receiving agents must deduplicate
-request IDs. Once a publication has been handed to the broker/client, reset cannot retract it.
+## Settings
 
-Trust freezes at the earliest verdict/isolation boundary. Only genuinely trusted historical points
-can be pinned, with memory-store fallback beyond the 30-minute RAM buffer. An offline untrusted bed
-continues showing its trusted pin. With no trusted point, last received readings stay visible and
-explicitly untrusted. No-data `UNSURE`/`Awaiting verdict`/score 0 exists only in HTTP/WS projections.
-Missing scalar values remain null; zero remains zero. Thin waveforms use empty channels when absent,
-and frozen waveforms have a separate bounded cache. Manual readings remain separate from telemetry.
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `MQTT_HOST`, `MQTT_PORT` | `127.0.0.1`, `1883` | Hub; the bus reconnects on its own |
+| `MQTT_USER`, `MQTT_PASS` | unset | Optional credentials (a password needs a user) |
+| `SW_PG_DSN` | `memory` | PostgreSQL DSN, or `memory` |
+| `SW_WARD_YAML`, `SW_USERS_YAML` | bundled files | 12 beds (made-up patients) and 6 demo users with demo PINs |
+| `SW_API_HOST`, `SW_API_PORT` | `127.0.0.1`, `8000` | Listen address |
+| `SW_DEMO_ROLE_LOGIN` | `true` | Accept the screens' `{role}` login; `false` = PIN only |
+| `SW_SESSION_TTL_S` | `28800` | Session lifetime |
+| `SW_FRONTEND_DIST` | `../frontend/dist` | Built screens served at `/` |
 
-WebSockets start with 12 ordered `bed.updated` messages. Critical changes send immediately; telemetry
-coalesces to at most one per bed per second. Above 500 queued messages, telemetry is removed first;
-above 2,000 the client is disconnected. A 100ms ticker updates offline/feed status and retries outbox
-work. `connection.changed` reports MQTT connection health. Sessions also expire on active sockets.
-
-Example systemd service (adjust paths/user):
+## systemd
 
 ```ini
+# /etc/systemd/system/sentinelward-api.service
 [Unit]
-Description=SentinelWard API Phase A
-After=network.target mosquitto.service
+Description=SentinelWard API
+After=network-online.target postgresql.service mosquitto.service
+Wants=postgresql.service mosquitto.service
+
 [Service]
 User=sentinelward
 WorkingDirectory=/srv/sentinelward
-Environment=SW_PG_DSN=memory
+Environment=SW_PG_DSN=postgresql://sentinelward@localhost/sentinelward
 Environment=SW_FRONTEND_DIST=/srv/sentinelward/frontend/dist
 ExecStart=/srv/sentinelward/.venv/bin/sw-api
 Restart=on-failure
+KillSignal=SIGINT
+TimeoutStopSec=20
+
 [Install]
 WantedBy=multi-user.target
 ```
 
+`sudo systemctl daemon-reload && sudo systemctl enable --now sentinelward-api`. SIGINT/SIGTERM shut
+down cleanly: MQTT stops first, queued publications are retried once, the batch writer drains
+(up to five attempts) and both database connections close.
+
+## SSH tunnel for the screens
+
+Only SSH is open on the server. From a laptop:
+
 ```sh
-.venv/bin/pytest -q backend/tests
+ssh -N -L 8000:127.0.0.1:8000 <user>@<linuxone-host>
+```
+
+then open `http://localhost:8000/` (screens) or `http://localhost:8000/docs` (API).
+
+## How it works
+
+- **Ingest.** The MQTT thread only copies the message and calls `loop.call_soon_threadsafe`. On the
+  event loop each message is validated with `sw_common.validate` and checked against its topic; an
+  invalid one is counted (`/api/health.invalid_messages`) and logged once per topic. Valid messages
+  update memory, are queued for the database and pushed to WebSocket clients in the same step.
+- **Database.** `writer.py` commits everything queued at most once per second in one transaction
+  (consecutive rows of the same statement go in one pipelined `executemany`). All statements are
+  upserts or `ON CONFLICT DO NOTHING`, so a failed batch is rolled back and retried whole after a
+  reconnect without duplicates. Raw waveforms are never stored: `vitals_1s` keeps one row per bed
+  per second. After a restart the newest 30 minutes per bed, recent verdicts, latest scores, alerts,
+  actions, records, assignments, open nurse calls and unsent publications are loaded back.
+- **Outbox.** Every publication (requests, bedside checks, staff actions, demo control) is validated,
+  stored, then put in the outbox; it leaves the outbox only when the hub accepts it, in order. In
+  PostgreSQL mode the outbox survives a restart.
+- **Never blank.** Each bed keeps 30 minutes of per-second values in RAM. A bed is trusted while the
+  latest verdict has `last_trusted_ts = null` and no isolation (`disable_client`/`set_bed_untrusted`
+  not lifted by `enable_client` or an undo) is in force. Otherwise it shows the newest *trusted* values
+  at or before the earliest boundary (`last_trusted_ts`, or the isolation moment); older pins come from
+  the database. After 5 s without vitals the bed is offline but keeps showing its values (the trusted
+  pin if it is untrusted). A bed that never sent data shows `vitals: null`. Missing values are null,
+  0 stays 0; manual readings are kept apart (`manual`) and never replace monitor values.
+- **Actions with changing results.** Agents re-publish the same `action_id` when a result changes
+  (`pending` → `ok`/`failed`); the newest version replaces the stored one and a late `failed`
+  reverses its effect (an isolation is lifted; a failed undo puts the isolation back).
+- **Demo reset.** Publishes `reset`, empties all run tables (beds, patients and `demo_runs` stay),
+  drops queued old-run rows and publications, and rejects any message with a source time at or
+  before the reset (also after a restart), so retained pre-reset verdicts cannot come back.
+- **WebSocket.** 12 `bed.updated` messages first, then critical changes immediately and telemetry at
+  most once per bed per second. Past 500 queued messages a client loses telemetry first (never
+  verdict/alert/action changes); past 2,000 it is disconnected.
+
+## Tests
+
+```sh
+.venv/bin/pytest -q backend/tests                 # offline: fake bus and clock, memory store
+SW_TEST_PG=postgresql://localhost/sw_test .venv/bin/pytest -q backend/tests/test_postgres.py
 .venv/bin/pytest -q brain/tests attacks/tests common/tests
 ```
 
-Backend tests use pytest, fake clocks/bus and real application code. The TCP WebSocket test starts
-plain Uvicorn on an ephemeral localhost port and uses `websockets` for the handshake, ordered snapshot,
-authentication and a threaded incoming verdict. It requires no broker or database. Local timing is a
-local test only; it does not establish LinuxONE performance. No PostgreSQL tests or Node harness run
-in Phase A. The currently installed Starlette emits one httpx TestClient deprecation warning; httpx2
-is intentionally not added to the approved dependencies.
+`SW_TEST_PG` must point at a **disposable** database: the PostgreSQL tests drop and recreate its
+`public` schema. They cover schema idempotence, persisted rows and trust marks, warm start (never
+blank across a restart), pins older than RAM, the durable outbox, reset barriers and retry after a
+lost connection. `test_network_ws.py` starts real Uvicorn on a localhost port. Timings measured on a
+laptop do not establish LinuxONE performance (targets: `/api/ward` < 50 ms, 30-minute history
+< 100 ms, verdict to WebSocket < 100 ms).
+
+The frontend contract check lives outside the repo so `frontend/` is never touched: it copies
+`frontend/src/{adapters,domain,mocks}`, generates real backend responses and runs them through the
+unchanged adapters and Zod schemas (`gen_fixtures.py`, then `esbuild harness.ts` and `node`).
