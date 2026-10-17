@@ -177,15 +177,59 @@ class EmergencyDetector:
         return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,gbt=gbt)
 
 
+LOW_CUFF_MAP=65        # cuff MAP below this is low
+LINE_AGREE_MAP=70      # the arterial line agrees within tolerance if its 10 s mean is below this
+LINE_RECOVERED_MS=60000  # release only after the line mean stays >= LINE_AGREE_MAP this long
+CUFF_FRESH_MS=300000
+
+
 def confirmed_low_pressure(state,now_ms):
-    """Preserve the independent cuff/arterial safety check even without an alarm."""
-    frame=state.last_message or {}; cuff=frame.get('nibp'); abp=frame.get('abp')
-    if cuff is None:
-        cuff=next((r['message']['nibp'] for r in reversed(state.messages) if r['message'].get('nibp') and not r.get('sequence_issue')),None)
-    if cuff and cuff.get('map') is not None and 0<=now_ms-cuff['ts']<=300000 and cuff['map']<65:
-        observed=[v for v in (abp or []) if v is not None]
-        return bool(observed and float(np.mean(observed))<65)
-    return False
+    """Independent cuff/arterial safety check, held as one episode (even without an alarm).
+
+    Confirm when a fresh cuff MAP is < 65 and the arterial line's 10 s mean agrees (< 70).
+    Hold until the line mean is >= 70 for 60 s, or a new cuff reads >= 65. A line mean that
+    hovers around 65 between two cuffs never drops the emergency. Updated incrementally per bed.
+    """
+    memo=getattr(state,'_low_pressure',None)
+    if memo is None:
+        memo={'last_ts':None,'cuff':None,'held':False,'recovering':None,'line':deque()}
+        setattr(state,'_low_pressure',memo)
+    frames=[]
+    for record in reversed(state.messages):
+        message=record['message']; ts=message.get('ts',now_ms)
+        if memo['last_ts'] is not None and ts<=memo['last_ts']: break
+        if record.get('sequence_issue') or record.get('received_ms',ts)>now_ms: continue
+        frames.append(message)
+    last=state.last_message
+    if last is not None and not any(m is last for m in frames) and (memo['last_ts'] is None or last.get('ts',now_ms)>memo['last_ts']):
+        frames.append(last)
+    for message in sorted(frames,key=lambda m:m.get('ts',now_ms)):
+        ts=message.get('ts',now_ms)
+        if memo['last_ts'] is not None and ts<=memo['last_ts']: continue
+        memo['last_ts']=ts
+        cuff=message.get('nibp')
+        if cuff and cuff.get('map') is not None and cuff.get('ts',ts)<=ts and (memo['cuff'] is None or cuff['ts']>memo['cuff']['ts']):
+            memo['cuff']={'ts':cuff['ts'],'map':cuff['map']}
+            if cuff['map']>=LOW_CUFF_MAP: memo['held']=False; memo['recovering']=None  # a new normal cuff releases
+        observed=[v for v in (message.get('abp') or []) if v is not None and np.isfinite(v)]
+        line=memo['line']
+        if observed: line.append((ts,float(np.sum(observed)),len(observed)))
+        while line and line[0][0]<=ts-10000: line.popleft()
+        mean=sum(s for _,s,_ in line)/sum(n for _,_,n in line) if line and observed else None
+        cuff=memo['cuff']
+        if not memo['held']:
+            if (mean is not None and mean<LINE_AGREE_MAP and cuff is not None and cuff['map']<LOW_CUFF_MAP
+                    and 0<=ts-cuff['ts']<=CUFF_FRESH_MS):
+                memo['held']=True; memo['recovering']=None
+        elif mean is not None:
+            if mean>=LINE_AGREE_MAP:
+                memo['recovering']=ts if memo['recovering'] is None else memo['recovering']
+                if ts-memo['recovering']>=LINE_RECOVERED_MS: memo['held']=False; memo['recovering']=None
+            else: memo['recovering']=None
+        if observed: memo['line_ts']=ts
+    # No arterial sample at all for as long as a cuff stays fresh: nothing left to hold on.
+    if memo['held'] and now_ms-memo.get('line_ts',now_ms)>CUFF_FRESH_MS: return False
+    return bool(memo['held'])
 
 class ReplayDetector:
     def __init__(self): self.history={}

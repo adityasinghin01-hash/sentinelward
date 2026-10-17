@@ -71,3 +71,70 @@ def test_m6_rezero_clears_to_normal_at_next_cuff():
 def test_m6_implausible_early_gap_is_not_learned():
     detector, _ = m6_run([(40000, 10, 75)])  # -65 mmHg: line not usable as a reference
     assert not detector.baselines['B08']
+
+
+def test_m6_early_pairs_learn_despite_ecg_problems_but_not_with_a_second_sender():
+    for sender, learned in ((None, True), ('second', False)):
+        detector = PressureDrift()
+        state = SimpleNamespace(messages=[], network=None, last_message=None, alarm_until_ms=0,
+                                patient_not_ok=False, baseline_admission_allowed=False)  # e.g. M1 flat ECG
+        frame = {'ts': 60000, 'abp': [86.] * 125, 'nibp': {'map': 80, 'ts': 60000}}
+        state.messages = [{'message': frame, 'received_ms': 60000, 'sender_id': 'first'},
+                          {'message': dict(frame, ts=60500, nibp=None), 'received_ms': 60500, 'sender_id': sender}]
+        detector({'bed_id': 'B09', 'window_start': 51000}, state, 61000)
+        assert bool(detector.baselines['B09']) is learned
+
+
+# --- confirmed low pressure (cuff < 65, line agrees within tolerance, held until recovery) ---
+
+from sw_brain.detectors import confirmed_low_pressure
+
+
+def lp_feed(state, seconds, line, cuff_at=None, start=0):
+    """Append 1 s frames; line(t) gives the line mean; cuff_at maps second -> cuff MAP. Returns held per second."""
+    held = []
+    for t in range(start, start + seconds):
+        cuff = (cuff_at or {}).get(t)
+        message = {'ts': t * 1000, 'abp': [float(line(t))] * 125,
+                   'nibp': None if cuff is None else {'map': cuff, 'sys': cuff + 30, 'dia': cuff - 15, 'ts': t * 1000}}
+        state.messages.append({'message': message, 'received_ms': t * 1000 + 50})
+        state.last_message = message
+        held.append(confirmed_low_pressure(state, t * 1000 + 100))
+    return held
+
+
+def test_low_pressure_confirms_when_line_agrees_within_tolerance():
+    state = BedState('B09')
+    held = lp_feed(state, 30, lambda t: 68, {5: 57})  # line 68: above 65 but within tolerance
+    assert not any(held[:5]) and all(held[5:])
+    state = BedState('B09')
+    assert not any(lp_feed(state, 30, lambda t: 74, {5: 57}))  # line clearly disagrees: not confirmed
+    state = BedState('B09')
+    assert not any(lp_feed(state, 30, lambda t: 60, {5: 70}))  # normal cuff: not confirmed
+
+
+def test_low_pressure_holds_across_65_crossings_between_cuffs():
+    state = BedState('B09')
+    wobble = lambda t: (62, 66, 69, 73, 64, 67)[t % 6]  # B09-like: line hovers 61-76 around 65
+    held = lp_feed(state, 600, wobble, {10: 57})
+    first = held.index(True)
+    assert first <= 12 and all(held[first:])  # one continuous episode, never dropped at 65
+
+
+def test_low_pressure_releases_after_60s_recovery_or_new_normal_cuff():
+    state = BedState('B09')
+    line = lambda t: 62 if t < 100 else 75
+    held = lp_feed(state, 200, line, {5: 57})
+    assert all(held[5:100])
+    assert all(held[100:155])          # recovering, not yet 60 s (10 s mean crosses 70 at ~t=104)
+    assert not any(held[170:])         # line >= 70 for 60 s: released
+    state = BedState('B09')
+    held = lp_feed(state, 120, lambda t: 62, {5: 57, 60: 66})
+    assert all(held[5:60]) and not held[60]  # a new cuff >= 65 releases at once (line alone 62 cannot re-confirm)
+    assert not any(held[60:])
+
+
+def test_low_pressure_needs_a_fresh_cuff_to_confirm():
+    state = BedState('B09')
+    held = lp_feed(state, 400, lambda t: 74 if t < 350 else 62, {5: 57})  # line falls only after the cuff expired
+    assert not any(held)
