@@ -62,7 +62,8 @@ services:
       SW_API_PORT: "8000"
       SW_FRONTEND_DIST: /srv/frontend
     volumes:
-      - ${SW_FRONTEND_DIR:-../../frontend/dist}:/srv/frontend:ro
+      # world-readable copy made by ./sync-frontend.sh (the api runs as uid 10001, not the file owner)
+      - ${SW_FRONTEND_DIR:-./frontend-dist}:/srv/frontend:ro
     ports: ["127.0.0.1:8001:8000"]
     depends_on:
       hub: {condition: service_started}

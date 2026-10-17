@@ -10,6 +10,7 @@ only the web app is published, on `127.0.0.1:8001`.
     sudo apt-get install -y docker.io docker-compose-v2 && sudo usermod -aG docker linux1   # once, then log in again
     cd ~/sw/app/deploy/containers
     ./make-env.sh                          # random DB password, mode 600, never printed
+    ./sync-frontend.sh                     # readable copy of frontend/dist for the non-root api
     docker compose build                   # builds sentinelward:latest for s390x
     docker compose up -d
     curl -s 127.0.0.1:8001/api/health
