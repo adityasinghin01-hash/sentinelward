@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import {Eye, EyeOff, Bell, Check, ExternalLink} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow, useCommand} from '../lib/hooks';
-import {bedState, time, age} from '../lib/domain';
+import {bedState, time, age, staff} from '../lib/domain';
 import type {Alert, Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
 import {Stats, Panel, Badge, ActionList, Empty, Feedback, BedLink} from '../components/ui';
@@ -19,7 +19,7 @@ function AlertRail({alerts, beds}: {alerts: Alert[]; beds: Bed[]}) {
   const open = alerts
     .filter(a => a.status === 'open' || a.status === 'escalated')
     .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] || b.ts - a.ts);
-  const canAck = role === 'nurse' || role === 'operator';
+  const canAck = role === 'nurse' || role === 'doctor'; // matches the backend: nurses and doctors acknowledge
   return (
     <Panel title="Active alerts" caption="One alert per bed per event; repeats update it, never stack."
            aside={<Badge tone={open.some(a => a.priority === 'high') ? 'high' : 'none'}>{open.length} open</Badge>}>
@@ -38,12 +38,12 @@ function AlertRail({alerts, beds}: {alerts: Alert[]; beds: Bed[]}) {
                 </div>
                 <p className="alert-text">{a.text}</p>
                 <p className="alert-ladder" title="Escalation ladder: 1 = assigned nurse, 2 = next nurse, 3 = all nurses + doctor. Each step waits 30 s in the demo.">
-                  <Bell size={12} aria-hidden="true" /> Ladder step {a.ladder_step} of 3 · sent to {a.to.join(', ') || 'ward'}
+                  <Bell size={12} aria-hidden="true" /> Ladder step {a.ladder_step} of 3 · sent to {a.to.map(staff).join(', ') || 'ward'}
                   {bed && !bed.is_trusted && ' · do not trust screen numbers'}
                 </p>
                 <div className="alert-actions">
                   <button className="button-small" disabled={!canAck || cmd.pending}
-                          title={canAck ? 'I am on it: stops the escalation ladder for this alert.' : 'Only the nurse acknowledges alerts.'}
+                          title={canAck ? 'I am on it: stops the escalation ladder for this alert.' : 'Only nurses and doctors acknowledge alerts.'}
                           onClick={() => void cmd.run(`/api/beds/${encodeURIComponent(a.bed_id)}/acknowledge`, {type: 'acknowledge_alert', bedId: a.bed_id, alertId: a.alert_id})}>
                     <Check size={13} aria-hidden="true" /> Acknowledge
                   </button>

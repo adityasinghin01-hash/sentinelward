@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {Activity, ShieldCheck, Stethoscope, Wrench, MonitorPlay, HeartPulse} from 'lucide-react';
 import type {Role, Session} from '../lib/types';
 import {api} from '../lib/api';
@@ -19,6 +19,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [pending, setPending] = useState<Role | null>(null);
+  const [params] = useSearchParams();
+  const preset = params.get('role'); // S0 "Open the live ward" pre-selects the central nurse
   const [error, setError] = useState('');
 
   const signIn = async (role: Role) => {
@@ -51,7 +53,7 @@ export function LoginPage() {
         </p>
         <div className="role-grid">
           {ROLES.map(({role, icon: Icon, does}) => (
-            <button key={role} className="role-card" onClick={() => void signIn(role)} disabled={pending !== null}
+            <button key={role} className={`role-card ${preset === role ? 'is-preset' : ''}`} autoFocus={preset === role} onClick={() => void signIn(role)} disabled={pending !== null}
                     aria-busy={pending === role}>
               <Icon size={20} aria-hidden="true" />
               <strong>{roleNames[role]}</strong>
