@@ -1,0 +1,3292 @@
+{
+ "what": "M2 robustness + forged-input check on the locked held-out windows, brain code path (offline)",
+ "seed": 20261018,
+ "n": {
+  "cinc2015": 188,
+  "vtac": 482
+ },
+ "inputs_sha256": {
+  "windows_v13.npz": "0e66399323d7436d3b651eec757684d737fb47e59fc127143370138a8c1bfb53",
+  "heldout_mask.npy": "b945519296d2837a854a369bc6df2a490a38bd2dbcd49815976c415d3aac1f34",
+  "heldout_shift.npz": "664091a9c1fbd69563b2d2a9f242ae867be7691084f30eb45e34878e25e61178"
+ },
+ "models": {
+  "1lead": "cc59fc616e67d8b2bfebfb8263b9ea81f54492201fdb368d7d85ecc5c3802348",
+  "2lead": "72daa84b4aac9d15c8656595592e76b6e8fa030e613869e1967616522ae52f75"
+ },
+ "clean_parity_vs_heldout_scores2_max_abs_diff": 0.00020217484269631015,
+ "unavailable_rule": "no advice -> alarm stands: counted as predicted real, score 1.0",
+ "host": "tessnovabuild",
+ "machine": "s390x",
+ "python": "3.12.3",
+ "numpy": "1.26.4",
+ "elapsed_s": 132.1,
+ "conditions": {
+  "clean": {
+   "family": "clean",
+   "strength": "-",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 97,
+     "FP": 17,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8509,
+     "score": 0.8622,
+     "AUROC": 0.968
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.9267
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9697
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 55,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.873,
+     "score": 0.9059,
+     "AUROC": 0.9668
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 131,
+     "TN": 290,
+     "FP": 55,
+     "FN": 6,
+     "TPR": 0.9562,
+     "TNR": 0.8406,
+     "score": 0.832,
+     "AUROC": 0.9635
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0
+   }
+  },
+  "noise_snr30": {
+   "family": "white noise, all channels",
+   "strength": "SNR 30 dB",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 73,
+     "TN": 98,
+     "FP": 16,
+     "FN": 1,
+     "TPR": 0.9865,
+     "TNR": 0.8596,
+     "score": 0.8906,
+     "AUROC": 0.9687
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 19,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.76,
+     "score": 0.8065,
+     "AUROC": 0.92
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9773
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 57,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9048,
+     "score": 0.9294,
+     "AUROC": 0.9646
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0199
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 131,
+     "TN": 293,
+     "FP": 52,
+     "FN": 6,
+     "TPR": 0.9562,
+     "TNR": 0.8493,
+     "score": 0.8379,
+     "AUROC": 0.9589
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0202
+   }
+  },
+  "noise_snr20": {
+   "family": "white noise, all channels",
+   "strength": "SNR 20 dB",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 67,
+     "TN": 99,
+     "FP": 15,
+     "FN": 7,
+     "TPR": 0.9054,
+     "TNR": 0.8684,
+     "score": 0.7685,
+     "AUROC": 0.966
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 3,
+     "TN": 20,
+     "FP": 5,
+     "FN": 3,
+     "TPR": 0.5,
+     "TNR": 0.8,
+     "score": 0.5349,
+     "AUROC": 0.8933
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 19,
+     "TN": 57,
+     "FP": 6,
+     "FN": 3,
+     "TPR": 0.8636,
+     "TNR": 0.9048,
+     "score": 0.7835,
+     "AUROC": 0.9574
+    },
+    "true_alarms_flipped_to_false": 5,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0415
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 123,
+     "TN": 300,
+     "FP": 45,
+     "FN": 14,
+     "TPR": 0.8978,
+     "TNR": 0.8696,
+     "score": 0.7862,
+     "AUROC": 0.9523
+    },
+    "true_alarms_flipped_to_false": 9,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0575
+   }
+  },
+  "noise_snr10": {
+   "family": "white noise, all channels",
+   "strength": "SNR 10 dB",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 58,
+     "TN": 103,
+     "FP": 11,
+     "FN": 16,
+     "TPR": 0.7838,
+     "TNR": 0.9035,
+     "score": 0.6389,
+     "AUROC": 0.954
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 3,
+     "TN": 21,
+     "FP": 4,
+     "FN": 3,
+     "TPR": 0.5,
+     "TNR": 0.84,
+     "score": 0.5581,
+     "AUROC": 0.8933
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 10,
+     "TN": 10,
+     "FP": 1,
+     "FN": 2,
+     "TPR": 0.8333,
+     "TNR": 0.9091,
+     "score": 0.6452,
+     "AUROC": 0.9242
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 0,
+     "TN": 12,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.0,
+     "TNR": 0.9231,
+     "score": 0.6667,
+     "AUROC": 0.6923
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 12,
+     "TN": 59,
+     "FP": 4,
+     "FN": 10,
+     "TPR": 0.5455,
+     "TNR": 0.9365,
+     "score": 0.568,
+     "AUROC": 0.9459
+    },
+    "true_alarms_flipped_to_false": 14,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0771
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 107,
+     "TN": 315,
+     "FP": 30,
+     "FN": 30,
+     "TPR": 0.781,
+     "TNR": 0.913,
+     "score": 0.701,
+     "AUROC": 0.9421
+    },
+    "true_alarms_flipped_to_false": 25,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.1159
+   }
+  },
+  "wander_0.25": {
+   "family": "baseline wander 0.15-0.5 Hz, ECG + PPG",
+   "strength": "0.25 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 68,
+     "TN": 101,
+     "FP": 13,
+     "FN": 6,
+     "TPR": 0.9189,
+     "TNR": 0.886,
+     "score": 0.7972,
+     "AUROC": 0.9676
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 21,
+     "FP": 4,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.84,
+     "score": 0.7429,
+     "AUROC": 0.94
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 18,
+     "TN": 58,
+     "FP": 5,
+     "FN": 4,
+     "TPR": 0.8182,
+     "TNR": 0.9206,
+     "score": 0.7525,
+     "AUROC": 0.9524
+    },
+    "true_alarms_flipped_to_false": 5,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0546
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 120,
+     "TN": 295,
+     "FP": 50,
+     "FN": 17,
+     "TPR": 0.8759,
+     "TNR": 0.8551,
+     "score": 0.7545,
+     "AUROC": 0.9484
+    },
+    "true_alarms_flipped_to_false": 11,
+    "false_alarms_flipped_to_real": 5,
+    "mean_abs_score_change": 0.0678
+   }
+  },
+  "wander_0.5": {
+   "family": "baseline wander 0.15-0.5 Hz, ECG + PPG",
+   "strength": "0.5 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 67,
+     "TN": 100,
+     "FP": 14,
+     "FN": 7,
+     "TPR": 0.9054,
+     "TNR": 0.8772,
+     "score": 0.7731,
+     "AUROC": 0.9647
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.9467
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 11,
+     "FP": 0,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 1.0,
+     "score": 0.8148,
+     "AUROC": 0.9697
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 17,
+     "TN": 58,
+     "FP": 5,
+     "FN": 5,
+     "TPR": 0.7727,
+     "TNR": 0.9206,
+     "score": 0.7143,
+     "AUROC": 0.9473
+    },
+    "true_alarms_flipped_to_false": 6,
+    "false_alarms_flipped_to_real": 2,
+    "mean_abs_score_change": 0.0619
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 122,
+     "TN": 300,
+     "FP": 45,
+     "FN": 15,
+     "TPR": 0.8905,
+     "TNR": 0.8696,
+     "score": 0.7786,
+     "AUROC": 0.9474
+    },
+    "true_alarms_flipped_to_false": 10,
+    "false_alarms_flipped_to_real": 2,
+    "mean_abs_score_change": 0.0758
+   }
+  },
+  "wander_1": {
+   "family": "baseline wander 0.15-0.5 Hz, ECG + PPG",
+   "strength": "1 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 68,
+     "TN": 102,
+     "FP": 12,
+     "FN": 6,
+     "TPR": 0.9189,
+     "TNR": 0.8947,
+     "score": 0.8019,
+     "AUROC": 0.9628
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 20,
+     "FP": 5,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8,
+     "score": 0.8387,
+     "AUROC": 0.9733
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 11,
+     "FP": 0,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 1.0,
+     "score": 0.8148,
+     "AUROC": 0.947
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9697
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 17,
+     "TN": 60,
+     "FP": 3,
+     "FN": 5,
+     "TPR": 0.7727,
+     "TNR": 0.9524,
+     "score": 0.7333,
+     "AUROC": 0.9401
+    },
+    "true_alarms_flipped_to_false": 5,
+    "false_alarms_flipped_to_real": 2,
+    "mean_abs_score_change": 0.0714
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 114,
+     "TN": 309,
+     "FP": 36,
+     "FN": 23,
+     "TPR": 0.8321,
+     "TNR": 0.8957,
+     "score": 0.7369,
+     "AUROC": 0.9398
+    },
+    "true_alarms_flipped_to_false": 18,
+    "false_alarms_flipped_to_real": 2,
+    "mean_abs_score_change": 0.1035
+   }
+  },
+  "powerline_0.1": {
+   "family": "powerline 50 Hz, ECG leads",
+   "strength": "0.1 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 99,
+     "FP": 15,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8684,
+     "score": 0.8724,
+     "AUROC": 0.9663
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.9133
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 0.9848
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 56,
+     "FP": 7,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8889,
+     "score": 0.9176,
+     "AUROC": 0.9625
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0171
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 128,
+     "TN": 291,
+     "FP": 54,
+     "FN": 9,
+     "TPR": 0.9343,
+     "TNR": 0.8435,
+     "score": 0.8089,
+     "AUROC": 0.9606
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0176
+   }
+  },
+  "powerline_0.25": {
+   "family": "powerline 50 Hz, ECG leads",
+   "strength": "0.25 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 100,
+     "FP": 14,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8772,
+     "score": 0.8776,
+     "AUROC": 0.9688
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.92
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9545
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 57,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9048,
+     "score": 0.9294,
+     "AUROC": 0.9646
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0304
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 128,
+     "TN": 296,
+     "FP": 49,
+     "FN": 9,
+     "TPR": 0.9343,
+     "TNR": 0.858,
+     "score": 0.8185,
+     "AUROC": 0.9564
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0357
+   }
+  },
+  "powerline_0.5": {
+   "family": "powerline 50 Hz, ECG leads",
+   "strength": "0.5 x signal range",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 70,
+     "TN": 100,
+     "FP": 14,
+     "FN": 4,
+     "TPR": 0.9459,
+     "TNR": 0.8772,
+     "score": 0.8333,
+     "AUROC": 0.9702
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.9267
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9394
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 20,
+     "TN": 57,
+     "FP": 6,
+     "FN": 2,
+     "TPR": 0.9091,
+     "TNR": 0.9048,
+     "score": 0.828,
+     "AUROC": 0.9668
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0434
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 123,
+     "TN": 303,
+     "FP": 42,
+     "FN": 14,
+     "TPR": 0.8978,
+     "TNR": 0.8783,
+     "score": 0.7918,
+     "AUROC": 0.9526
+    },
+    "true_alarms_flipped_to_false": 9,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0631
+   }
+  },
+  "gain_0.25": {
+   "family": "ECG amplitude scaling",
+   "strength": "x0.25",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 92,
+     "FP": 22,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.807,
+     "score": 0.8367,
+     "AUROC": 0.9707
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 18,
+     "FP": 7,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.72,
+     "score": 0.6571,
+     "AUROC": 0.92
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.947
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 10,
+     "FP": 3,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.7692,
+     "score": 0.7857,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 54,
+     "FP": 9,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8571,
+     "score": 0.8941,
+     "AUROC": 0.9704
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 5,
+    "mean_abs_score_change": 0.0285
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 128,
+     "TN": 288,
+     "FP": 57,
+     "FN": 9,
+     "TPR": 0.9343,
+     "TNR": 0.8348,
+     "score": 0.8031,
+     "AUROC": 0.9548
+    },
+    "true_alarms_flipped_to_false": 4,
+    "false_alarms_flipped_to_real": 6,
+    "mean_abs_score_change": 0.0418
+   }
+  },
+  "gain_0.5": {
+   "family": "ECG amplitude scaling",
+   "strength": "x0.5",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 73,
+     "TN": 93,
+     "FP": 21,
+     "FN": 1,
+     "TPR": 0.9865,
+     "TNR": 0.8158,
+     "score": 0.8646,
+     "AUROC": 0.9724
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 19,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.76,
+     "score": 0.8065,
+     "AUROC": 0.9333
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9545
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 10,
+     "FP": 3,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.7692,
+     "score": 0.7857,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 54,
+     "FP": 9,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8571,
+     "score": 0.8941,
+     "AUROC": 0.9733
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 4,
+    "mean_abs_score_change": 0.0185
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 129,
+     "TN": 289,
+     "FP": 56,
+     "FN": 8,
+     "TPR": 0.9416,
+     "TNR": 0.8377,
+     "score": 0.8132,
+     "AUROC": 0.9607
+    },
+    "true_alarms_flipped_to_false": 2,
+    "false_alarms_flipped_to_real": 3,
+    "mean_abs_score_change": 0.0226
+   }
+  },
+  "gain_2": {
+   "family": "ECG amplitude scaling",
+   "strength": "x2",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 71,
+     "TN": 100,
+     "FP": 14,
+     "FN": 3,
+     "TPR": 0.9595,
+     "TNR": 0.8772,
+     "score": 0.855,
+     "AUROC": 0.9681
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 21,
+     "FP": 4,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.84,
+     "score": 0.7429,
+     "AUROC": 0.92
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9545
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 21,
+     "TN": 57,
+     "FP": 6,
+     "FN": 1,
+     "TPR": 0.9545,
+     "TNR": 0.9048,
+     "score": 0.8764,
+     "AUROC": 0.9683
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0222
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 129,
+     "TN": 295,
+     "FP": 50,
+     "FN": 8,
+     "TPR": 0.9416,
+     "TNR": 0.8551,
+     "score": 0.8249,
+     "AUROC": 0.9567
+    },
+    "true_alarms_flipped_to_false": 2,
+    "false_alarms_flipped_to_real": 2,
+    "mean_abs_score_change": 0.0333
+   }
+  },
+  "ecg2_drop_30": {
+   "family": "ECG2 dropout (last part of window missing)",
+   "strength": "30% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 68,
+     "TN": 93,
+     "FP": 21,
+     "FN": 6,
+     "TPR": 0.9189,
+     "TNR": 0.8158,
+     "score": 0.7594,
+     "AUROC": 0.959
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 19,
+     "FP": 6,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.76,
+     "score": 0.6857,
+     "AUROC": 0.9267
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 10,
+     "TN": 10,
+     "FP": 1,
+     "FN": 2,
+     "TPR": 0.8333,
+     "TNR": 0.9091,
+     "score": 0.6452,
+     "AUROC": 0.9545
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9848
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 19,
+     "TN": 52,
+     "FP": 11,
+     "FN": 3,
+     "TPR": 0.8636,
+     "TNR": 0.8254,
+     "score": 0.732,
+     "AUROC": 0.9351
+    },
+    "true_alarms_flipped_to_false": 4,
+    "false_alarms_flipped_to_real": 4,
+    "mean_abs_score_change": 0.0576
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 129,
+     "TN": 277,
+     "FP": 68,
+     "FN": 8,
+     "TPR": 0.9416,
+     "TNR": 0.8029,
+     "score": 0.7899,
+     "AUROC": 0.9457
+    },
+    "true_alarms_flipped_to_false": 5,
+    "false_alarms_flipped_to_real": 18,
+    "mean_abs_score_change": 0.0663
+   }
+  },
+  "ecg2_drop_60": {
+   "family": "ECG2 dropout (last part of window missing)",
+   "strength": "60% missing",
+   "paths": {
+    "trees_1lead": 670
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 69,
+     "TN": 94,
+     "FP": 20,
+     "FN": 5,
+     "TPR": 0.9324,
+     "TNR": 0.8246,
+     "score": 0.7837,
+     "AUROC": 0.9654
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 4,
+     "TN": 23,
+     "FP": 2,
+     "FN": 2,
+     "TPR": 0.6667,
+     "TNR": 0.92,
+     "score": 0.6923,
+     "AUROC": 0.9467
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 9,
+     "TN": 11,
+     "FP": 0,
+     "FN": 3,
+     "TPR": 0.75,
+     "TNR": 1.0,
+     "score": 0.5714,
+     "AUROC": 0.9318
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 48,
+     "FP": 15,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.7619,
+     "score": 0.8235,
+     "AUROC": 0.9509
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 10,
+    "mean_abs_score_change": 0.0659
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 133,
+     "TN": 245,
+     "FP": 100,
+     "FN": 4,
+     "TPR": 0.9708,
+     "TNR": 0.7101,
+     "score": 0.759,
+     "AUROC": 0.9418
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 52,
+    "mean_abs_score_change": 0.078
+   }
+  },
+  "ecg2_drop_100": {
+   "family": "ECG2 dropout (last part of window missing)",
+   "strength": "100% missing",
+   "paths": {
+    "trees_1lead": 670
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 69,
+     "TN": 94,
+     "FP": 20,
+     "FN": 5,
+     "TPR": 0.9324,
+     "TNR": 0.8246,
+     "score": 0.7837,
+     "AUROC": 0.9654
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 4,
+     "TN": 23,
+     "FP": 2,
+     "FN": 2,
+     "TPR": 0.6667,
+     "TNR": 0.92,
+     "score": 0.6923,
+     "AUROC": 0.9467
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 9,
+     "TN": 11,
+     "FP": 0,
+     "FN": 3,
+     "TPR": 0.75,
+     "TNR": 1.0,
+     "score": 0.5714,
+     "AUROC": 0.9318
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 48,
+     "FP": 15,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.7619,
+     "score": 0.8235,
+     "AUROC": 0.9509
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 10,
+    "mean_abs_score_change": 0.0659
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 133,
+     "TN": 245,
+     "FP": 100,
+     "FN": 4,
+     "TPR": 0.9708,
+     "TNR": 0.7101,
+     "score": 0.759,
+     "AUROC": 0.9418
+    },
+    "true_alarms_flipped_to_false": 3,
+    "false_alarms_flipped_to_real": 52,
+    "mean_abs_score_change": 0.078
+   }
+  },
+  "ppg_drop_30": {
+   "family": "PPG dropout (last part of window missing)",
+   "strength": "30% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 71,
+     "TN": 93,
+     "FP": 21,
+     "FN": 3,
+     "TPR": 0.9595,
+     "TNR": 0.8158,
+     "score": 0.82,
+     "AUROC": 0.9663
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 4,
+     "TN": 18,
+     "FP": 7,
+     "FN": 2,
+     "TPR": 0.6667,
+     "TNR": 0.72,
+     "score": 0.5641,
+     "AUROC": 0.84
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9924
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 54,
+     "FP": 9,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8571,
+     "score": 0.8941,
+     "AUROC": 0.961
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 5,
+    "mean_abs_score_change": 0.0276
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 130,
+     "TN": 291,
+     "FP": 54,
+     "FN": 7,
+     "TPR": 0.9489,
+     "TNR": 0.8435,
+     "score": 0.8255,
+     "AUROC": 0.9575
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 3,
+    "mean_abs_score_change": 0.0313
+   }
+  },
+  "ppg_drop_60": {
+   "family": "PPG dropout (last part of window missing)",
+   "strength": "60% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 70,
+     "TN": 92,
+     "FP": 22,
+     "FN": 4,
+     "TPR": 0.9459,
+     "TNR": 0.807,
+     "score": 0.7941,
+     "AUROC": 0.9547
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 4,
+     "TN": 16,
+     "FP": 9,
+     "FN": 2,
+     "TPR": 0.6667,
+     "TNR": 0.64,
+     "score": 0.5128,
+     "AUROC": 0.7933
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9697
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 21,
+     "TN": 55,
+     "FP": 8,
+     "FN": 1,
+     "TPR": 0.9545,
+     "TNR": 0.873,
+     "score": 0.8539,
+     "AUROC": 0.9423
+    },
+    "true_alarms_flipped_to_false": 2,
+    "false_alarms_flipped_to_real": 8,
+    "mean_abs_score_change": 0.0423
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 120,
+     "TN": 289,
+     "FP": 56,
+     "FN": 17,
+     "TPR": 0.8759,
+     "TNR": 0.8377,
+     "score": 0.7436,
+     "AUROC": 0.9359
+    },
+    "true_alarms_flipped_to_false": 11,
+    "false_alarms_flipped_to_real": 6,
+    "mean_abs_score_change": 0.0671
+   }
+  },
+  "ppg_drop_100": {
+   "family": "PPG dropout (last part of window missing)",
+   "strength": "100% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 88,
+     "FP": 26,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.7719,
+     "score": 0.8163,
+     "AUROC": 0.9589
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 15,
+     "FP": 10,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.6,
+     "score": 0.5714,
+     "AUROC": 0.8533
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9848
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9697
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 10,
+     "FP": 3,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.7692,
+     "score": 0.7857,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 53,
+     "FP": 10,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8413,
+     "score": 0.8824,
+     "AUROC": 0.9488
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 9,
+    "mean_abs_score_change": 0.0365
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 132,
+     "TN": 261,
+     "FP": 84,
+     "FN": 5,
+     "TPR": 0.9635,
+     "TNR": 0.7565,
+     "score": 0.7829,
+     "AUROC": 0.9546
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 31,
+    "mean_abs_score_change": 0.0523
+   }
+  },
+  "abp_drop_30": {
+   "family": "ABP dropout (last part of window missing)",
+   "strength": "30% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 71,
+     "TN": 99,
+     "FP": 15,
+     "FN": 3,
+     "TPR": 0.9595,
+     "TNR": 0.8684,
+     "score": 0.85,
+     "AUROC": 0.9602
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 20,
+     "FP": 5,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.8,
+     "score": 0.7143,
+     "AUROC": 0.9133
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 0.9697
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 21,
+     "TN": 56,
+     "FP": 7,
+     "FN": 1,
+     "TPR": 0.9545,
+     "TNR": 0.8889,
+     "score": 0.8652,
+     "AUROC": 0.9545
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 0,
+    "mean_abs_score_change": 0.0187
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 132,
+     "TN": 284,
+     "FP": 61,
+     "FN": 5,
+     "TPR": 0.9635,
+     "TNR": 0.8232,
+     "score": 0.8287,
+     "AUROC": 0.9614
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 7,
+    "mean_abs_score_change": 0.016
+   }
+  },
+  "abp_drop_60": {
+   "family": "ABP dropout (last part of window missing)",
+   "strength": "60% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 70,
+     "TN": 95,
+     "FP": 19,
+     "FN": 4,
+     "TPR": 0.9459,
+     "TNR": 0.8333,
+     "score": 0.8088,
+     "AUROC": 0.9583
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 19,
+     "FP": 6,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.76,
+     "score": 0.6857,
+     "AUROC": 0.9
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9697
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 20,
+     "TN": 54,
+     "FP": 9,
+     "FN": 2,
+     "TPR": 0.9091,
+     "TNR": 0.8571,
+     "score": 0.7957,
+     "AUROC": 0.9531
+    },
+    "true_alarms_flipped_to_false": 2,
+    "false_alarms_flipped_to_real": 4,
+    "mean_abs_score_change": 0.0254
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 130,
+     "TN": 282,
+     "FP": 63,
+     "FN": 7,
+     "TPR": 0.9489,
+     "TNR": 0.8174,
+     "score": 0.8078,
+     "AUROC": 0.9504
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 9,
+    "mean_abs_score_change": 0.0272
+   }
+  },
+  "abp_drop_100": {
+   "family": "ABP dropout (last part of window missing)",
+   "strength": "100% missing",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 99,
+     "FP": 15,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8684,
+     "score": 0.8724,
+     "AUROC": 0.9655
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 19,
+     "FP": 6,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.76,
+     "score": 0.6857,
+     "AUROC": 0.9
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 11,
+     "FP": 0,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 1.0,
+     "score": 0.8148,
+     "AUROC": 0.9697
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9545
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 57,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9048,
+     "score": 0.9294,
+     "AUROC": 0.969
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 1,
+    "mean_abs_score_change": 0.0219
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 130,
+     "TN": 284,
+     "FP": 61,
+     "FN": 7,
+     "TPR": 0.9489,
+     "TNR": 0.8232,
+     "score": 0.8118,
+     "AUROC": 0.9553
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 8,
+    "mean_abs_score_change": 0.0203
+   }
+  },
+  "shift_0.5s": {
+   "family": "time shift (window ends s early; rebuilt from source)",
+   "strength": "0.5 s",
+   "paths": {
+    "none": 1,
+    "trees_1lead": 2,
+    "trees_2lead": 667
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 73,
+     "TN": 97,
+     "FP": 17,
+     "FN": 1,
+     "TPR": 0.9865,
+     "TNR": 0.8509,
+     "score": 0.8854,
+     "AUROC": 0.9644
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 17,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.68,
+     "score": 0.7419,
+     "AUROC": 0.8933
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9773
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 1.0
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 57,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9048,
+     "score": 0.9294,
+     "AUROC": 0.9582
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 4,
+    "mean_abs_score_change": 0.0334
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 132,
+     "TN": 290,
+     "FP": 55,
+     "FN": 5,
+     "TPR": 0.9635,
+     "TNR": 0.8406,
+     "score": 0.8406,
+     "AUROC": 0.9649
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 6,
+    "mean_abs_score_change": 0.0413
+   }
+  },
+  "shift_1s": {
+   "family": "time shift (window ends s early; rebuilt from source)",
+   "strength": "1 s",
+   "paths": {
+    "none": 1,
+    "trees_1lead": 2,
+    "trees_2lead": 667
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 96,
+     "FP": 18,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8421,
+     "score": 0.8571,
+     "AUROC": 0.9636
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 17,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.68,
+     "score": 0.7419,
+     "AUROC": 0.8867
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9924
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 12,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.9231,
+     "score": 0.9286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 21,
+     "TN": 56,
+     "FP": 7,
+     "FN": 1,
+     "TPR": 0.9545,
+     "TNR": 0.8889,
+     "score": 0.8652,
+     "AUROC": 0.9517
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 5,
+    "mean_abs_score_change": 0.0464
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 131,
+     "TN": 291,
+     "FP": 54,
+     "FN": 6,
+     "TPR": 0.9562,
+     "TNR": 0.8435,
+     "score": 0.834,
+     "AUROC": 0.9629
+    },
+    "true_alarms_flipped_to_false": 4,
+    "false_alarms_flipped_to_real": 8,
+    "mean_abs_score_change": 0.0535
+   }
+  },
+  "shift_2s": {
+   "family": "time shift (window ends s early; rebuilt from source)",
+   "strength": "2 s",
+   "paths": {
+    "none": 1,
+    "trees_1lead": 2,
+    "trees_2lead": 667
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 64,
+     "TN": 94,
+     "FP": 20,
+     "FN": 10,
+     "TPR": 0.8649,
+     "TNR": 0.8246,
+     "score": 0.693,
+     "AUROC": 0.939
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 17,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.68,
+     "score": 0.7419,
+     "AUROC": 0.9
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 1,
+     "FP": 1,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.5,
+     "score": 0.9714,
+     "AUROC": 0.9848
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 9,
+     "FP": 4,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.6923,
+     "score": 0.7143,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 13,
+     "TN": 57,
+     "FP": 6,
+     "FN": 9,
+     "TPR": 0.5909,
+     "TNR": 0.9048,
+     "score": 0.5785,
+     "AUROC": 0.886
+    },
+    "true_alarms_flipped_to_false": 9,
+    "false_alarms_flipped_to_real": 7,
+    "mean_abs_score_change": 0.0844
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 123,
+     "TN": 293,
+     "FP": 52,
+     "FN": 14,
+     "TPR": 0.8978,
+     "TNR": 0.8493,
+     "score": 0.7732,
+     "AUROC": 0.9519
+    },
+    "true_alarms_flipped_to_false": 11,
+    "false_alarms_flipped_to_real": 10,
+    "mean_abs_score_change": 0.0816
+   }
+  },
+  "flatline_1s": {
+   "family": "sample-hold flatline, all channels",
+   "strength": "1 s segment",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 73,
+     "TN": 63,
+     "FP": 51,
+     "FN": 1,
+     "TPR": 0.9865,
+     "TNR": 0.5526,
+     "score": 0.7083,
+     "AUROC": 0.9302
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 9,
+     "FP": 16,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.36,
+     "score": 0.4,
+     "AUROC": 0.68
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 12,
+     "TN": 5,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.4545,
+     "score": 0.7391,
+     "AUROC": 0.947
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.8636
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 8,
+     "FP": 5,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.6154,
+     "score": 0.6429,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 41,
+     "FP": 22,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.6508,
+     "score": 0.7412,
+     "AUROC": 0.9156
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 35,
+    "mean_abs_score_change": 0.1156
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 130,
+     "TN": 183,
+     "FP": 162,
+     "FN": 7,
+     "TPR": 0.9489,
+     "TNR": 0.5304,
+     "score": 0.6137,
+     "AUROC": 0.9102
+    },
+    "true_alarms_flipped_to_false": 5,
+    "false_alarms_flipped_to_real": 109,
+    "mean_abs_score_change": 0.1566
+   }
+  },
+  "flatline_2s": {
+   "family": "sample-hold flatline, all channels",
+   "strength": "2 s segment",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 73,
+     "TN": 47,
+     "FP": 67,
+     "FN": 1,
+     "TPR": 0.9865,
+     "TNR": 0.4123,
+     "score": 0.625,
+     "AUROC": 0.9138
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 4,
+     "FP": 21,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.16,
+     "score": 0.3226,
+     "AUROC": 0.6267
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 12,
+     "TN": 5,
+     "FP": 6,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.4545,
+     "score": 0.7391,
+     "AUROC": 0.947
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.9091
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 5,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.3846,
+     "score": 0.4286,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 21,
+     "TN": 33,
+     "FP": 30,
+     "FN": 1,
+     "TPR": 0.9545,
+     "TNR": 0.5238,
+     "score": 0.6067,
+     "AUROC": 0.8925
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 50,
+    "mean_abs_score_change": 0.1769
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 135,
+     "TN": 143,
+     "FP": 202,
+     "FN": 2,
+     "TPR": 0.9854,
+     "TNR": 0.4145,
+     "score": 0.5673,
+     "AUROC": 0.8942
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 148,
+    "mean_abs_score_change": 0.2216
+   }
+  },
+  "flatline_4s": {
+   "family": "sample-hold flatline, all channels",
+   "strength": "4 s segment",
+   "paths": {
+    "none": 1,
+    "trees_1lead": 2,
+    "trees_2lead": 667
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 74,
+     "TN": 28,
+     "FP": 86,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.2456,
+     "score": 0.5426,
+     "AUROC": 0.8559
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 6,
+     "TN": 1,
+     "FP": 24,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.04,
+     "score": 0.2258,
+     "AUROC": 0.46
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 12,
+     "TN": 2,
+     "FP": 9,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.1818,
+     "score": 0.6087,
+     "AUROC": 0.8409
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 0.8939
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 3,
+     "FP": 10,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.2308,
+     "score": 0.2857,
+     "AUROC": 0.7692
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 22,
+     "FP": 41,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.3492,
+     "score": 0.5176,
+     "AUROC": 0.8427
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 69,
+    "mean_abs_score_change": 0.2727
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 136,
+     "TN": 89,
+     "FP": 256,
+     "FN": 1,
+     "TPR": 0.9927,
+     "TNR": 0.258,
+     "score": 0.463,
+     "AUROC": 0.816
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 204,
+    "mean_abs_score_change": 0.3364
+   }
+  },
+  "forge_pulse_other_patient": {
+   "family": "forged: PPG+ABP copied from another patient",
+   "strength": "random donor",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 59,
+     "TN": 96,
+     "FP": 18,
+     "FN": 15,
+     "TPR": 0.7973,
+     "TNR": 0.8421,
+     "score": 0.625,
+     "AUROC": 0.9002
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 2,
+     "TN": 17,
+     "FP": 8,
+     "FN": 4,
+     "TPR": 0.3333,
+     "TNR": 0.68,
+     "score": 0.4043,
+     "AUROC": 0.5867
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 8,
+     "TN": 10,
+     "FP": 1,
+     "FN": 4,
+     "TPR": 0.6667,
+     "TNR": 0.9091,
+     "score": 0.4615,
+     "AUROC": 0.8636
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 32,
+     "TN": 0,
+     "FP": 2,
+     "FN": 1,
+     "TPR": 0.9697,
+     "TNR": 0.0,
+     "score": 0.8205,
+     "AUROC": 0.803
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.8462
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 16,
+     "TN": 58,
+     "FP": 5,
+     "FN": 6,
+     "TPR": 0.7273,
+     "TNR": 0.9206,
+     "score": 0.6789,
+     "AUROC": 0.8961
+    },
+    "true_alarms_flipped_to_false": 13,
+    "false_alarms_flipped_to_real": 9,
+    "mean_abs_score_change": 0.1129
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 99,
+     "TN": 289,
+     "FP": 56,
+     "FN": 38,
+     "TPR": 0.7226,
+     "TNR": 0.8377,
+     "score": 0.612,
+     "AUROC": 0.8653
+    },
+    "true_alarms_flipped_to_false": 32,
+    "false_alarms_flipped_to_real": 21,
+    "mean_abs_score_change": 0.1283
+   }
+  },
+  "forge_pulse_from_false_alarm": {
+   "family": "forged: PPG+ABP copied from a false-alarm window",
+   "strength": "calm donor",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 54,
+     "TN": 100,
+     "FP": 14,
+     "FN": 20,
+     "TPR": 0.7297,
+     "TNR": 0.8772,
+     "score": 0.5746,
+     "AUROC": 0.9042
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 3,
+     "TN": 19,
+     "FP": 6,
+     "FN": 3,
+     "TPR": 0.5,
+     "TNR": 0.76,
+     "score": 0.5116,
+     "AUROC": 0.7667
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 6,
+     "TN": 11,
+     "FP": 0,
+     "FN": 6,
+     "TPR": 0.5,
+     "TNR": 1.0,
+     "score": 0.3617,
+     "AUROC": 0.8712
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 32,
+     "TN": 1,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9697,
+     "TNR": 0.5,
+     "score": 0.8462,
+     "AUROC": 0.9545
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 0,
+     "TN": 11,
+     "FP": 2,
+     "FN": 1,
+     "TPR": 0.0,
+     "TNR": 0.8462,
+     "score": 0.6111,
+     "AUROC": 0.7692
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 13,
+     "TN": 58,
+     "FP": 5,
+     "FN": 9,
+     "TPR": 0.5909,
+     "TNR": 0.9206,
+     "score": 0.5868,
+     "AUROC": 0.8745
+    },
+    "true_alarms_flipped_to_false": 18,
+    "false_alarms_flipped_to_real": 5,
+    "mean_abs_score_change": 0.1227
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 81,
+     "TN": 292,
+     "FP": 53,
+     "FN": 56,
+     "TPR": 0.5912,
+     "TNR": 0.8464,
+     "score": 0.5283,
+     "AUROC": 0.8264
+    },
+    "true_alarms_flipped_to_false": 50,
+    "false_alarms_flipped_to_real": 21,
+    "mean_abs_score_change": 0.1464
+   }
+  },
+  "forge_pulse_shift_2s": {
+   "family": "forged: own PPG+ABP time-shifted (circular)",
+   "strength": "2 s",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 95,
+     "FP": 19,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8333,
+     "score": 0.852,
+     "AUROC": 0.967
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 18,
+     "FP": 7,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.72,
+     "score": 0.6571,
+     "AUROC": 0.9
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 10,
+     "FP": 1,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 0.9091,
+     "score": 0.7778,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 56,
+     "FP": 7,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8889,
+     "score": 0.9176,
+     "AUROC": 0.9668
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 3,
+    "mean_abs_score_change": 0.0141
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 131,
+     "TN": 287,
+     "FP": 58,
+     "FN": 6,
+     "TPR": 0.9562,
+     "TNR": 0.8319,
+     "score": 0.8261,
+     "AUROC": 0.9627
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 6,
+    "mean_abs_score_change": 0.0169
+   }
+  },
+  "forge_pulse_shift_5s": {
+   "family": "forged: own PPG+ABP time-shifted (circular)",
+   "strength": "5 s",
+   "paths": {
+    "trees_1lead": 2,
+    "trees_2lead": 668
+   },
+   "cinc2015": {
+    "ALL": {
+     "n": 188,
+     "n_true": 74,
+     "TP": 72,
+     "TN": 96,
+     "FP": 18,
+     "FN": 2,
+     "TPR": 0.973,
+     "TNR": 0.8421,
+     "score": 0.8571,
+     "AUROC": 0.9687
+    },
+    "ASYSTOLE": {
+     "n": 31,
+     "n_true": 6,
+     "TP": 5,
+     "TN": 19,
+     "FP": 6,
+     "FN": 1,
+     "TPR": 0.8333,
+     "TNR": 0.76,
+     "score": 0.6857,
+     "AUROC": 0.9133
+    },
+    "BRADY": {
+     "n": 23,
+     "n_true": 12,
+     "TP": 11,
+     "TN": 11,
+     "FP": 0,
+     "FN": 1,
+     "TPR": 0.9167,
+     "TNR": 1.0,
+     "score": 0.8148,
+     "AUROC": 0.9621
+    },
+    "TACHY": {
+     "n": 35,
+     "n_true": 33,
+     "TP": 33,
+     "TN": 0,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.0,
+     "score": 0.9429,
+     "AUROC": 1.0
+    },
+    "VFIB": {
+     "n": 14,
+     "n_true": 1,
+     "TP": 1,
+     "TN": 11,
+     "FP": 2,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.8462,
+     "score": 0.8571,
+     "AUROC": 0.9231
+    },
+    "VTACH": {
+     "n": 85,
+     "n_true": 22,
+     "TP": 22,
+     "TN": 55,
+     "FP": 8,
+     "FN": 0,
+     "TPR": 1.0,
+     "TNR": 0.873,
+     "score": 0.9059,
+     "AUROC": 0.9661
+    },
+    "true_alarms_flipped_to_false": 0,
+    "false_alarms_flipped_to_real": 3,
+    "mean_abs_score_change": 0.0133
+   },
+   "vtac": {
+    "ALL": {
+     "n": 482,
+     "n_true": 137,
+     "TP": 130,
+     "TN": 284,
+     "FP": 61,
+     "FN": 7,
+     "TPR": 0.9489,
+     "TNR": 0.8232,
+     "score": 0.8118,
+     "AUROC": 0.959
+    },
+    "true_alarms_flipped_to_false": 1,
+    "false_alarms_flipped_to_real": 6,
+    "mean_abs_score_change": 0.0173
+   }
+  }
+ }
+}

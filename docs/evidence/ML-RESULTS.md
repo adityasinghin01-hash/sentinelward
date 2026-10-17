@@ -38,6 +38,7 @@ Artifact pins: 1-lead SHA-256 `cc59fc61…2348` (97 features, 200 trees); 2-lead
 - Thresholds are tuned for the Challenge's 5×cost on missed true alarms, so specificity is modest.
 - The score only explains an alarm: it never suppresses, delays or downgrades a monitor alarm (tested in `brain/tests`).
 - The 2015 Challenge winners (81.39) used a hidden test set, 2 leads at 250 Hz and 5 minutes of data: not directly comparable.
+- Robustness (same held-out windows, perturbed; `ROBUSTNESS.md`, `ml_v2/results/robustness.json`): mild noise/mains/gain/≤1 s shift stay within the clean CI; worst for missed alarms is SNR 10 dB (CinC TPR 0.784); a forged calm pulse under a real ECG fools M2 (VTaC TPR 0.591), which is why forgery is M3/M4/M5's job and M2 never suppresses an alarm.
 
 ## IBM Z: Telum II on-chip AI (live second opinion)
 The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 1.5.0`, device `nnpa:0`) as a second opinion. For every bed alarm the live brain scores with M2, it scores the same 10 s window (125 Hz ECG + PPG, + ABP when present) and publishes its own "is this alarm real?" probability on `ward/chip/<bed>`. It is shown only: it never changes a verdict, an alert or an action, and its hub account may only read vitals and publish on `ward/chip/+`. The deployed M2 stays the trees.
