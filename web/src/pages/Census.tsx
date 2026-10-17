@@ -1,5 +1,4 @@
 import {useNavigate} from 'react-router-dom';
-import {Eye, EyeOff} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow} from '../lib/hooks';
 import {bedState, displayVitals, isOpenAlert, staff, time, trustView, value} from '../lib/domain';
@@ -11,7 +10,6 @@ export function CensusPage() {
   const beds = useWard(s => s.beds);
   const alerts = useWard(s => s.alerts);
   const hidden = useWard(s => s.hidden);
-  const toggleHidden = useWard(s => s.setHidden);
   const now = useNow();
   const navigate = useNavigate();
   const rows = beds.map(b => ({b, s: bedState(b, now), v: displayVitals(b)}))
@@ -21,9 +19,7 @@ export function CensusPage() {
     <div className="page">
       <PageTitle eyebrow="S5 · Doctor / tele-ICU" title="Census"
                  description="Occupied beds sorted by who needs a doctor first, then by how much the data can be trusted.">
-        <button className="toggle" onClick={toggleHidden} aria-pressed={!hidden} title="Show or hide patient initials, age and sex.">
-          {hidden ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}{hidden ? 'Names hidden' : 'Names shown'}
-        </button>
+
       </PageTitle>
       {untrusted > 0 && (
         <div className="striped-banner" role="status">
@@ -54,7 +50,7 @@ export function CensusPage() {
                       <td>{!hidden && b.patient ? `${b.patient.initials} · ${b.patient.age ?? '—'} ${b.patient.sex ?? ''}` : 'Hidden'}</td>
                       <td><Badge tone={s.tone} icon={b.verdict === 'NORMAL' ? 'check' : b.verdict === 'DEVICE_ATTACK' ? 'shield' : 'status'}>{s.label}</Badge>
                         {s.offline && <span className="tiny"> · no data</span>}</td>
-                      <td className={`mono ${s.untrusted || trustView(b).value === null ? 'striped-cell' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? trustView(b).text : `${trustView(b).text}${s.untrusted ? ' UNTRUSTED' : ''}`}{b.isolated && ' · CUT OFF'}</td>
+                      <td className={`mono ${s.untrusted || trustView(b).value === null ? 'striped-cell' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? 'Not trusted' : s.untrusted ? 'Checking' : 'Trusted'}{b.isolated && ' · CUT OFF'}</td>
                       <td className="mono big-cell">{value(v?.hr)}</td>
                       <td className="mono big-cell">{value(v?.spo2)}</td>
                       <td className="mono">{value(v?.systolic)}/{value(v?.diastolic)}</td>

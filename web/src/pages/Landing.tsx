@@ -1,4 +1,5 @@
 import {Link} from 'react-router-dom';
+import {ThemeToggle} from '../components/ThemeToggle';
 import {Activity, HeartPulse, ShieldAlert, Unplug, ArrowDown, Github} from 'lucide-react';
 import {useNow, useResource} from '../lib/hooks';
 import type {Bed} from '../lib/types';
@@ -19,7 +20,7 @@ export function LandingPage() {
     <div className="landing">
       <header className="landing-top">
         <div className="brand"><Activity size={18} aria-hidden="true" />SentinelWard</div>
-        <Link to="/login" className="button-link">Log in</Link>
+        <div className="landing-account"><ThemeToggle scope="landing"/><Link to="/login" className="button-link">Log in</Link></div>
       </header>
       <main id="main">
         <section className="hero">

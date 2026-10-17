@@ -1,0 +1,20 @@
+/* ===== S0 Landing ===== */
+.landing { min-height: 100vh; background: var(--page); display: flex; flex-direction: column; }
+.landing-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; }
+.landing main { width: min(1180px, 100%); margin: 0 auto; padding: 24px 32px; flex: 1; }
+.hero h1 { font-size: 44px; font-weight: 600; margin: 24px 0 10px; letter-spacing: -.01em; }
+.hero p { font-size: 18px; color: var(--text-2); max-width: 720px; margin: 0 0 16px; }
+.mini-ward { margin: 32px 0; }
+.mini-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.mini-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.offline-preview { display: flex; flex-direction: column; gap: 4px; padding: 30px; text-align: center; border-radius: var(--radius-card); background: var(--stripes), var(--surface); color: var(--text); }
+.cases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.case { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.case svg { color: var(--text); }
+.case h2 { font-size: 16px; margin: 8px 0 6px; }
+.case p { margin: 0; color: var(--text-2); font-size: 14px; }
+.landing-foot { display: flex; justify-content: space-between; gap: 12px; padding: 16px 32px; color: var(--text-3); font-size: 12px; border-top: 1px solid var(--border); }
+.landing-foot a { display: inline-flex; gap: 5px; align-items: center; color: var(--text-2); }
+.role-card.is-preset { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+
+.landing-account { display: flex; align-items: center; gap: 12px; }

@@ -1,0 +1,58 @@
+/* ===== S3 Bed detail ===== */
+.bed-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--border); margin-bottom: 12px; }
+.bed-header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.bed-header .patient { font-size: 14px; }
+.bed-header .back { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); text-decoration: none; font-size: 14px; }
+.bed-header-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.bed-header.alarm-bar-high { border-color: var(--st-emergency); box-shadow: inset 6px 0 0 var(--st-emergency); }
+.bed-header.alarm-bar-medium { border-color: var(--st-check); box-shadow: inset 6px 0 0 var(--st-check); }
+.bed-header.alarm-bar-low { border-color: var(--st-maint); box-shadow: inset 6px 0 0 var(--st-maint); }
+.bed-header.untrusted { background: var(--stripes), var(--surface); }
+.go-now { margin: 0 0 12px; padding: 10px 14px; border-radius: 8px; background: var(--st-emergency); color: var(--st-emergency-ink); font-weight: 600; background-image: var(--stripes); }
+.bed-layout { display: grid; grid-template-columns: minmax(0, 65fr) minmax(0, 35fr); gap: 14px; align-items: start; }
+.bed-main .panel + .panel, .bed-side .panel + .panel { margin-top: 12px; }
+.bed-main .waveform + .waveform { margin-top: 6px; }
+.striped-panel .waveform { opacity: .9; }
+.last-good.big, .bed-main .data-age { font-size: 13px; padding: 6px 10px; margin-bottom: 8px; }
+.big-vitals { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 10px; margin-top: 12px; }
+.big-vitals .vital strong { font-size: 56px; }
+.big-vitals .vital.bp strong { font-size: 32px; padding-top: 14px; }
+.big-vitals .vital span { font-size: 13px; }
+.big-vitals.tone-text-high .vital strong { color: var(--st-emergency); }
+.big-vitals.greyed .vital strong { color: var(--text-3); }
+.incoming { margin-top: 10px; display: flex; gap: 12px; align-items: center; padding: 6px 10px; border: 1px dashed var(--st-nodata); border-radius: 6px; color: var(--text-3); font-size: 12px; }
+.legend { display: flex; gap: 12px; font-size: 12px; color: var(--text-2); }
+.legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.trend { position: relative; background: var(--surface-sunken); border-radius: 6px; overflow: hidden; }
+.trend canvas { width: 100%; height: 100%; display: block; }
+.witness-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.witness { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.witness h3 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.witness .fact dd { font-family: inherit; }
+.bedside-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.bedside-row > span { font-weight: 500; margin-right: 6px; }
+.manual-check { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--stripes); }
+.manual-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
+.manual-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 10px; }
+.manual-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-3); }
+.manual-form input { width: 90px; }
+.manual-form .grow { flex: 1; min-width: 180px; }
+.manual-form .grow input { width: 100%; }
+.why-verdict { display: flex; flex-direction: column; gap: 2px; }
+.why-verdict strong { font-size: 18px; }
+.reasons { margin: 10px 0; padding-left: 18px; color: var(--text-2); font-size: 13px; }
+.directive { display: flex; align-items: center; gap: 6px; margin: 0; padding: 7px 10px; border-radius: 6px; background: var(--control-hover); font-size: 13px; }
+.checks { display: flex; flex-direction: column; gap: 8px; }
+.check-row { display: grid; grid-template-columns: 28px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; }
+.check-key { color: var(--text-3); font-size: 12px; }
+.check-name { font-size: 13px; }
+.check-reason { grid-column: 2 / 4; font-size: 11px; color: var(--text-3); }
+.verdict-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.verdict-list li { display: grid; grid-template-columns: 72px 1fr auto; gap: 8px; }
+
+/* Chip evidence is a neutral comparison next to M2, never an alarm indicator. */
+.chip-opinion { border: 1px solid var(--border); border-radius: var(--radius-card); padding: 12px; margin: 6px 0 12px; background: var(--surface-sunken); }
+.chip-opinion h3 { font-size: .85rem; margin: 0 0 8px; color: var(--text-2); }
+.chip-opinion > .tip { display: block; }
+.chip-opinion .facts { margin: 0; }
+.chip-opinion .tiny { margin: 8px 0 0; }

@@ -5,7 +5,7 @@ import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
 import {age, can, certDeadline, countdown, score01, time, trustView} from '../lib/domain';
 import type {AgentRecord, BedDetail, Device, NetFeatures} from '../lib/types';
-import {ActionList, Empty, Feedback, PageTitle, Panel, ResourceState, Stats, Tip} from '../components/ui';
+import {ActionList, Empty, Feedback, PageTitle, Panel, ConfirmDialog, ResourceState, Stats, Tip} from '../components/ui';
 import {Chip, Dialog, Fact} from '../components/extra';
 import {TrendChart} from '../components/Chart';
 
@@ -33,7 +33,7 @@ function NetworkWitness({device}: {device: Device}) {
   const cmd = useCommand();
   const [confirm, setConfirm] = useState(false);
   const rows = net.data ?? [];
-  const series = useMemo(() => [{label: 'msg/s', color: '#80AEE5', values: rows.map(r => r.msgs_per_s)}], [rows]);
+  const series = useMemo(() => [{label: 'msg/s', color: 'var(--wave-ecg)', values: rows.map(r => r.msgs_per_s)}], [rows]);
   const ts = useMemo(() => rows.map(r => r.window_start), [rows]);
   const last = rows[rows.length - 1] ?? device.net;
   const allowed = can(role, 'security');
@@ -53,20 +53,15 @@ function NetworkWitness({device}: {device: Device}) {
       </dl>
       {net.error && <p className="tiny">Network history unavailable: {net.error}</p>}
       <div className="row-actions">
-        <button disabled={!allowed || device.isolated || cmd.pending} onClick={() => setConfirm(true)}
+        <button className="danger-outline" disabled={!allowed || device.isolated || cmd.pending} onClick={() => setConfirm(true)}
                 title={!allowed ? 'Only IT security can cut off a device.' : device.isolated ? 'Already cut off. Use Undo in the feed to reconnect.' : 'Ask the network agent (A2) to cut this monitor off the ward network. Logged and undoable.'}>
           <Ban size={14} aria-hidden="true" /> Cut off device
         </button>
       </div>
       <Feedback message={cmd.feedback} failed={cmd.failed} />
-      <Dialog open={confirm} title={`Cut off ${device.device_id}?`} onClose={() => setConfirm(false)} actions={<>
-        <button className="ghost" onClick={() => setConfirm(false)}>Cancel</button>
-        <button onClick={() => { setConfirm(false); void cmd.run(`/api/devices/${encodeURIComponent(device.device_id)}/isolate`, {type: 'isolate_device', deviceId: device.device_id, bedId: device.bed_id}); }}>
-          Yes, cut it off
-        </button></>}>
-        <p>The monitor for Bed {device.bed_id} stops reaching the ward. The bed screen keeps the last trusted values with grey stripes and asks the nurse for hand checks.</p>
-        <p className="tiny">The cut-off is logged and can be undone from the action feed.</p>
-      </Dialog>
+      <ConfirmDialog open={confirm} title="Isolate monitor?" bed={device.bed_id} monitor={device.device_id}
+        consequence="Incoming signals stop reaching the ward. Last trusted values stay visible; check the patient by hand. The isolation is logged and can be undone from the action feed."
+        actionLabel="Yes, cut it off" onClose={() => setConfirm(false)} onConfirm={() => {setConfirm(false); void cmd.run(`/api/devices/${encodeURIComponent(device.device_id)}/isolate`, {type: 'isolate_device', deviceId: device.device_id, bedId: device.bed_id});}} />
     </Panel>
   );
 }
@@ -137,7 +132,7 @@ export function SecurityPage() {
                           <td className="mono">{d.last_seen_ts ? age(d.last_seen_ts, now) : '—'}</td>
                           <td className="mono">{senders(d)}</td>
                           <td className="mono">{d.net?.seq_gaps ?? '—'} / {d.net?.seq_repeats ?? '—'}</td>
-                          <td className={`mono ${low ? 'striped-cell' : ''}`} title={trust?.why || undefined}>{trust ? trust.text : '—'}{low && <span className="sr-only"> low trust</span>}</td>
+                          <td className={`mono ${low ? 'striped-cell' : ''}`} title={trust?.why || undefined}>{trust ? trust.value === null ? 'Not trusted' : low ? 'Checking' : 'Trusted' : 'Checking'}{low && <span className="sr-only"> low trust</span>}</td>
                         </tr>
                       );
                     })}

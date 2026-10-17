@@ -50,7 +50,7 @@ export function BriefingPage() {
                     {label: 'Incidents', value: f?.incident_count ?? b.incidents, hint: `Security incidents opened in this shift. ${source}`},
                     {label: 'Untrusted beds', value: f?.untrusted_bed_count ?? b.untrusted_beds, hint: `Beds whose data was not trusted when the briefing was written. ${source}`, sub: f?.untrusted_beds?.length ? f.untrusted_beds.join(', ') : undefined},
                     {label: 'Open tickets', value: f?.open_ticket_count ?? b.open_tickets, hint: `Repair tickets not yet resolved. ${source}`},
-                    {label: 'Beds with blind time', value: blind.filter(x => x.minutes > 0).length, hint: `Beds that spent time with no trusted data. ${source}`},
+                    {label: 'Beds needing hand checks', value: blind.filter(x => x.minutes > 0).length, hint: `Beds that spent time with no trusted data. ${source}`},
                   ]} />
                   <div className="split-2">
                     <Panel title="Handover summary" caption={`Written by ${b.generated_by === 'template' ? 'the template writer' : b.generated_by} · ${dateTime(b.ts)}`}
@@ -59,7 +59,7 @@ export function BriefingPage() {
                       <div className="summary-text">{b.summary || 'No summary text.'}</div>
                       {b.generated_by !== 'IBM Granite' && b.fallback_reason && <p className="tiny">Template used because: {b.fallback_reason}</p>}
                     </Panel>
-                    <Panel title="Blind time per bed" caption={`Minutes with no trusted data: the patient was watched by hand only. ${f ? 'Same numbers as the summary.' : 'Server count for this period.'}`}>
+                    <Panel title="Time without trusted signals" caption={`Minutes with no trusted data: the patient was watched by hand only. ${f ? 'Same numbers as the summary.' : 'Server count for this period.'}`}>
                       {blind.length === 0 ? <p className="tiny">No blind time recorded in this period.</p> : (
                         <ul className="bars">
                           {blind.map(x => (

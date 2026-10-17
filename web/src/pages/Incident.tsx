@@ -6,7 +6,7 @@ import {useCommand, useNow, useResource} from '../lib/hooks';
 import {bytes, can, certDeadline, countdown, dateTime, downloadName, evidenceView, staff, time, timelineRow} from '../lib/domain';
 import {downloadJson} from '../lib/api';
 import type {AgentRecord} from '../lib/types';
-import {ActionList, BedLink, Empty, Feedback, PageTitle, Panel, ResourceState, Stats, Tip} from '../components/ui';
+import {ActionList, BedLink, Empty, Feedback, PageTitle, Panel, ResourceState, Stats, Tip, humanText, humanName} from '../components/ui';
 import {Chip, Dialog} from '../components/extra';
 
 type Evidence = Record<string, unknown>;
@@ -33,7 +33,7 @@ export function IncidentListPage() {
                 <ShieldAlert size={15} aria-hidden="true" />
                 <div>
                   <Link className="inline-link" to={`/incident/${encodeURIComponent(r.record_id)}`}>{title(r.data)}</Link>
-                  <p className="tiny">{String(r.data.status ?? 'open').replace(/_/g, ' ')} · {dateTime(r.ts)} · {r.record_id}</p>
+                  <p className="tiny">{String(r.data.status ?? 'open').replace(/_/g, ' ')} · {dateTime(r.ts)} <Tip text={`Incident identifier: ${r.record_id}`}><span className="tiny"> · Record</span></Tip></p>
                 </div>
               </li>
             ))}
@@ -112,7 +112,7 @@ export function IncidentPage() {
   return (
     <div className="page">
       <PageTitle eyebrow={`S7 · Incident ${inc.data.record_id}`} title={title(d)}
-                 description={`Opened ${dateTime(inc.data.ts)} by ${inc.data.by}. Minute by minute, with fingerprinted evidence.`}>
+                 description={`Opened ${dateTime(inc.data.ts)} by ${humanName(inc.data.by)}. Minute by minute, with fingerprinted evidence.`}>
         <Link className="button-link" to={`/incident/${encodeURIComponent(inc.data.record_id)}/report`} title="Open the CERT-In report draft for a person to check and send.">
           <FileText size={14} aria-hidden="true" /> CERT-In report draft
         </Link>
@@ -132,7 +132,7 @@ export function IncidentPage() {
                 onClick={() => void contain.run(`/api/incidents/${encodeURIComponent(inc.data!.record_id)}/contain`, {type: 'contain_incident', bedId})}>
           <Lock size={14} aria-hidden="true" /> Contain
         </button>
-        <button disabled={!allowed || closed || resolve.pending} title={allowed ? 'Close this incident. You will be asked for a reason.' : 'Only IT security can close incidents.'}
+        <button className="danger-outline" disabled={!allowed || closed || resolve.pending} title={allowed ? 'Close this incident. You will be asked for a reason.' : 'Only IT security can close incidents.'}
                 onClick={() => setClosing(true)}>
           <CheckCircle2 size={14} aria-hidden="true" /> Close incident
         </button>
@@ -146,7 +146,7 @@ export function IncidentPage() {
                 ...(i === firstDuring && firstDuring > 0 ? [<li key="divider" className="tl-divider">ATTACK STARTS · {time(attackStart, true)}</li>] : []),
                 <li key={`${t.ts}-${i}`} className={`tl-${t.kind} ${t.before ? 'tl-before' : ''}`} title={t.before ? 'Before the attack started: context only.' : undefined}>
                   <time className="mono">{time(t.ts, true)}</time>
-                  <div><strong>{t.what}</strong><p className="tiny">{t.who}{t.before ? ' · before the attack' : ''}</p></div>
+                  <div><strong title={t.what}>{humanText(t.what)}</strong><p className="tiny">{humanName(t.who)}{t.before ? ' · before the attack' : ''}</p></div>
                 </li>,
               ])}
             </ol>
@@ -172,7 +172,7 @@ export function IncidentPage() {
       </div>
       <Dialog open={closing} title="Close this incident?" onClose={() => setClosing(false)} actions={<>
         <button className="ghost" onClick={() => setClosing(false)}>Cancel</button>
-        <button disabled={!reason.trim()} title={reason.trim() ? 'Ask the agents to resolve this incident with your reason.' : 'Enter a reason first.'}
+        <button className="danger" disabled={!reason.trim()} title={reason.trim() ? 'Ask the agents to resolve this incident with your reason.' : 'Enter a reason first.'}
                 onClick={() => { setClosing(false); void resolve.run(`/api/incidents/${encodeURIComponent(inc.data!.record_id)}/resolve`, {type: 'resolve_incident', bedId, reason: reason.trim()}); }}>
           Close incident</button></>}>
         <label className="field">Reason (kept in the audit log)

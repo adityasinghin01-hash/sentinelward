@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {ThemeToggle} from '../components/ThemeToggle';
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {Activity, ShieldCheck, Stethoscope, Wrench, MonitorPlay, HeartPulse} from 'lucide-react';
 import type {Role, Session} from '../lib/types';
@@ -45,7 +46,7 @@ export function LoginPage() {
   return (
     <main className="login" id="main">
       <section className="login-card" aria-labelledby="login-title">
-        <div className="brand brand-large"><Activity size={22} aria-hidden="true" />SentinelWard</div>
+        <div className="login-brand-row"><div className="brand brand-large"><Activity size={22} aria-hidden="true" />SentinelWard</div><ThemeToggle scope="landing"/></div>
         <h1 id="login-title">Choose your role</h1>
         <p className="login-lead">
           Patient, sensor, or hacker: every reading on this station comes with the evidence behind it.

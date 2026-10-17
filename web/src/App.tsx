@@ -1,13 +1,17 @@
-import {useEffect} from 'react';
+import {useEffect, useLayoutEffect} from 'react';
 import type {ReactNode} from 'react';
 import {Navigate, NavLink, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
-import {Activity, AlertTriangle, LogOut, Radio, ShieldAlert, WifiOff} from 'lucide-react';
+import {AlertTriangle, LogOut, Radio, ShieldAlert, WifiOff, LockKeyhole, UserRound, ChevronDown} from 'lucide-react';
 import {useWard, connectWard} from './lib/store';
-import {canOpen, openAlerts, roleHomes, roleNames, time} from './lib/domain';
+import {canOpen, openAlerts, roleHomes, roleNames, time, age} from './lib/domain';
 import type {AgentRecord} from './lib/types';
 import {useNow, useResource} from './lib/hooks';
 import {api} from './lib/api';
-import {Tip} from './components/ui';
+import {Tip, Menu, MenuItem, MenuCheckboxItem, MenuLabel, MenuSeparator, TooltipProvider, Toaster, toast, humanName} from './components/ui';
+import {ThemeToggle} from './components/ThemeToggle';
+import {initializeTheme} from './lib/theme';
+import {lazy, Suspense} from 'react';
+const DevUI = import.meta.env.DEV ? lazy(() => import('./pages/DevUI')) : null;
 import {LoginPage} from './pages/Login';
 import {WardPage} from './pages/Ward';
 import {BedPage} from './pages/Bed';
@@ -41,17 +45,20 @@ function TopBar() {
   const receivedAt = useWard(s => s.receivedAt);
   const setSession = useWard(s => s.setSession);
   const now = useNow();
+  const hidden = useWard(s => s.hidden);
+  const setHidden = useWard(s => s.setHidden);
   const navigate = useNavigate();
   const logout = async () => {
     try { await api('/api/session', {method: 'DELETE'}); } catch { /* the session ends locally either way */ }
     setSession(null);
     navigate('/login');
+    toast('Signed out');
   };
   const live = connection === 'live';
   return (
     <header className="topbar">
       <div className="brand">
-        <Activity size={18} aria-hidden="true" />
+        <LogoMark />
         <span>SentinelWard</span>
         <Tip text="The ward this station is watching."><span className="unit">ICU-A</span></Tip>
       </div>
@@ -61,25 +68,23 @@ function TopBar() {
         ))}
       </nav>
       <div className="topbar-right">
-        <Tip text="Local time on this station.">
-          <span className="clock mono">{time(now, true)}</span>
-        </Tip>
-        <Tip text={live ? 'Live: readings are arriving from the ward hub now.' : 'Not live: the screen keeps the last received data and reconnects automatically.'}>
+        <Tip text={live ? 'Live: readings are arriving from the ward hub now.' : 'Stream interrupted. Last received information stays visible while the station reconnects.'}>
           <span className={`live-pill ${live ? 'is-live' : 'is-down'}`}>
             {live ? <Radio size={13} aria-hidden="true" /> : <WifiOff size={13} aria-hidden="true" />}
-            {live ? 'LIVE' : connection === 'connecting' ? 'CONNECTING' : 'OFFLINE'}
+            {live ? 'LIVE' : 'RECONNECTING'}<span className="live-age mono">{receivedAt ? `${age(receivedAt, now)} ago` : 'awaiting signal'}</span>
           </span>
         </Tip>
-        <span className="who" title="Signed-in role">{roleNames[session.role]}</span>
-        <button className="icon-button" onClick={() => void logout()} title="Sign out of this station">
-          <LogOut size={15} aria-hidden="true" /><span className="sr-only">Sign out</span>
-        </button>
+        <span className="clock mono" title="Local time on this station">{time(now, true)}</span>
+        {hidden && <span className="privacy-chip" title="Identity hidden"><LockKeyhole size={13} aria-hidden="true"/><span className="sr-only">Identity hidden</span></span>}
+        <ThemeToggle scope="app"/>
+        <Menu label="Account" trigger={<button className="account-trigger" aria-label={`Account: ${humanName(session.display_name || session.name)}`}><UserRound size={16} aria-hidden="true"/><span>{humanName(session.display_name || session.name)}</span><ChevronDown size={12} aria-hidden="true"/></button>}>
+          <MenuLabel className="menu-label"><strong>{humanName(session.display_name || session.name)}</strong><small>{roleNames[session.role]}</small></MenuLabel>
+          <MenuSeparator className="menu-separator"/>
+          <MenuCheckboxItem checked={hidden} onCheckedChange={()=>setHidden()}>Hide names</MenuCheckboxItem>
+          <MenuSeparator className="menu-separator"/>
+          <MenuItem onSelect={()=>void logout()}><LogOut size={15} aria-hidden="true"/>Log out</MenuItem>
+        </Menu>
       </div>
-      {!live && receivedAt && (
-        <div className="connection-banner" role="status">
-          Connection lost · showing data from {time(receivedAt, true)} · reconnecting
-        </div>
-      )}
     </header>
   );
 }
@@ -107,15 +112,15 @@ function AlarmStrip() {
   const location = useLocation();
   const itScreen = role === 'it' || /^\/(security|incident)/.test(location.pathname);
   if (itScreen) return <ItStrip />;
-  const high = openAlerts(alerts).filter(a => a.priority === 'high');
+  const high = openAlerts(alerts).filter(a => a.verdict === 'EMERGENCY' || a.verdict === 'BOTH');
   if (!high.length) return null;
   const beds = [...new Set(high.map(a => a.bed_id))];
   return (
     <div className="alarm-strip" role="alert">
       <AlertTriangle size={15} aria-hidden="true" />
-      <strong>HIGH ALARM</strong>
-      <span>{role === 'biomedical' ? `${beds.join(', ')} affected · nurses alerted` : high.slice(0, 3).map(a => `${a.bed_id}: ${a.text}`).join(' · ')}</span>
-      {role !== 'biomedical' && <NavLink to={`/bed/${beds[0]}`} title="Open the alarming bed.">Open {beds[0]}</NavLink>}
+      <strong>EMERGENCY</strong>
+      <div className="alarm-beds">{beds.map(bed=><NavLink key={bed} to={`/bed/${bed}`} aria-label={`Open ${bed}`} title={`Open ${bed}: emergency${high.some(a=>a.bed_id===bed&&a.verdict==='BOTH')?' · monitor hacked':''}`}>{bed}</NavLink>)}</div>
+      {role === 'biomedical' && <span>Nurses alerted</span>}
     </div>
   );
 }
@@ -136,7 +141,11 @@ function Shell({page, children}: {page: string; children: ReactNode}) {
   );
 }
 
+export function LogoMark(){return <svg className="logo-mark" width="24" height="28" viewBox="0 0 24 28" fill="none" aria-hidden="true"><path d="M12 2 22 6v8c0 6-10 12-10 12S2 20 2 14V6L12 2Z" stroke="currentColor" strokeWidth="1.5"/><path d="M4 14h4l2-5 4 10 2-5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+
 export function App() {
+  const location=useLocation();
+  useLayoutEffect(()=>initializeTheme(location.pathname),[location.pathname]);
   const setSession = useWard(s => s.setSession);
   useEffect(() => {
     const expired = () => setSession(null);
@@ -144,7 +153,8 @@ export function App() {
     return () => window.removeEventListener('sw:session-expired', expired);
   }, [setSession]);
   return (
-    <Routes>
+    <TooltipProvider><Toaster/><Routes>
+      {DevUI && <Route path="/dev/ui" element={<Suspense fallback={null}><DevUI/></Suspense>}/> }
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/ward" element={<Shell page="ward"><WardPage /></Shell>} />
@@ -160,6 +170,6 @@ export function App() {
       <Route path="/log" element={<Shell page="log"><LogPage /></Shell>} />
       <Route path="/demo" element={<Shell page="demo"><DemoPage /></Shell>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    </Routes></TooltipProvider>
   );
 }

@@ -1,0 +1,79 @@
+.cutoff-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--text); background: var(--stripes); border: 1px solid var(--st-nodata); }
+.tile-state { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tile-directive { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* Ward layout */
+.ward-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; align-items: start; }
+.bed-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ward-rail { position: sticky; top: 70px; }
+
+/* Bed tile (GE / Philips style: coloured title bar = alarm priority) */
+.bed-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; display: flex; flex-direction: column; min-height: 262px; }
+.bed-title { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; text-decoration: none; color: var(--text); background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
+.bed-number { font-weight: 600; margin-right: 8px; }
+.patient { color: var(--text-2); font-size: 12px; }
+.bed-inner { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.tile-waveforms { display: grid; gap: 4px; }
+.waveform { position: relative; height: 38px; background: var(--surface-sunken); border-radius: 6px; overflow: hidden; }
+.waveform canvas { width: 100%; height: 100%; display: block; }
+.wave-large { height: 120px; }
+.wave-label { position: absolute; top: 2px; left: 6px; font-size: 10px; color: var(--text-3); letter-spacing: .06em; z-index: 1; }
+.wave-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-3); font-size: 11px; }
+.vital-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: 14px; }
+.vital { display: flex; flex-direction: column; }
+.vital span { color: var(--text-3); font-size: 11px; }
+.vital small { font-size: 10px; }
+.vital strong { font-size: 40px; line-height: 1; font-weight: 500; color: var(--st-ok); }
+.vital.bp strong { font-size: 22px; padding-top: 8px; color: var(--text); }
+.vital.bp strong span { color: var(--text-3); font-size: 16px; }
+.trust { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-3); }
+.trust-segments { display: inline-flex; gap: 2px; }
+.trust-segments i { width: 14px; height: 6px; border-radius: 2px; background: var(--control-hover); }
+.trust-segments i.filled { background: var(--text); }
+.trust-segments.low-trust i.filled { background: var(--stripes); outline: 1px solid var(--st-nodata); }
+.tile-state { display: flex; align-items: center; gap: 8px; }
+.tile-directive { margin: 0; font-size: 12px; font-weight: 600; color: var(--text); }
+.last-good, .data-age { font-size: 11px; color: var(--text); background: var(--stripes); padding: 3px 6px; border-radius: 4px; }
+.tiny { font-size: 11px; color: var(--text-3); }
+
+/* Static state title bars; clinical text never flashes. */
+.bed-tile.alarm-high { border-color: var(--st-emergency); }
+.bed-tile.alarm-high .bed-title { background: var(--st-emergency); color: var(--st-emergency-ink); }
+.bed-tile.alarm-high .vital strong { color: var(--st-emergency); }
+.bed-tile.alarm-medium { border-color: var(--st-check); }
+.bed-tile.alarm-medium .bed-title { background: var(--st-check); color: var(--st-check-ink); }
+.bed-tile.alarm-medium .patient, .bed-tile.alarm-low .patient { color: inherit; }
+.bed-tile.alarm-low { border-color: var(--st-maint); }
+.bed-tile.alarm-low .bed-title { background: var(--st-maint); color: var(--st-check-ink); }
+.bed-tile.alarm-high .patient { color: var(--st-emergency-ink); }
+
+/* Untrusted: grey stripes + words, a pattern no alarm uses */
+.bed-tile.untrusted .bed-inner { background-image: var(--stripes); background-size: 22px 22px; background-blend-mode: soft-light; }
+.bed-tile.untrusted:not(.alarm-high) .bed-title { background: var(--stripes), var(--surface-sunken); color: var(--text); }
+.bed-tile.untrusted .vital strong { color: var(--text-3); }
+.bed-tile.offline .vital strong { color: var(--text-3); opacity: .85; }
+
+/* Alert rail */
+.alert-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.alert-item { background: var(--surface-sunken); border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 9px 10px; }
+.alarm-edge-high { border-left-color: var(--st-emergency); }
+.alarm-edge-medium { border-left-color: var(--st-check); }
+.alarm-edge-low { border-left-color: var(--st-maint); }
+.alert-head { display: flex; align-items: center; gap: 8px; }
+.alert-age { margin-left: auto; color: var(--text-3); font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+.alert-text { margin: 6px 0 4px; font-size: 13px; }
+.alert-ladder { margin: 0 0 8px; color: var(--text-3); font-size: 12px; display: flex; align-items: center; gap: 5px; }
+.alert-actions { display: flex; gap: 6px; }
+.inline-link { display: inline-flex; align-items: center; color: var(--text); font-weight: 600; text-decoration: none; }
+
+/* Tablet (1024 x 768): 3 columns, numbers first, rail below */
+@media (max-width: 1280px) {
+  .ward-layout { grid-template-columns: 1fr; }
+  .ward-rail { position: static; }
+  .bed-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .tile-waveforms { display: none; }
+  .bed-tile { min-height: 0; }
+}
+

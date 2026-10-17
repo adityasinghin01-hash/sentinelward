@@ -1,7 +1,7 @@
 import {useMemo, useRef} from 'react';
 import type {KeyboardEvent} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Eye, EyeOff, Bell, Check, ExternalLink} from 'lucide-react';
+import {Bell, Check, ExternalLink} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow, useCommand} from '../lib/hooks';
 import {bedState, time, age, staff, openAlerts, trustView} from '../lib/domain';
@@ -41,7 +41,7 @@ function AlertRail({alerts, beds}: {alerts: Alert[]; beds: Bed[]}) {
                   {bed && !bed.is_trusted && ' · do not trust screen numbers'}
                 </p>
                 <div className="alert-actions">
-                  <button className="button-small" disabled={!canAck || cmd.pending}
+                  <button className="button-small button-primary" disabled={!canAck || cmd.pending}
                           title={canAck ? 'I am on it: stops the escalation ladder for this alert.' : 'Only nurses and doctors acknowledge alerts.'}
                           onClick={() => void cmd.run(`/api/beds/${encodeURIComponent(a.bed_id)}/acknowledge`, {type: 'acknowledge_alert', bedId: a.bed_id, alertId: a.alert_id})}>
                     <Check size={13} aria-hidden="true" /> Acknowledge
@@ -66,7 +66,6 @@ export function WardPage() {
   const alerts = useWard(s => s.alerts);
   const actions = useWard(s => s.actions);
   const hidden = useWard(s => s.hidden);
-  const toggleHidden = useWard(s => s.setHidden);
   const error = useWard(s => s.error);
   const now = useNow();
   const navigate = useNavigate();
@@ -101,13 +100,9 @@ export function WardPage() {
           {label: 'Beds', value: beds.length, hint: 'Beds this station is watching.', sub: summary.offline ? `${summary.offline} with no data now` : 'all reporting'},
           {label: 'Open alerts', value: summary.open, hint: 'Alerts nobody has acknowledged and the agents have not closed: the same list as Active alerts on the right and the Open tab on Alerts.', sub: summary.high ? `${summary.high} high priority` : 'none high'},
           {label: 'Untrusted', value: summary.untrusted, hint: 'Beds whose incoming data is not trusted; the screen shows their last trusted values instead.'},
-          {label: 'Average trust', value: summary.avg === null ? '—' : summary.avg.toFixed(2), hint: 'Mean data-trust score, 0 to 1, over beds with a live checked monitor. Cut-off, offline and not-yet-checked monitors are left out: their data is not trusted.', sub: summary.notTrusted ? `${summary.notTrusted} bed${summary.notTrusted === 1 ? '' : 's'} not scored` : undefined},
+          {label: 'Trusted signals', value: beds.length - summary.notTrusted, hint: 'Beds with a live, checked monitor. Cut-off, offline and not-yet-checked monitors are left out.', sub: summary.notTrusted ? `${summary.notTrusted} bed${summary.notTrusted === 1 ? '' : 's'} not scored` : undefined},
         ]} />
-        <button className="toggle" onClick={toggleHidden} aria-pressed={!hidden}
-                title={hidden ? 'Show patient initials, age and sex on the tiles.' : 'Hide patient details (privacy default).'}>
-          {hidden ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
-          {hidden ? 'Names hidden' : 'Names shown'}
-        </button>
+
       </div>
       {error && <p className="notice" role="status">{error} The last received information stays on screen.</p>}
       <div className="ward-layout">
