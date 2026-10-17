@@ -476,3 +476,7 @@ textarea { resize: vertical; }
 .verdict-lines li { margin: 2px 0; }
 .tl-before { opacity: .6; }
 .tl-divider { list-style: none; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-2); border-top: 1px dashed var(--border); padding-top: 4px; margin: 4px 0; }
+.evidence-head { text-transform: none; }
+.timeline li.tl-divider { display: block; }
+.timeline li.tl-divider::before { display: none; }
+.evidence-list.compact .evidence strong { margin-right: 8px; }
