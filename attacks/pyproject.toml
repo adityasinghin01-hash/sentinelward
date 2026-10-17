@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinelward-attacks"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["sentinelward-brain>=0.1.0", "PyYAML>=6,<7"]
+
+[project.scripts]
+sw-attacks = "sw_attacks.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["sw_attacks*"]
+
+[tool.setuptools.package-data]
+sw_attacks = ["schedule.yaml"]

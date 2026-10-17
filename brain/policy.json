@@ -1,0 +1,10 @@
+{
+  "version": "live-2026-10-17",
+  "confidence": "uncalibrated",
+  "trust": "uncalibrated",
+  "trust_formula": "1 - max(eligible M3, M4, M5); empty eligible set yields 1 but verdict stays UNSURE",
+  "positive_threshold": 0.8,
+  "offline_timeout_s": 3,
+  "monitor_alarm_hold_after_window_s": 30,
+  "precedence": ["BOTH", "EMERGENCY", "TAMPERING", "DRIFTING", "LOOSE_SENSOR", "DEVICE_ATTACK", "UNSURE", "NORMAL"]
+}

@@ -1,0 +1,70 @@
+version: live-2026-10-17
+source: "docs/12 Ward script v1 (9 Oct).md"
+script_duration_s: 1200
+notes:
+  - "B08 transducer drift belongs to the ward simulator; attacks does not duplicate it."
+  - "Legitimate publishers keep running; this service has its own MQTT client and credentials."
+  - "Documented starts are exact; unspecified attack ends and burst limits are explicit implementation defaults."
+attacks:
+  - id: replay_B05
+    bed_id: B05
+    kind: replay
+    start_s: 600
+    source_start_s: 360
+    end_s: 930
+    start_basis: doc12
+    end_basis: "doc12_undo_at_15m30s"
+    rate_hz: 1
+    detail: "Replay B05's captured T+06:00 stream as a distinct MQTT publisher; stop at IT Undo time."
+  - id: flatline_B06
+    bed_id: B06
+    kind: flatline
+    start_s: 960
+    end_s: 1200
+    start_basis: doc12
+    end_basis: implementation_default
+    rate_hz: 1
+    detail: "Forge zero ECG and ASYSTOLE, preserving the real pulse; finite default ends with the script."
+  - id: mixed_B07
+    bed_id: B07
+    kind: flood_second_sender
+    start_s: 825
+    end_s: 870
+    start_basis: doc12
+    end_basis: "doc00_source_end_at_14m30s"
+    rate_hz: 50
+    steady_rate_hz: 1
+    burst_s: 8
+    max_messages: 500
+    limits_basis: implementation_default
+    detail: "Bounded flood then a second sender until the recording's documented end; no recording loop."
+  - id: drift_B10
+    bed_id: B10
+    kind: drift
+    start_s: 360
+    end_s: 1200
+    start_basis: doc12
+    end_basis: implementation_default
+    rate_hz: 1
+    ramp_s: 420
+    max_offset_mmhg: 15
+    detail: "Forge arterial pressure 0 to +15 mmHg over seven minutes, then hold to script end."
+  - id: network_B11
+    bed_id: B11
+    kind: network_flood
+    start_s: 720
+    end_s: 730
+    start_basis: doc12
+    end_basis: implementation_default
+    rate_hz: 50
+    max_messages: 500
+    detail: "Own-broker MQTT flood only; external port scanning is explicitly unavailable."
+  - id: sender_B12
+    bed_id: B12
+    kind: second_sender
+    start_s: 1020
+    end_s: 1040
+    start_basis: doc12
+    end_basis: doc12
+    rate_hz: 1
+    detail: "Exactly 20 seconds of plausible original frames from this separate MQTT client."

@@ -1,0 +1,15 @@
+[Unit]
+Description=SentinelWard live advisory brain
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sentinelward
+EnvironmentFile=/etc/sentinelward/brain.env
+ExecStart=/opt/sentinelward/.venv/bin/sw-brain
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
