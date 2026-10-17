@@ -106,6 +106,7 @@ def test_log_connect_publish_attribution_rotation_and_missing(tmp_path):
     e=Extractor(); path=tmp_path/'mosquitto.log'; tail=LogTail(path,e,clock=lambda:0)
     tail.poll()
     assert not e.logs_available
+    path.touch(); tail.poll()  # Attach at EOF before the live broker appends.
     path.write_text("10: New client connected from 127.0.0.1:123 as MON-03 (p2, c1, k30, u'MON-03').\n10: Received PUBLISH from MON-03 (d0, q0, r0, m0, 'ward/bed/B03/vitals', ... (80 bytes))\n10: New connection from 127.0.0.1:123 on port 1883.\n")
     tail.poll()
     msg=e.snapshot('MON-03',10000)
@@ -174,8 +175,10 @@ def test_root_verification_can_read_private_service_owned_env(tmp_path,monkeypat
 def test_rotated_log_leaves_partial_window_sender_count_unknown(tmp_path):
     ticks=[9000]
     path=tmp_path/'log'
-    path.write_text("10: Received PUBLISH from MON-03 (d0, q0, r0, m0, 'ward/bed/B03/vitals', ... (80 bytes))\n")
+    path.touch()
     e=Extractor();tail=LogTail(path,e,clock=lambda:ticks[0])
+    tail.poll()
+    path.write_text("10: Received PUBLISH from MON-03 (d0, q0, r0, m0, 'ward/bed/B03/vitals', ... (80 bytes))\n")
     tail.poll()
     assert e.snapshot('MON-03',10000)['senders']==1
     ticks[0]=12000

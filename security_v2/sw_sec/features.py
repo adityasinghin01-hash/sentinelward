@@ -163,24 +163,32 @@ class LogTail:
 
     def poll(self):
         try:
-            with self.path.open() as handle:
+            with self.path.open('rb') as handle:
                 info=handle.fileno()
                 import os
                 st=os.fstat(info)
                 identity=(st.st_dev,st.st_ino)
                 if identity!=self.identity or st.st_size<self.offset:
-                    self.offset=0
+                    # Start live, without replaying a potentially huge broker
+                    # history. On rotation/truncation read the new file from
+                    # its beginning; its first publications are live evidence.
+                    self.offset=st.st_size if self.identity is None else 0
                     self.identity=identity
                     self.extractor.log_coverage_start=(self.clock()//5000+1)*5000
                 handle.seek(self.offset)
                 for _ in range(10000):
                     offset=handle.tell()
-                    line=handle.readline(16384)
+                    # Read only the size sampled for this poll. Otherwise live
+                    # appends can take tell() beyond st_size and falsely mark
+                    # a fully caught-up log unavailable at publication time.
+                    remaining=st.st_size-offset
+                    if remaining<=0: break
+                    line=handle.readline(min(16384,remaining))
                     if not line: break
-                    if not line.endswith('\n'):
+                    if not line.endswith(b'\n'):
                         handle.seek(offset)
                         break
-                    self.extractor.log(line)
+                    self.extractor.log(line.decode('utf-8',errors='replace'))
                 self.offset=handle.tell()
                 self.extractor.logs_available=self.offset==st.st_size
         except (OSError,UnicodeError):

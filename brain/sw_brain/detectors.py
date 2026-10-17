@@ -240,20 +240,25 @@ class ReplayDetector:
         # device-level count, never identities to attach to individual frames.
         source=state.network
         device=(state.last_message or {}).get('device_id')
+        # Both services publish/score on a five-second grid. The previous
+        # completed feature window must survive scheduler jitter at this tick;
+        # comparing its start with wall time drops it just 1 ms after the grid.
+        end=now_ms//5000*5000
         if (source and device is not None and source['device_id']==device and
                 source.get('received_ms',now_ms)<=now_ms and
-                now_ms-10000<=source['window_start'] and
+                end-10000<=source['window_start'] and
                 source['window_start']+source['window_s']*1000<=now_ms):
             return source
         return None
 
     @staticmethod
-    def transport(state,now_ms):
+    def transport(state,now_ms,*,recent_start=None):
         # Compare whole envelopes, including alarms/numerics/optional leads. The
         # first arriving publisher need not be the real monitor. A matching frame
         # from either connection proves a copy; conflicting claims remain strong.
         records=[r for r in state.messages if now_ms-45000<=r['received_ms']<=now_ms]
-        recent=[r for r in records if now_ms-10000<=r['received_ms']<=now_ms]
+        cutoff=now_ms-10000 if recent_start is None else recent_start
+        recent=[r for r in records if cutoff<=r['received_ms']<=now_ms]
         by_seq={}; by_ts={}; copies=set(); conflicts=set()
         for r in records:
             m=r['message']; seq=m['seq']; ts=m['ts']
@@ -379,11 +384,20 @@ class NetworkAttack:
         topic=value['extra'].get('topic7_features',{})
         if (transport['duplicate_only'] and value['score'] is not None and
                 value['extra']['features']['msg_rate']<=5 and
-                (topic.get('msgs_per_s') or 0)<=5 and
-                (topic.get('seq_repeats') or 0)<=transport['sequence_events']):
-            value=result(.6 if value['extra']['senders']>1 else 0.,
-                         'Identical live copies; second sender needs bedside confirmation' if value['extra']['senders']>1 else
-                         'Identical live packet copies; no changed data',**value['extra'])
+                (topic.get('msgs_per_s') or 0)<=5):
+            verified=transport['sequence_events']
+            start=value['extra'].get('topic7_window_start')
+            if start is not None:
+                # Compare extractor repeats with copies verified in THAT
+                # completed interval. A late tick's moving look-back can lose
+                # its first copy while the extractor still reports all five.
+                end=start+value['extra']['topic7_window_s']*1000
+                witness=ReplayDetector.transport(state,end-1,recent_start=start)
+                verified=witness['sequence_events'] if witness['duplicate_only'] else 0
+            if (topic.get('seq_repeats') or 0)<=verified:
+                value=result(.6 if value['extra']['senders']>1 else 0.,
+                             'Identical live copies; second sender needs bedside confirmation' if value['extra']['senders']>1 else
+                             'Identical live packet copies; no changed data',**value['extra'])
         return value
 
     __call__=evaluate
