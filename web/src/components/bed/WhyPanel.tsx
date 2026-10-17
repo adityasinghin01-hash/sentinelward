@@ -14,6 +14,10 @@ const checkNames: Record<string, {name: string; scale: string}> = {
   M6: {name: 'Drift', scale: 'Pressure drift likelihood'},
 };
 
+export function BedDirective({detail}: {detail: BedDetail}) {
+  return <p className="bed-directive"><ClipboardCheck size={16} aria-hidden="true" />{plainEvidence(detail.requested_action || 'Continue monitoring')}</p>;
+}
+
 export function WhyPanel({detail, now, explanation}: {detail: BedDetail; now: number; explanation?: string}) {
   const latest = detail.recent_verdicts[0];
   const reasons = latest?.reasons?.length ? latest.reasons : [detail.reason || 'No reason recorded'];
@@ -24,7 +28,7 @@ export function WhyPanel({detail, now, explanation}: {detail: BedDetail; now: nu
   const sentence = explanation || ({
     NORMAL: 'No concern is reported by the current verdict.',
     TAMPERING: 'The monitor may have been tampered with. Its readings are not trusted.',
-    DEVICE_ATTACK: 'The monitor may have been tampered with. Its readings are not trusted.',
+    DEVICE_ATTACK: 'A device attack is suspected. IT is investigating the monitor.',
     LOOSE_SENSOR: 'The signal suggests a loose sensor.',
     DRIFTING: 'The pressure sensor appears to be drifting.',
     UNSURE: 'The readings are unclear. Check the patient by hand.',
@@ -32,7 +36,6 @@ export function WhyPanel({detail, now, explanation}: {detail: BedDetail; now: nu
   return <Panel title="Why SentinelWard says this" className="bed-why">
     <p className="bed-verdict-sentence">{plainEvidence(sentence)}</p>
     <ul className="bed-reasons">{reasons.map(reason => <li key={reason}>{plainEvidence(reason)}</li>)}</ul>
-    <p className="bed-directive"><ClipboardCheck size={16} aria-hidden="true" />{plainEvidence(detail.requested_action || 'Continue monitoring')}</p>
     <div className="bed-checks" aria-label="Signal checks">
       {available.map(([key, meta]) => {
         const check = detail.scores[key], score = check.score!;

@@ -14,7 +14,7 @@
 .bed-header.tone-emergency { border-color: var(--st-emergency); }
 .bed-header.tone-emergency .bed-band { background: var(--st-emergency); color: var(--st-emergency-ink); border-color: var(--st-emergency); }
 .bed-header.tone-both { border-color: var(--st-emergency); }
-.bed-header.tone-both .bed-band { background: linear-gradient(90deg, var(--st-emergency) 0 82%, var(--st-security) 82% 100%); color: var(--st-emergency-ink); border-color: var(--st-emergency); }
+.bed-header.tone-both .bed-band { background: var(--st-emergency); box-shadow: inset -6px 0 0 var(--st-security); color: var(--st-emergency-ink); border-color: var(--st-emergency); }
 .bed-header.tone-security { border-color: var(--st-security); }
 .bed-header.tone-security .bed-band { background: var(--st-security); color: var(--st-security-ink); border-color: var(--st-security); }
 .bed-header.tone-check { border-color: var(--st-check); }
@@ -22,9 +22,11 @@
 .bed-header.tone-maint .bed-band { box-shadow: inset 4px 0 0 var(--st-maint); }
 .bed-header.tone-nodata { border-style: dashed; }
 /* Bed detail: quiet evidence panels beneath the unchanged clinical band. */
-.bed-layout { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.bed-priority, .bed-layout { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.bed-priority { margin-bottom: 24px; }
+.bed-priority .bed-directive { margin: 0; font-size: 15px; line-height: 22px; }
 .bed-main, .bed-side { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.bed-layout .panel { min-width: 0; margin: 0; padding: 20px; border-radius: 12px; }
+.bed-priority .panel, .bed-layout .panel { min-width: 0; margin: 0; padding: 20px; border-radius: 12px; }
 .bed-layout .panel-heading { margin-bottom: 16px; gap: 12px; }
 .bed-layout .panel-heading h2 { font-size: 16px; line-height: 22px; }
 .bed-layout .panel-heading p { margin-top: 4px; font-size: 13px; line-height: 18px; color: var(--text-3); }
@@ -124,9 +126,9 @@
 .witness h3 { margin: 0 0 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text-2); font-weight: 500; }
 .witness .facts { gap: 12px; }
 .witness .fact dd { font-family: var(--font-sans); font-size: 13px; line-height: 20px; }
-@media (min-width: 1700px) { .bed-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } .bed-layout .panel { padding: 24px; } .wave-large { height: 124px; } }
-@media (max-width: 1100px) { .bed-layout { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; } .bed-layout .panel { padding: 16px; } .big-vitals { gap: 8px; } .big-vitals .vital strong { font-size: 36px; } .big-vitals .vital.bp strong { font-size: 26px; } .bedside-row > span { flex-basis: 100%; } }
-@media (max-width: 850px) { .bed-layout { grid-template-columns: minmax(0, 1fr); } .bed-side { grid-row: auto; } }
+@media (min-width: 1700px) { .bed-priority, .bed-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } .bed-layout .panel { padding: 24px; } .wave-large { height: 124px; } }
+@media (max-width: 1100px) { .bed-priority, .bed-layout { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; } .bed-layout .panel { padding: 16px; } .big-vitals { gap: 8px; } .big-vitals .vital strong { font-size: 36px; } .big-vitals .vital.bp strong { font-size: 26px; } .bedside-row > span { flex-basis: 100%; } }
+@media (max-width: 850px) { .bed-priority, .bed-layout { grid-template-columns: minmax(0, 1fr); } .bed-side { grid-row: auto; } }
 @media (max-width: 520px) { .big-vitals { grid-template-columns: 1fr 1fr; row-gap: 20px; } .witness-grid { grid-template-columns: 1fr; } .witness + .witness { border-left: 0; border-top: 1px solid var(--border); padding: 16px 0 0; } .manual-head { align-items: flex-start; flex-direction: column; gap: 6px; } .bed-meta { display: none; } }
 
 /* Shared signal presentation, including dense ward strips. */

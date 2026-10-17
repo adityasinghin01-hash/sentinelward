@@ -6,6 +6,7 @@ import {age,time,trustView} from '../lib/domain';
 import type {Action,Bed,Priority} from '../lib/types';
 import {useWard} from '../lib/store';
 import {useCommand} from '../lib/hooks';
+import {actionView} from './pages/actions';
 export function Tip({text,children}:{text:string;children:ReactNode}){const id=useId();return <Tooltip text={text}><span className="tip" tabIndex={0} aria-describedby={id}>{children}<span className="sr-only" role="tooltip" id={id}>{text}</span></span></Tooltip>}
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {hint?:string;variant?:'primary'|'secondary'|'ghost'|'danger'|'icon';size?:36|40|44;pending?:boolean;ref?:Ref<HTMLButtonElement>};
 export function Button({children,hint,variant='secondary',size=40,pending,className='',disabled,...p}:ButtonProps){const loadingCapable=pending!==undefined&&variant!=='icon';return <button {...p} type={p.type??'button'} className={`button button-${variant} button-${size} ${className}`} disabled={disabled||pending} aria-busy={pending||undefined} title={hint||p.title||(typeof children==='string'?children:undefined)}><span className="button-content">{loadingCapable&&<span className="button-loader" aria-hidden="true">{pending&&<LoaderCircle size={16} className="button-spinner"/>}</span>}{children}</span>{pending&&variant==='icon'&&<LoaderCircle size={16} className="button-spinner" aria-hidden="true"/>}</button>}
@@ -18,12 +19,24 @@ export function Notice({children}:{children:ReactNode}){return <div className="n
 export function ResourceState({loading,error,retry}:{loading:boolean;error:string;retry?:()=>void}){if(error)return <div className="notice" role="alert"><Info size={16}/><span>{error} Last received information is kept on screen.</span>{retry&&<Button onClick={retry}>Retry</Button>}</div>;if(loading)return <div className="skeleton" role="status">Loading from the ward…</div>;return null}
 export function Feedback({message,failed=false}:{message:string;failed?:boolean}){return message?<div className="notice" role={failed?'alert':'status'}><Info size={15}/>{message}</div>:null}
 export function Trust({bed}:{bed:Pick<Bed,'isolated'|'connected'|'display'|'verdict'|'trust_score'>}){const t=trustView(bed);const n=t.value;return <Tip text={n===null?`Data trust: ${t.text}. ${t.why}`:`Data trust: ${t.text} out of 1. Higher means the reading is more likely genuine; this is not a diagnosis.`}><span className="trust"><span className="trust-label">{n===null?'Not trusted':n>=.5?'Trusted':'Checking'}</span><span className={`trust-segments ${n===null||n<0.5?'low-trust':''}`} aria-hidden="true">{Array.from({length:7},(_,i)=><i key={i} className={n!==null&&i<Math.round(n*7)?'filled':''}/>)}</span></span></Tip>}
-export function Undo({action}:{action:Action}) {
-  const role=useWard(s=>s.session?.role); const cmd=useCommand(); const [confirm,setConfirm]=useState(false);
-  const allowed=role==='it'||role==='operator';
-  return <span className="undo-control"><Button size={36} disabled={!allowed||!action.undoable||cmd.pending} hint={!allowed?'IT security can request reversal of this action.':!action.undoable?'This action has no available reversal; see its audit record.':'Ask the responsible agent to reverse this automatic action.'} onClick={()=>setConfirm(true)}><Undo2 size={13}/>Undo</Button>
-    <ConfirmDialog open={confirm} title="Undo monitor action?" bed={action.bed_id??'Ward'} monitor={action.device_id??'Monitor recorded in this action'} consequence={`Reverse this action: ${humanText(action.action)}. The monitor may resume sending signals to the ward. The reversal is logged.`} actionLabel="Undo action" onClose={()=>setConfirm(false)} onConfirm={()=>{setConfirm(false);void cmd.run(`/api/actions/${encodeURIComponent(action.id)}/undo`,{type:'undo_action',originalActionId:action.id,bedId:action.bed_id})}}/>
-    {cmd.feedback&&<span role="status" className="tiny">{cmd.feedback}</span>}</span>;
+export function Undo({action}: {action: Action}) {
+  const role = useWard(s => s.session?.role);
+  const cmd = useCommand();
+  const [confirm, setConfirm] = useState(false);
+  const allowed = role === 'it' || role === 'operator';
+  const cutOff = /disable_client|isolate_device/.test(action.action_code);
+  const view = actionView(action);
+  return <span className="undo-control pages-undo">
+    <Button size={36} disabled={!allowed || !action.undoable || cmd.pending}
+      hint={!allowed ? 'IT security can request reversal of this action.' : !action.undoable ? 'This action has no available reversal; see its audit record.' : 'Ask the responsible agent to reverse this automatic action.'}
+      onClick={() => setConfirm(true)}><Undo2 size={14} aria-hidden="true" />Undo</Button>
+    <ConfirmDialog open={confirm} title={cutOff ? 'Reconnect this monitor?' : 'Undo this action?'}
+      bed={view.bed} monitor={action.device_id || 'Ward action'}
+      consequence={cutOff ? 'The monitor may send signals to the ward again. Check that IT has verified it is safe to reconnect. This reversal is recorded in the action log.' : `Reverse “${view.what}”. The responsible agent will record the result in the action log.`}
+      actionLabel={cutOff ? 'Reconnect monitor' : 'Undo action'} pending={cmd.pending} onClose={() => setConfirm(false)}
+      onConfirm={() => {setConfirm(false); void cmd.run(`/api/actions/${encodeURIComponent(action.id)}/undo`, {type: 'undo_action', originalActionId: action.id, bedId: action.bed_id});}} />
+    <Feedback message={cmd.feedback} failed={cmd.failed} />
+  </span>;
 }
 export function ActionList({actions}:{actions:Action[]}){return actions.length?<div className="action-list">{actions.map(a=><div className="action-row" key={a.id}><span className="event-icon"><Shield size={14}/></span><div><strong title={a.action}>{humanText(a.action)}</strong><p><time title="Time this action was recorded">{time(a.occurred_at,true)}</time> · {humanName(a.actor)} · {a.bed_id||a.device_id||'Ward'}</p></div>{a.mode==='automatic'&&a.undoable&&<Undo action={a}/>}</div>)}</div>:<Empty title="No actions recorded" detail="Automatic and staff actions will appear here with their audit trail."/>}
 export function BedLink({id}:{id:string}){return <Link className="inline-link" title={`Open live readings and checks for ${id}`} to={`/bed/${id}`}>{id}<ChevronRight size={12}/></Link>}

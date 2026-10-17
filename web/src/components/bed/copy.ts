@@ -3,8 +3,9 @@ import {humanText} from '../ui';
 /** Presentation only: the complete received text remains in each record's Details. */
 export function plainEvidence(text: string): string {
   return humanText(text)
-    .replace(/\bBOTH\b/g, 'emergency on an attacked monitor')
-    .replace(/\b(?:TAMPERING|DEVICE_ATTACK)\b/g, 'suspected monitor tampering')
+    .replace(/\bBOTH\b/g, 'emergency with a suspected device attack')
+    .replace(/\bTAMPERING\b/g, 'possible monitor tampering')
+    .replace(/\bDEVICE_ATTACK\b/g, 'suspected device attack')
     .replace(/\bEMERGENCY\b/g, 'emergency')
     .replace(/\bUNSURE\b/g, 'check by hand')
     .replace(/\bNORMAL\b/g, 'normal')

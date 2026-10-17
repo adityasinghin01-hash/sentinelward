@@ -20,8 +20,8 @@ afterEach(() => {cleanup(); vi.unstubAllGlobals();});
 describe('clinical chips', () => {
   const expected = {
     NORMAL: ['NORMAL', 'ok'], EMERGENCY: ['EMERGENCY', 'emergency'],
-    BOTH: ['EMERGENCY · MONITOR HACKED', 'both'], TAMPERING: ['MONITOR HACKED', 'security'],
-    DEVICE_ATTACK: ['MONITOR HACKED', 'security'], UNSURE: ['CHECK BY HAND', 'check'],
+    BOTH: ['EMERGENCY · ATTACK SUSPECTED', 'both'], TAMPERING: ['POSSIBLE TAMPERING', 'security'],
+    DEVICE_ATTACK: ['DEVICE ATTACK SUSPECTED', 'security'], UNSURE: ['CHECK BY HAND', 'check'],
     DRIFTING: ['SENSOR DRIFT', 'maint'], LOOSE_SENSOR: ['LOOSE SENSOR', 'maint'], NO_DATA: ['NO DATA', 'nodata'],
   };
   it.each(Object.entries(expected))('%s has a word, icon and semantic state colour', (state, [word, tone]) => {

@@ -4,9 +4,9 @@ import type {Verdict} from '../lib/types';
 export const stateChips = {
   NORMAL: {word:'NORMAL',tone:'ok',icon:Circle},
   EMERGENCY: {word:'EMERGENCY',tone:'emergency',icon:AlertTriangle},
-  BOTH: {word:'EMERGENCY · MONITOR HACKED',tone:'both',icon:ShieldAlert},
-  TAMPERING: {word:'MONITOR HACKED',tone:'security',icon:ShieldAlert},
-  DEVICE_ATTACK: {word:'MONITOR HACKED',tone:'security',icon:ShieldAlert},
+  BOTH: {word:'EMERGENCY · ATTACK SUSPECTED',tone:'both',icon:ShieldAlert},
+  TAMPERING: {word:'POSSIBLE TAMPERING',tone:'security',icon:ShieldAlert},
+  DEVICE_ATTACK: {word:'DEVICE ATTACK SUSPECTED',tone:'security',icon:ShieldAlert},
   UNSURE: {word:'CHECK BY HAND',tone:'check',icon:AlertTriangle},
   DRIFTING: {word:'SENSOR DRIFT',tone:'maint',icon:Activity},
   LOOSE_SENSOR: {word:'LOOSE SENSOR',tone:'maint',icon:Wrench},
