@@ -55,6 +55,12 @@ class A3Evidence(Agent):
         bed = data.get("bed_id")
         if name in ("in_verdict", "in_score", "in_bedside", "in_request", "alert", "action") and isinstance(bed, str):
             self._buffer(bed, dict(data))
+        if name == "record" and data.get("kind") == "report" and data.get("by") == "A5":
+            inc = self.incidents.get(data["data"].get("incident_id"))
+            if inc is not None and inc.get("report_id") != data["record_id"]:
+                inc["report_id"] = data["record_id"]
+                self._publish(inc)
+            return
         if bed not in self.open:
             return
         inc = self.open[bed]
@@ -68,10 +74,6 @@ class A3Evidence(Agent):
                 self._timeline(inc, data["ts"], f"Alert {data['alert_id']} {data['status']}{who} (step {data['ladder_step']}, {data['priority']})")
         elif name == "in_bedside":
             self._timeline(inc, data["ts"], f"Bedside check: {data['result']} by {data['by']}")
-        elif name == "record" and data.get("kind") == "report" and data["data"].get("incident_id") == inc["incident_id"]:
-            if inc.get("report_id") != data["record_id"]:
-                inc["report_id"] = data["record_id"]
-                self._publish(inc)
 
     # ------------------------------------------------------------------ incidents
     def on_verdict(self, v: dict) -> None:

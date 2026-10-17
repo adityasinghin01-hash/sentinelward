@@ -53,6 +53,7 @@ def check_output(text: str, facts: dict) -> str | None:
     numbers = allowed_numbers(facts)
     beds = {str(int(b[1:])) for b in facts.get("beds_mentioned", [])}
     devices = {d[-2:] for d in facts.get("devices_mentioned", [])}
+    numbers |= beds | devices | {b[1:] for b in facts.get("beds_mentioned", [])} | {str(int(d)) for d in devices}
     for m in BED_RE.finditer(text):
         if str(int(m.group(1))) not in beds:
             return f"mentions bed {m.group(1)} which is not in the facts"
