@@ -15,7 +15,7 @@ Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–1
 | ~06:00 | B10 | TAMPERING, not DRIFTING | TAMPERING 06:02 (forged drift, conflicting frame content); cut off 06:28 | PASS |
 | 13:45 / 14:00 | B07 | TAMPERING, then BOTH (nurse alerted + cut off) | DEVICE_ATTACK 13:47 → TAMPERING 13:52 → **BOTH 14:02** (real VFIB); high alert, never cancelled; cut off 14:03 | PASS |
 | 16:00 | B06 | faked flatline caught | BOTH 16:02 (forged ASYSTOLE alarm kept as an alarm + conflicting content); cut off 16:03; held to the end | PASS |
-| 17:00 | B12 | weak second sender → UNSURE → nurse OK | no verdict change visible at 17:00 (the 20 s copy-only sender left too little live evidence) | NOT SHOWN |
+| 17:00 | B12 | weak second sender → UNSURE → nurse OK | no verdict change at 17:00: the network witness could not read the hub's log (file mode 0600), so it never counted senders; found after this run and fixed (log 0640, group adm; `security_v2/sw_sec/deploy.py`) | NOT SHOWN (cause fixed) |
 | 19:00 | all | A8 shift briefing | written by **IBM Granite** on LinuxONE (fact-checked; template fallback not needed) | PASS |
 
 **Results table (T8)**
@@ -24,4 +24,4 @@ Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–1
 - Nurse alerts: 13 in 20 minutes for 12 beds (B01/B02: 0). Telegram: 24 messages sent + 27 edited, 0 failed (agents status counters).
 - No bed lost its values: attacked beds kept showing their last trusted numbers while cut off.
 
-**Known gaps (honest):** B12's weak attack did not surface live; B05 took 92 s to return to NORMAL after IT's Undo (the tampering latch waits for 30 s of clean data after the replay attack ends); B11 had 3 UNSURE hand-check pages from a clipped pulse signal.
+**Known gaps (honest):** B12's weak attack did not surface live (network witness blind, since fixed; re-run pending); B05 took 92 s to return to NORMAL after IT's Undo (the tampering latch waits for 30 s of clean data after the replay attack ends); B11 had 3 UNSURE hand-check pages from a clipped pulse signal.

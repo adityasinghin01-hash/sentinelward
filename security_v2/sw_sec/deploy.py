@@ -266,6 +266,10 @@ WantedBy=multi-user.target
             private_write(SYSTEMD_DIR/'sw-net.service',net,mode=0o644)
             run_checked(['systemctl','daemon-reload'])
             run_checked(['systemctl','start','mosquitto'])
+            # The network witness runs as the service user (in group adm) and must read the broker log;
+            # Mosquitto writes it 0600, which silently left every sender count null.
+            if os.path.exists(log_path):
+                run_checked(['chgrp','adm',log_path]); run_checked(['chmod','0640',log_path])
             check_admin(admin)
             # Baseline connections distinguish auth failures from transport failure.
             from .mqtt_probe import probe
