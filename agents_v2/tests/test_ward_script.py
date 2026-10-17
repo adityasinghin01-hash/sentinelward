@@ -23,7 +23,7 @@ def test_ward_script_key_moments(world):
     at("05:50")
     w.a["A1"].ack(b03, "staff:tom", "telegram")
     assert w.bus.alerts(b03)[-1]["status"] == "acked"
-    # T+06:30 B04 false asystole -> LOOSE_SENSOR, low, false alarm silenced
+    # T+06:30 B04 false asystole -> LOOSE_SENSOR, low, advice to refit the sensor
     at("06:30")
     w.verdict("B04", "LOOSE_SENSOR", 0.9, reasons=["ECG lead off"], n=2)
     assert w.bus.alerts()[-1]["priority"] == "low"

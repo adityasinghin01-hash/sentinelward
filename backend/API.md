@@ -144,6 +144,7 @@ numbers the summary text was written from: `since_ts`, `shift_start`, `data_from
 `incidents`, `untrusted_bed_count`, `untrusted_beds`, `open_ticket_count`, `open_tickets`, `blind_time`,
 `alerts_sent`, `alerts_acknowledged`, `median_ack_s`, `false_alarms_silenced`; only keys present), or
 `null`; `fallback_reason` is why the template wrote the text, when it did.
+`false_alarms_silenced` is a legacy field name for loose-sensor episodes flagged (advice only); SentinelWard never silences monitor alarms.
 
 ## WebSocket `/ws`
 

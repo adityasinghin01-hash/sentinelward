@@ -3,7 +3,7 @@
 Granite only writes prose from the facts it is given; its output is never parsed for actions.
 The base model in IBM's LinuxONE image is not instruction-tuned, so the prompt is a fixed outline
 plus the facts, and the output is rejected (template used instead) when it is empty, too long,
-or mentions any number, bed or device that is not in the facts.
+mentions any number, bed or device that is not in the facts, or contradicts a bed's status/trust.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import Any
 
 log = logging.getLogger("sw_agents.granite")
 NUM_RE = re.compile(r"\d+(?:\.\d+)?")
-BED_RE = re.compile(r"\b(?:bed\s*|B)(\d{1,2})\b", re.IGNORECASE)
+BED_RE = re.compile(r"\b(?:bed\s*|B)(\d+)\b", re.IGNORECASE)
 DEV_RE = re.compile(r"\bMON-(\d\d)\b", re.IGNORECASE)
 FORBIDDEN = re.compile(r"https?://|<[a-z/]|```", re.IGNORECASE)
 
@@ -60,7 +60,7 @@ def check_output(text: str, facts: dict) -> str | None:
         if m.group(1) not in devices:
             return f"mentions MON-{m.group(1)} which is not in the facts"
     for n in NUM_RE.findall(text):
-        if n not in numbers and n.rstrip("0").rstrip(".") not in numbers:
+        if n not in numbers and (n.rstrip("0").rstrip(".") if "." in n else n) not in numbers:
             return f"adds the number {n} which is not in the facts"
     return None
 
@@ -73,13 +73,15 @@ def _num_eq(text_value: str, fact) -> bool:
 
 
 def check_claims(text: str, facts: dict) -> str | None:
-    """Counts the text states must be the counts in the facts (a number being *somewhere* is not enough)."""
+    """Counts and per-bed claims must match the facts (a number being *somewhere* is not enough)."""
     t = text.lower()
     counts = [(r"(\d+) incidents?\b", "incident_count", "incidents"),
               (r"(\d+) (?:open )?(?:biomed(?:ical)? )?tickets?\b", "open_ticket_count", "open tickets"),
               (r"(\d+) (?:\w+ ){0,2}alerts?\b", "alerts_sent", "alerts"),
               (r"acknowledged (?:all )?(?:of them, )?(\d+)\b", "alerts_acknowledged", "acknowledged alerts"),
               (r"(\d+) false alarms?\b", "false_alarms_silenced", "false alarms"),
+              (r"loose-sensor episodes: (\d+)\b", "false_alarms_silenced", "loose-sensor episodes"),
+              (r"(\d+) loose-sensor episodes?\b", "false_alarms_silenced", "loose-sensor episodes"),
               (r"(\d+) untrusted beds?\b", "untrusted_bed_count", "untrusted beds"),
               (r"median (?:of |time of |acknowledgement time of )?(\d+(?:\.\d+)?)", "median_ack_s", "median")]
     for pattern, key, label in counts:
@@ -106,6 +108,58 @@ def check_claims(text: str, facts: dict) -> str | None:
         for b in re.findall(r"(?:b|bed\s*)(\d{1,2})", m.group(1)):
             if str(int(b)) not in untrusted:
                 return f"says bed {int(b)} is untrusted but it is not"
+    return check_bed_claims(text, facts)
+
+
+def check_bed_claims(text: str, facts: dict) -> str | None:
+    """Bind status/trust words to their bed(s), rather than accepting a ward-wide word swap."""
+    untrusted = {str(int(b[1:])) for b in facts.get("untrusted_beds") or []}
+    incidents: dict[str, list[dict]] = {}
+    for incident in facts.get("incidents") or []:
+        incidents.setdefault(str(int(incident["bed_id"][1:])), []).append(incident)
+    # Keep bed lists together, separate new subjects, and retain pronouns only within a sentence.
+    bed = r"(?:b\d+|bed\s*\d+)\b"
+    words = r"resolved|closed|open|contained|trusted|untrusted|stable|normal|safe|emergency|tampering|both|unsure"
+    claim_re = re.compile(r"\b(?:(not|never|no longer)\s+(?:(?:be|been|yet|currently|still)\s+)*)?(" + words + r")\b", re.IGNORECASE)
+    normalized = re.sub(r"n['’]t\b", " not", text, flags=re.IGNORECASE)
+    for sentence in re.split(r"[!?\n]|\.(?!\d)", normalized):
+        subjects: set[str] = set()
+        pending: set[str] = set()
+        clauses = re.split(r";|\b(?:while|whereas|but)\b|,\s*(?:with\s+)?(?=" + bed + r")|"
+                           r"\b(?:and|with)\s+(?=" + bed + r"\s+(?:is|are|was|were|has|remains?|stays?|" + words + r")\b)",
+                           sentence, flags=re.IGNORECASE)
+        for clause in clauses:
+            # Negation of another claim must not excuse a claim that an alarm was silenced.
+            for mute in re.finditer(r"\b(?:(not|never)\s+(?:automatically\s+)?)?(?:silenced|suppressed|muted)\b", clause, re.IGNORECASE):
+                if not mute.group(1):
+                    return "claims alarm silencing; sensor classification is advice only"
+            named = {str(int(m.group(1))) for m in BED_RE.finditer(clause)}
+            claims = [m for m in claim_re.finditer(clause) if not (
+                m.group(2).lower() == "both" and m.group(2) != "BOTH" and
+                re.match(r"\s+(?:beds?\b|b\d+\b|(?:" + words + r")\b)", clause[m.end():], re.IGNORECASE))]
+            if named:
+                subjects = named | pending
+            elif not re.match(r"\s*(?:so\s+)?(?:it|they|not|never|no longer|is|are|still|now)\b", clause, re.IGNORECASE):
+                subjects = set()
+            pending = subjects if not claims else set()
+            for match in claims:
+                negated, claim = match.groups()
+                claim = claim.lower()
+                for b in subjects:
+                    records = incidents.get(b, [])
+                    statuses = {i["status"].lower() for i in records}
+                    verdicts = {i["verdict"].lower() for i in records}
+                    if claim in ("resolved", "closed", "open", "contained"):
+                        supported = bool(statuses & {"resolved", "closed"}) if claim in ("resolved", "closed") else claim in statuses
+                    elif claim in ("trusted", "untrusted"):
+                        supported = (b in untrusted) == (claim == "untrusted")
+                    elif claim in ("stable", "normal", "safe"):
+                        supported = b not in untrusted and not any(
+                            i["status"].lower() not in ("resolved", "closed") and i["verdict"].lower() != "normal" for i in records)
+                    else:
+                        supported = claim in verdicts or (claim in ("tampering", "emergency") and "both" in verdicts)
+                    if supported == bool(negated):
+                        return f"says bed {int(b)} is {match.group(0)} but that contradicts its structured facts"
     return None
 
 
@@ -151,10 +205,10 @@ PROMPT_SKIP = ("since_ts", "now_ts", "beds_mentioned", "devices_mentioned")
 # is a base model: it follows a worked example far better than an instruction.
 EXAMPLE = ("Facts since 08:00:\n- Incidents: 1 (B02 TAMPERING open)\n- Untrusted beds: B02\n"
            "- Open biomed tickets: 1 (MON-11 drift)\n- Blind time: B02 3.5 min\n"
-           "- Alerts to staff: 6, acknowledged 4, median 22.0 s to acknowledge\n- False alarms silenced: 2\n"
+           "- Alerts to staff: 6, acknowledged 4, median 22.0 s to acknowledge\n- Loose-sensor episodes: 2 (advice only; alarms remain active)\n"
            "Handover note: Since 08:00 the ward had 1 incident: suspected tampering on B02, still open, so B02 is "
            "untrusted. There is 1 open biomed ticket, a drift on MON-11. B02 was blind for 3.5 min. Staff got 6 alerts "
-           "and acknowledged 4, with a median of 22.0 s. 2 false alarms were silenced.\n\n")
+           "and acknowledged 4, with a median of 22.0 s. 2 loose-sensor episodes were flagged; alarms remain active.\n\n")
 
 
 def fact_lines(f: dict) -> str:
@@ -167,7 +221,7 @@ def fact_lines(f: dict) -> str:
             f"- Untrusted beds: {', '.join(f.get('untrusted_beds') or []) or 'none'}\n"
             f"- Open biomed tickets: {f.get('open_ticket_count', 0)} ({tk})\n- Blind time: {bl}\n"
             f"- Alerts to staff: {f.get('alerts_sent', 0)}, acknowledged {f.get('alerts_acknowledged', 0)}{med}\n"
-            f"- False alarms silenced: {f.get('false_alarms_silenced', 0)}\n")
+            f"- Loose-sensor episodes: {f.get('false_alarms_silenced', 0)} (advice only; alarms remain active)\n")
 
 
 def seed_for(facts: dict) -> str:

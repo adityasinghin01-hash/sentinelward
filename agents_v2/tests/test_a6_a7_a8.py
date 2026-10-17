@@ -160,7 +160,7 @@ def test_claims_must_match_the_facts():
          "blind_time": [{"bed_id": "B03", "minutes": 0.4}, {"bed_id": "B04", "minutes": 0.1}]}
     ok = ("Since 08:00 the ward had 2 incidents, so B05 and B07 are untrusted. There is 1 open biomed ticket. "
           "B03 was blind for 0.4 min, B04 for 0.1 min. Staff got 5 alerts and acknowledged 1, with a median of 15.0 s. "
-          "1 false alarm was silenced.")
+          "1 loose-sensor episode was flagged; alarms remain active.")
     assert check_claims(ok, f) is None
     # real Granite output from the server (17 Oct): every number exists in the facts, two claims are false
     assert "acknowledged" in check_claims("Staff got 5 alerts and acknowledged all 5, with a median of 15.0 s.", f)
