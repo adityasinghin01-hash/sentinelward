@@ -1,0 +1,72 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Inter, Arial, sans-serif","fontSize":"17px","primaryColor":"#f7f9fc","primaryTextColor":"#172033","primaryBorderColor":"#52627a","lineColor":"#52627a","secondaryColor":"#eef4f8","tertiaryColor":"#fff7e8","clusterBkg":"#ffffff","clusterBorder":"#8b98aa"},"flowchart":{"htmlLabels":true,"curve":"basis","nodeSpacing":24,"rankSpacing":42}}}%%
+flowchart LR
+  subgraph WARD["Lab ward · replayed real ICU recordings"]
+    D["PhysioNet / CinC 2015 · VTaC<br/>MIMIC-III waveform sample · VitalDB"]
+    S["Ward simulator<br/>real recordings replayed"]
+    M["12 bedside monitors<br/>MON-01 … MON-12"]
+    D --> S --> M
+  end
+
+  subgraph Z["IBM LinuxONE · IBM z17 / Telum II · s390x · nnpa"]
+    H["Secured MQTT hub<br/>Mosquitto Dynamic Security<br/>TLS · per-device accounts · own-bed ACLs"]
+    N["Network witness<br/>features per device every 5 s"]
+
+    subgraph BRAIN["Brain · 10 s windows every 5 s"]
+      M1["M1 · sensor quality"]
+      M2["M2 · real alarm<br/>2-lead gradient-boosted model<br/>trained on LinuxONE"]
+      M3["M3 · body consistency"]
+      M4["M4 · replay"]
+      M5["M5 · network attack"]
+      M6["M6 · pressure drift"]
+    end
+
+    DEC["Decision layer<br/>8 verdicts · trust · reasons<br/>tampering never hides an emergency"]
+
+    subgraph AG["A1–A8 agents · one sw_agents process"]
+      A1["A1 · alerts<br/>Telegram ladder"]
+      A2["A2 · device cut-off<br/>Undo"]
+      A3["A3 · evidence<br/>SHA-256"]
+      A4["A4 · fleet hunt"]
+      A5["A5 · CERT-In draft"]
+      A6["A6 · biomed tickets"]
+      A7["A7 · workload"]
+      A8["A8 · shift briefing<br/>IBM Granite"]
+    end
+
+    API["Backend API + live WebSocket"]
+    DB[("PostgreSQL<br/>ward state · records · audit")]
+    C["Six-container deployment<br/>hub · db · api · brain · sim · attacks<br/>non-root · read-only · limits"]
+  end
+
+  UI["Central screens<br/>Ward · Bed · Alerts · Security · Incidents<br/>CERT-In draft · Tickets · Briefing · Action log"]
+  TG["Phone · Telegram<br/>alert · ladder · acknowledgement"]
+
+  M --> H
+  H --> N
+  H --> M1 & M2 & M3 & M4 & M6
+  N --> M4 & M5
+  M1 & M2 & M3 & M4 & M5 & M6 --> DEC
+  DEC --> A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8
+  DEC --> API
+  A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 --> API
+  A2 -- "disable / enable client" --> H
+  A1 --> TG
+  TG -- "ack / bedside response" --> A1
+  API <--> DB
+  API --> UI
+  UI -- "ack · isolate · Undo · review" --> API
+  C -. "isolated deployment option" .-> H
+  C -.-> API
+
+  classDef data fill:#eef7f2,stroke:#3e7554,color:#172033;
+  classDef secure fill:#edf3fb,stroke:#35668f,color:#172033;
+  classDef ai fill:#f3effb,stroke:#6e57a5,color:#172033;
+  classDef action fill:#fff5e6,stroke:#a66b16,color:#172033;
+  classDef store fill:#f4f4f4,stroke:#5e6570,color:#172033;
+  classDef human fill:#fff0f0,stroke:#9b4f4f,color:#172033;
+  class D,S,M data;
+  class H,N secure;
+  class M1,M2,M3,M4,M5,M6,DEC ai;
+  class A1,A2,A3,A4,A5,A6,A7,A8 action;
+  class API,DB,C store;
+  class UI,TG human;
