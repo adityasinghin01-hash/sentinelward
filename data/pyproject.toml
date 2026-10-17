@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sw_data"
+version = "1.0.0"
+description = "SentinelWard bed-pack builder: PhysioNet/CinC 2015, MIMIC-III matched subset and VitalDB to 125 Hz little-endian packs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pyyaml>=6",
+    "wfdb==4.3.1",
+]
+
+[project.optional-dependencies]
+# Mac / Colab only: vitaldb reads .vital files wrongly on big-endian LinuxONE.
+vital = ["vitaldb==1.7.2"]
+test = ["pytest>=7"]
+
+[project.scripts]
+sw-data = "sw_data.cli:main"
+
+[tool.setuptools]
+packages = ["sw_data"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "-q"

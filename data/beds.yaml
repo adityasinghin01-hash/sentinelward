@@ -1,0 +1,129 @@
+# SentinelWard ward script (doc 12): the 12 beds the ward simulator replays.
+#
+# Fields marked "H1 PICK", "H1 WINDOW" or "H1 CONFIRM" are decided at H1:
+#   H1 CONFIRM  run `python -m sw_data check <record>` first; if it fails, put the backup in.
+#   H1 PICK     fill in from `python -m sw_data pick-mimic <mimic root> --exclude p000052,p000107,p000109 --need 3`.
+#   H1 WINDOW   fill in the "suggested start" minute printed by `python -m sw_data check <case>.vital`.
+# A bed whose H1 field is still null fails the build loudly; the other beds still build.
+#
+# Relative paths below are relative to this file. Point them at your local copies.
+# Machines: 2015 + MIMIC beds build on LinuxONE or Mac; VitalDB beds (B08-B10) on Mac or Colab only:
+#   python -m sw_data build beds.yaml --out packs --beds B01,B02,B03,B04,B05,B06,B07,B11,B12   # LinuxONE
+#   python -m sw_data build beds.yaml --out packs --beds B08,B09,B10                           # Mac
+
+version: 1
+
+paths:
+  cinc2015: ../sources/challenge-2015/training          # folder holding a123l.hea / a123l.dat ...
+  mimic: ../sources/mimic3wdb-matched-sample            # sample root: p00/p000052/...
+  vitaldb: ../sources/vitaldb                           # folder holding <case>.vital
+  vitaldb_clinical: ../sources/vitaldb/clinical_data.csv
+
+# signals = required signals; a bed fails if one is absent or more than 50 % missing in its window.
+#   ecg, ppg, abp, resp : waveforms (resp = the RESP waveform, stored as an extra 125 Hz "resp" array)
+#   numerics            : MIMIC numerics record lined up with the piece, HR at most 50 % missing
+#   numbers             : VitalDB Solar8000 numbers, HR at most 50 % missing
+#   cuff                : VitalDB NIBP track with at least one new reading in the window
+
+beds:
+  - bed_id: B01
+    device_id: MON-01
+    dataset: mimic
+    patient: p000109
+    piece: "3346682_0014"
+    start_s: 7200            # 2 h into the piece
+    duration_s: 1320         # 22 min
+    signals: [ecg, ppg, resp, numerics]
+
+  - bed_id: B02
+    device_id: MON-02
+    dataset: mimic
+    patient: p000052
+    piece: "3533390_0011"
+    start_s: 0
+    duration_s: 1320
+    signals: [ecg, ppg, resp, numerics]
+
+  - bed_id: B03
+    device_id: MON-03
+    dataset: cinc2015
+    record: v221l            # true VT; whole record
+    signals: [ecg, ppg, abp]
+
+  - bed_id: B04
+    device_id: MON-04
+    dataset: cinc2015
+    record: a123l            # H1 CONFIRM: false asystole; replace with backup_record if check fails
+    backup_record: null      # H1 CONFIRM: backup 2015 record (none named in doc 12)
+    signals: [ecg, ppg, abp]
+
+  - bed_id: B05
+    device_id: MON-05
+    dataset: mimic
+    patient: p000107
+    piece: "3860035_0044"
+    start_s: 0
+    duration_s: 1320
+    signals: [ecg, ppg, numerics]
+
+  - bed_id: B06
+    device_id: MON-06
+    dataset: mimic
+    patient: null            # H1 PICK: MIMIC patient #4 (pick-mimic row 1)
+    piece: null              # H1 PICK: piece name from pick-mimic, in quotes ("4000000_0001")
+    start_s: null            # H1 PICK: suggested start offset (s) from pick-mimic
+    duration_s: 1320
+    signals: [ecg, ppg, numerics]
+
+  - bed_id: B07
+    device_id: MON-07
+    dataset: cinc2015
+    record: f543l            # H1 CONFIRM: true VF; replace with backup_record if check fails
+    backup_record: null      # H1 CONFIRM: backup 2015 record (none named in doc 12)
+    signals: [ecg, ppg, abp]
+
+  - bed_id: B08
+    device_id: MON-08
+    dataset: vitaldb
+    case: 5552
+    window_ref: file         # minutes counted from the start of the .vital file (casestart = 0)
+    start_min: 231           # surgery minutes 231-253
+    duration_s: 1320
+    signals: [ecg, ppg, abp, cuff, numbers]
+
+  - bed_id: B09
+    device_id: MON-09
+    dataset: vitaldb
+    case: 912
+    window_ref: file
+    start_min: 38            # surgery minutes 38-60
+    duration_s: 1320
+    signals: [ecg, ppg, abp, cuff, numbers]
+
+  - bed_id: B10
+    device_id: MON-10
+    dataset: vitaldb
+    case: 4277               # H1 CONFIRM: switch to backup_case (5659) if check fails
+    backup_case: 5659
+    window_ref: file
+    start_min: null          # H1 WINDOW: "suggested start" minute from `check <case>.vital`
+    duration_s: 1320
+    signals: [ecg, ppg, abp, cuff, numbers]
+
+  - bed_id: B11
+    device_id: MON-11
+    dataset: mimic
+    patient: null            # H1 PICK: MIMIC patient #5 (pick-mimic row 2)
+    piece: null              # H1 PICK
+    start_s: null            # H1 PICK
+    duration_s: 1320
+    signals: [ecg, ppg, numerics]
+
+  - bed_id: B12
+    device_id: MON-12
+    dataset: mimic
+    patient: null            # H1 PICK: MIMIC patient #6 (pick-mimic row 3)
+    piece: null              # H1 PICK
+    start_s: null            # H1 PICK
+    duration_s: 1320
+    signals: [ecg, ppg, numerics]
