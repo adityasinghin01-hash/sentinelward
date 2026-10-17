@@ -235,6 +235,19 @@ class ReplayDetector:
     def __init__(self): self.history={}; self.pending_sender_checks={}
     def reset(self): self.history.clear(); self.pending_sender_checks.clear()
     @staticmethod
+    def network_source(state,now_ms):
+        # MQTT receipts have no publisher identity. Topic 7 supplies only a
+        # device-level count, never identities to attach to individual frames.
+        source=state.network
+        device=(state.last_message or {}).get('device_id')
+        if (source and device is not None and source['device_id']==device and
+                source.get('received_ms',now_ms)<=now_ms and
+                now_ms-10000<=source['window_start'] and
+                source['window_start']+source['window_s']*1000<=now_ms):
+            return source
+        return None
+
+    @staticmethod
     def transport(state,now_ms):
         # Compare whole envelopes, including alarms/numerics/optional leads. The
         # first arriving publisher need not be the real monitor. A matching frame
@@ -258,6 +271,8 @@ class ReplayDetector:
         unexplained=[r for r in issues if id(r) not in copies or abs(r['received_ms']-r['message']['ts'])>3000]
         conflict=any(id(r) in conflicts for r in recent)
         senders={r['sender_id'] for r in recent if r.get('sender_id') is not None}
+        source=ReplayDetector.network_source(state,now_ms)
+        sender_count=max(len(senders),int((source or {}).get('senders') or 0))
         # Keep a bounded witness of a flood, then require the SAME connection to
         # continue at monitor pace in at least two completed seconds. A flood's
         # many copies of one sequence do not also count as paced impersonation.
@@ -280,10 +295,18 @@ class ReplayDetector:
                           r['received_ms']<now_ms-10000 and not r.get('sequence_issue') and
                           r.get('sender_id') is not None),None)
         unverified_sender=any(r.get('sender_id')!=established and id(r) not in copies for r in recent)
-        copy_only=(bool(issues) and established is not None and not conflict and not unexplained and
+        # Without IDs, identical complete envelopes still prove copies. They do
+        # not prove WHO sent either copy. Keep the identity-based check when it
+        # is actually available; a newly accepted unknown sender is unverified.
+        anonymous=not senders and any(not r.get('sequence_issue') and
+                                     r['received_ms']<now_ms-10000 for r in state.messages)
+        copy_only=(bool(issues) and (established is not None or anonymous) and not conflict and not unexplained and
                    not unverified_sender and all(id(r) in copies for r in issues))
-        return dict(recent=recent,sequence_events=len(issues),senders=len(senders),
-                    sender_identity_available=bool(senders),content_conflict=conflict,
+        return dict(recent=recent,sequence_events=len(issues),senders=sender_count,
+                    sender_identity_available=bool(senders),
+                    sender_count_available=bool(senders) or (source is not None and source.get('senders') is not None),
+                    sender_count_window_start=source['window_start'] if source is not None else None,
+                    content_conflict=conflict,
                     unexplained_sequence=bool(unexplained),flood_and_paced_sender=combined,
                     duplicate_only=copy_only,independent_evidence=strong)
 
@@ -296,8 +319,13 @@ class ReplayDetector:
         # clear that doubt when packets age out, nor create a nurse task for a
         # flood that belongs to IT. New traffic after a check reopens the doubt.
         bed=state.bed_id
-        if .5<=metadata_score<.8 and len(recent)<=50:
-            self.pending_sender_checks[bed]=max(r['received_ms'] for r in recent)
+        if .5<=metadata_score<.8 and recent and len(recent)<=50:
+            # Use the time of the observed sender witness, not later ordinary
+            # receipts. A delayed old window must not reopen a completed check.
+            witness=extra['sender_count_window_start']
+            observed=witness+5000-1 if witness is not None else max(r['received_ms'] for r in recent)
+            if observed>getattr(state,'patient_ok_ts',-1):
+                self.pending_sender_checks[bed]=max(self.pending_sender_checks.get(bed,-1),observed)
         pending=self.pending_sender_checks.get(bed)
         if pending is not None and pending<=getattr(state,'patient_ok_ts',-1)<=now_ms:
             self.pending_sender_checks.pop(bed,None); pending=None
@@ -307,8 +335,8 @@ class ReplayDetector:
         reason=('Conflicting frame content for the same sequence or timestamp' if extra['content_conflict'] else
                 'Old or unverified regressed sequence' if extra['unexplained_sequence'] else
                 'Flood followed by paced impersonation from the same sender' if extra['flood_and_paced_sender'] else
-                'Second authenticated sender; bedside confirmation pending' if pending is not None else
-                'Second authenticated sender on this bed' if extra['senders']>1 else
+                'Multiple publishers observed; bedside confirmation pending' if pending is not None else
+                'Multiple publishers observed on this bed' if extra['senders']>1 else
                 'No replay evidence in available bed history')
         if not window:
             return result(metadata_score,reason,**extra)
