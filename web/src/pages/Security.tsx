@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 import {Ban, FileWarning, Radar, ShieldAlert, ShieldCheck, WifiOff} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
-import {age, can, countdown, score01, time} from '../lib/domain';
+import {age, can, certDeadline, countdown, score01, time, trustView} from '../lib/domain';
 import type {AgentRecord, BedDetail, Device, NetFeatures} from '../lib/types';
 import {ActionList, Empty, Feedback, PageTitle, Panel, ResourceState, Stats, Tip} from '../components/ui';
 import {Chip, Dialog, Fact} from '../components/extra';
@@ -13,6 +13,12 @@ import {TrendChart} from '../components/Chart';
 const SECURITY_ACTORS = new Set(['A2', 'A3', 'A4', 'A5']);
 const SECURITY_CODES = /isolat|disable|reconnect|undo|evidence|snapshot|hash|incident|report|fleet|contain|resolve|clock/i;
 const openIncident = (r: AgentRecord) => !['resolved', 'closed'].includes(String(r.data.status));
+
+const SENDERS_HINT = 'Different network senders the network witness saw using this monitor\'s identity (newest known 5-second window). More than 1 suggests an impostor. "n/a": the witness had no broker connection log, so it could not count senders.';
+function senders(d: Device) {
+  const n = d.senders ?? d.net?.senders;
+  return typeof n === 'number' ? String(n) : <Tip text={SENDERS_HINT}><span>n/a</span></Tip>;
+}
 
 function DeviceStatus({d}: {d: Device}) {
   if (d.isolated) return <Chip kind="striped" hint={`Cut off from the ward network${d.isolated_since ? ` since ${time(d.isolated_since, true)}` : ''}. Undo reconnects it.`}><Ban size={12} aria-hidden="true" />Cut off</Chip>;
@@ -37,7 +43,7 @@ function NetworkWitness({device}: {device: Device}) {
       <TrendChart ts={ts} series={series} height={110} label={`Message rate of ${device.device_id} over the last 10 minutes`} />
       <dl className="facts facts-grid">
         <Fact label="Message rate" hint="Messages per second in the newest window. A healthy monitor sends about 1/s." value={last?.msgs_per_s == null ? '—' : `${last.msgs_per_s.toFixed(1)}/s`} />
-        <Fact label="Senders" hint="How many different network senders used this monitor's identity. More than 1 suggests an impostor." value={last?.senders ?? '—'} />
+        <Fact label="Senders" hint={SENDERS_HINT} value={senders(device)} />
         <Fact label="Timing jitter" hint="Spread of the time between messages, in ms. Replayed or injected traffic is often too regular or bursty." value={last?.iat_std_ms == null ? '—' : `${Math.round(last.iat_std_ms)} ms`} />
         <Fact label="Seq gaps / repeats" hint="Missing / repeated message numbers in the window. Repeats point to replay." value={`${last?.seq_gaps ?? '—'} / ${last?.seq_repeats ?? '—'}`} />
         <Fact label="Malformed" hint="Messages that failed format checks in the window." value={last?.malformed ?? '—'} />
@@ -81,7 +87,7 @@ export function SecurityPage() {
   const device = list.find(d => d.device_id === selected) ?? list[0];
   const open = (incidents.data ?? []).filter(openIncident);
   const dues = (reports.data ?? []).filter(r => !['sent', 'human_marked_sent'].includes(String(r.data.status)))
-    .map(r => Number(r.data.deadline_ts)).filter(n => n > 0);
+    .map(r => certDeadline(r, (incidents.data ?? []).find(i => i.record_id === r.data.incident_id))).filter((n): n is number => !!n);
   const due = dues.length ? Math.min(...dues) : null;
   const feed = actions.filter(a => SECURITY_ACTORS.has(a.actor) || SECURITY_CODES.test(a.action_code)).slice(0, 14);
   return (
@@ -111,14 +117,15 @@ export function SecurityPage() {
                     <th scope="col">Device</th><th scope="col">Bed</th><th scope="col">Status</th>
                     <th scope="col"><Tip text="Messages per second, newest 5-second window."><span>Msg rate</span></Tip></th>
                     <th scope="col"><Tip text="Age of the newest message the hub received from this monitor."><span>Last heard</span></Tip></th>
-                    <th scope="col"><Tip text="Different senders seen using this monitor's identity. More than 1 is suspicious."><span>Senders</span></Tip></th>
+                    <th scope="col"><Tip text={SENDERS_HINT}><span>Senders</span></Tip></th>
                     <th scope="col"><Tip text="Missing / repeated message numbers in the newest window."><span>Gaps / repeats</span></Tip></th>
                     <th scope="col"><Tip text="Data trust of the bed this monitor feeds, 0 to 1."><span>Data trust</span></Tip></th>
                   </tr></thead>
                   <tbody>
                     {list.map(d => {
                       const bed = beds.find(b => b.bed_id === d.bed_id);
-                      const low = bed ? bed.trust_score < 50 : false;
+                      const trust = bed ? trustView(bed) : null;
+                      const low = trust ? trust.value === null || trust.value < 0.5 : false;
                       return (
                         <tr key={d.device_id} tabIndex={0} className={device?.device_id === d.device_id ? 'is-selected' : ''}
                             aria-selected={device?.device_id === d.device_id} onClick={() => setSelected(d.device_id)}
@@ -128,9 +135,9 @@ export function SecurityPage() {
                           <td><DeviceStatus d={d} /></td>
                           <td className="mono">{d.net?.msgs_per_s == null ? '—' : `${d.net.msgs_per_s.toFixed(1)}/s`}</td>
                           <td className="mono">{d.last_seen_ts ? age(d.last_seen_ts, now) : '—'}</td>
-                          <td className="mono">{d.net?.senders ?? '—'}</td>
+                          <td className="mono">{senders(d)}</td>
                           <td className="mono">{d.net?.seq_gaps ?? '—'} / {d.net?.seq_repeats ?? '—'}</td>
-                          <td className={`mono ${low ? 'striped-cell' : ''}`}>{bed ? (bed.trust_score / 100).toFixed(2) : '—'}{low && <span className="sr-only"> low trust</span>}</td>
+                          <td className={`mono ${low ? 'striped-cell' : ''}`} title={trust?.why || undefined}>{trust ? trust.text : '—'}{low && <span className="sr-only"> low trust</span>}</td>
                         </tr>
                       );
                     })}
