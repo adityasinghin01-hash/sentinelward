@@ -234,7 +234,7 @@ def create_app(*, settings: Settings | None = None, bus=None, store: Store | Non
 
     @app.get("/api/devices", response_model=list[DeviceEntry])
     async def devices(identity=Depends(user)):
-        return runtime.state.devices_list()
+        return presenters.devices(runtime.state)
 
     @app.get("/api/actions", response_model=ActionsResponse)
     async def actions(limit: int = Query(default=200, ge=1, le=5000), identity=Depends(user)):

@@ -167,6 +167,9 @@ class DeviceEntry(BaseModel):
     isolated_since: int | None
     last_seen_ts: int | None
     net: dict[str, Any] | None
+    # Newest non-null net_features.senders in the buffered rows (the newest row may not know it).
+    senders: float | None = None
+    senders_window_start: int | None = None
 
 
 class HealthResponse(BaseModel):
@@ -299,6 +302,7 @@ class BedDetail(RawBed):
     recent_verdicts: list[dict[str, Any]]
     device: dict[str, Any]
     open_alerts: list[dict[str, Any]]
+    monitor_alarm: dict[str, Any] | None = None
 
 
 class HistoryPoint(BaseModel):
@@ -334,11 +338,15 @@ class BriefingResponse(BaseModel):
     blind_time: list[BlindTime]
     record_id: str
     ts: int
+    # The A8 record's own facts, i.e. the numbers the summary text was written from.
+    facts: dict[str, Any] | None = None
+    fallback_reason: str | None = None
 
 
 class NurseLoad(BaseModel):
     nurse_id: str
     nurse_name: str
+    role: str | None = None
     alarms_last_2h: int = Field(ge=0)
 
 

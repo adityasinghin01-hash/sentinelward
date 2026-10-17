@@ -179,6 +179,8 @@ def register(app: FastAPI, d: Deps) -> None:
             "open_tickets": sum(1 for r in state.records_of("ticket") if r["data"].get("status") not in CLOSED_TICKET),
             "blind_time": [{"bed_id": b, "minutes": round(n / 60, 2)} for b, n in sorted(blind.items()) if n > 0],
             "record_id": rec["record_id"], "ts": rec["ts"],
+            "facts": presenters.briefing_facts(data),
+            "fallback_reason": narrative.get("fallback_reason") if isinstance(narrative.get("fallback_reason"), str) else None,
         }
 
     @app.get("/api/workload", response_model=WorkloadResponse, response_model_exclude_none=True, tags=["briefing"])
@@ -193,5 +195,5 @@ def register(app: FastAPI, d: Deps) -> None:
                 continue
             user = runtime.sessions.users.get(n["staff_id"].removeprefix("staff:"))
             nurses.append({"nurse_id": n["staff_id"], "nurse_name": user.display_name if user else n["staff_id"],
-                           "alarms_last_2h": max(0, n["count"])})
+                           "role": user.role if user else None, "alarms_last_2h": max(0, n["count"])})
         return {"nurses": nurses, "record_id": rec["record_id"], "ts": rec["ts"]}
