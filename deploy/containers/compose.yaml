@@ -1,0 +1,106 @@
+# SentinelWard as containers on IBM LinuxONE (s390x).
+# A second, isolated copy of the ward: its own hub, database and network; only the web app is
+# published, on 127.0.0.1:8001 (the bare-metal systemd stack keeps 8000). Run ./make-env.sh first.
+name: sentinelward
+
+x-hardening: &hardening
+  read_only: true
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  tmpfs: ["/tmp"]
+  restart: unless-stopped
+  networks: [ward]
+
+x-app: &app
+  <<: *hardening
+  image: sentinelward:latest
+  env_file: [.env.containers]
+  environment:
+    SW_MQTT_HOST: hub
+    MQTT_HOST: hub
+    SW_MQTT_PORT: "1883"
+    MQTT_PORT: "1883"
+  depends_on:
+    hub: {condition: service_started}
+
+services:
+  hub:
+    image: eclipse-mosquitto:2.0.18
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - hubdata:/mosquitto/data
+    networks: [ward]
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: sentinelward
+      POSTGRES_USER: sw_api
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [dbdata:/var/lib/postgresql/data]
+    networks: [ward]
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sw_api -d sentinelward"]
+      interval: 5s
+      retries: 20
+
+  api:
+    <<: *app
+    build: {context: ../.., dockerfile: deploy/containers/Dockerfile}
+    command: ["python", "-m", "sw_api"]
+    environment:
+      SW_MQTT_HOST: hub
+      MQTT_HOST: hub
+      SW_API_HOST: 0.0.0.0
+      SW_API_PORT: "8000"
+      SW_FRONTEND_DIST: /srv/frontend
+    volumes:
+      - ${SW_FRONTEND_DIR:-../../frontend/dist}:/srv/frontend:ro
+    ports: ["127.0.0.1:8001:8000"]
+    depends_on:
+      hub: {condition: service_started}
+      db: {condition: service_healthy}
+    mem_limit: 384m
+    cpus: 1.0
+
+  brain:
+    <<: *app
+    command: ["python", "-m", "sw_brain"]
+    mem_limit: 512m
+    cpus: 1.0
+
+  sim:
+    <<: *app
+    command: ["python", "-m", "sw_sim", "listen", "--packs", "/packs", "--runs", "/runs/simulator",
+              "--script", "/app/simulator/ward_script.yaml"]
+    volumes:
+      - ${SW_PACKS_DIR:-/home/linux1/sw/packs}:/packs:ro
+      - runs:/runs
+    mem_limit: 256m
+    cpus: 0.5
+
+  attacks:
+    <<: *app
+    command: ["python", "-m", "sw_attacks", "--runs-dir", "/runs/attacks",
+              "--schedule", "/app/attacks/schedule.yaml"]
+    volumes: [runs:/runs]
+    mem_limit: 128m
+    cpus: 0.25
+
+networks:
+  ward: {internal: false}
+
+volumes:
+  hubdata: {}
+  dbdata: {}
+  runs: {}
+
+secrets:
+  db_password: {file: ./db_password.txt}
