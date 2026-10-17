@@ -36,6 +36,17 @@ it('keeps last-trusted values separate from incoming readings and freezes both t
   expect(screen.getAllByRole('img',{name:/Last trusted recording, held still/})).toHaveLength(2);
   expect(writes).toEqual([]);
 });
+it('labels received values as untrusted when no trusted snapshot exists', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(
+    url.includes('/history') ? {points: []} : {...detail, last_trusted: null}
+  ))));
+  open();
+  await screen.findByRole('heading', {name: 'Last values received · not trusted'});
+  expect(within(screen.getByRole('group', {name: 'Vital signs'})).getByText('190')).toBeInTheDocument();
+  expect(screen.getByText('Not trusted · showing the last values received; no trusted recording is available. Check by hand.')).toBeInTheDocument();
+  expect(screen.queryByText(/Frozen at the newest trusted recording|showing the last good recording/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('img', {name: /Last trusted recording/})).not.toBeInTheDocument();
+});
 it.each(['Patient OK','Patient NOT OK'])('preserves the %s request', async label => {
   open();
   fireEvent.click(await screen.findByRole('button',{name:label}));

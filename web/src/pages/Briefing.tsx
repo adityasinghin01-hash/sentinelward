@@ -49,6 +49,7 @@ export function BriefingPage() {
         <article className="briefing-paper">
           <div className="briefing-paper-head"><h2>Shift handover</h2><time className="mono">{dateTime(b.ts)}</time></div>
           <Chip className="briefing-writer">{writer}</Chip>
+          {granite && <p className="briefing-source">Written by IBM Granite. Its numbers and bed statuses are checked against the facts beside it; checks are heuristic, so review the text.</p>}
           <div className="summary-text">{paragraphs.length ? paragraphs.map((p, i) => <p key={i}>{p}</p>) : <p>No summary has been recorded yet.</p>}</div>
           {!granite && b.fallback_reason && <p className="briefing-source">{rejected ? 'The fact check rejected the Granite draft. This summary uses the recorded facts directly.' : /unavailable/i.test(b.fallback_reason) ? 'Template used because: Granite unavailable for this draft.' : /still writing/i.test(b.fallback_reason) ? 'The template is shown while Granite is still writing.' : 'The template wrote this summary from the ward’s recorded facts.'}</p>}
           <details className="record-details"><summary>Source details</summary><div className="record-original"><p>{f ? 'The counts and durations below come from the same record as this summary.' : 'This server did not include the summary’s source facts. Counts may differ from the prose.'}</p><pre>{JSON.stringify({generated_by: b.generated_by, fallback_reason: b.fallback_reason, facts: f}, null, 2)}</pre></div></details>

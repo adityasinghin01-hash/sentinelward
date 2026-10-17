@@ -72,6 +72,8 @@ the hub ACL (security_v2's agents role does not list `ward/record`; that subscri
 
 ## Open questions
 
+Historical B11 question below: recorded before the later cut-off-label and alert-policy fixes; it does not describe the current implementation.
+
 1. A DEVICE_ATTACK cut-off silences that monitor; the brain then reports UNSURE "offline" and A1 sends a hand-check alert. Safe, but doc12 says B11 is "IT only".
 2. The backend replaces a record when the same `record_id` arrives again. A5 updates a draft only until `review_report`, and A6 updates tickets on new episodes; either can overwrite a staff edit made in between.
 3. Medium alerts escalate to the doctor after 60 s without an ack (B05 in doc12 is acked at ~80 s). Set `SW_A1_LADDER_PRIORITIES=high` if that is too noisy.

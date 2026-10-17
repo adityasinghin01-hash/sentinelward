@@ -117,49 +117,57 @@ def check_bed_claims(text: str, facts: dict) -> str | None:
     incidents: dict[str, list[dict]] = {}
     for incident in facts.get("incidents") or []:
         incidents.setdefault(str(int(incident["bed_id"][1:])), []).append(incident)
-    # Keep bed lists together, separate new subjects, and retain pronouns only within a sentence.
+    # Keep bed lists together and bind pronouns to the last named bed in this paragraph.
     bed = r"(?:b\d+|bed\s*\d+)\b"
     words = r"resolved|closed|open|contained|trusted|untrusted|stable|normal|safe|emergency|tampering|both|unsure"
     claim_re = re.compile(r"\b(?:(not|never|no longer)\s+(?:(?:be|been|yet|currently|still)\s+)*)?(" + words + r")\b", re.IGNORECASE)
     normalized = re.sub(r"n['’]t\b", " not", text, flags=re.IGNORECASE)
-    for sentence in re.split(r"[!?\n]|\.(?!\d)", normalized):
-        subjects: set[str] = set()
-        pending: set[str] = set()
-        clauses = re.split(r";|\b(?:while|whereas|but)\b|,\s*(?:with\s+)?(?=" + bed + r")|"
-                           r"\b(?:and|with)\s+(?=" + bed + r"\s+(?:is|are|was|were|has|remains?|stays?|" + words + r")\b)",
-                           sentence, flags=re.IGNORECASE)
-        for clause in clauses:
-            # Negation of another claim must not excuse a claim that an alarm was silenced.
-            for mute in re.finditer(r"\b(?:(not|never)\s+(?:automatically\s+)?)?(?:silenced|suppressed|muted)\b", clause, re.IGNORECASE):
-                if not mute.group(1):
-                    return "claims alarm silencing; sensor classification is advice only"
-            named = {str(int(m.group(1))) for m in BED_RE.finditer(clause)}
-            claims = [m for m in claim_re.finditer(clause) if not (
-                m.group(2).lower() == "both" and m.group(2) != "BOTH" and
-                re.match(r"\s+(?:beds?\b|b\d+\b|(?:" + words + r")\b)", clause[m.end():], re.IGNORECASE))]
-            if named:
-                subjects = named | pending
-            elif not re.match(r"\s*(?:so\s+)?(?:it|they|not|never|no longer|is|are|still|now)\b", clause, re.IGNORECASE):
-                subjects = set()
-            pending = subjects if not claims else set()
-            for match in claims:
-                negated, claim = match.groups()
-                claim = claim.lower()
-                for b in subjects:
-                    records = incidents.get(b, [])
-                    statuses = {i["status"].lower() for i in records}
-                    verdicts = {i["verdict"].lower() for i in records}
-                    if claim in ("resolved", "closed", "open", "contained"):
-                        supported = bool(statuses & {"resolved", "closed"}) if claim in ("resolved", "closed") else claim in statuses
-                    elif claim in ("trusted", "untrusted"):
-                        supported = (b in untrusted) == (claim == "untrusted")
-                    elif claim in ("stable", "normal", "safe"):
-                        supported = b not in untrusted and not any(
-                            i["status"].lower() not in ("resolved", "closed") and i["verdict"].lower() != "normal" for i in records)
-                    else:
-                        supported = claim in verdicts or (claim in ("tampering", "emergency") and "both" in verdicts)
-                    if supported == bool(negated):
-                        return f"says bed {int(b)} is {match.group(0)} but that contradicts its structured facts"
+    for paragraph in re.split(r"\n\s*\n", normalized):
+        last_named: str | None = None
+        for sentence in re.split(r"[!?\n]|\.(?!\d)", paragraph):
+            subjects: set[str] = set()
+            pending: set[str] = set()
+            clauses = re.split(r";|\b(?:while|whereas|but)\b|,\s*(?:with\s+)?(?=" + bed + r")|"
+                               r"\b(?:and|with)\s+(?=" + bed + r"\s+(?:is|are|was|were|has|remains?|stays?|" + words + r")\b)",
+                               sentence, flags=re.IGNORECASE)
+            for clause in clauses:
+                # Negation of another claim must not excuse a claim that an alarm was silenced.
+                for mute in re.finditer(r"\b(?:(not|never)\s+(?:automatically\s+)?)?(?:silenced|suppressed|muted)\b", clause, re.IGNORECASE):
+                    if not mute.group(1):
+                        return "claims alarm silencing; sensor classification is advice only"
+                named_beds = [str(int(m.group(1))) for m in BED_RE.finditer(clause)]
+                named = set(named_beds)
+                claims = [m for m in claim_re.finditer(clause) if not (
+                    m.group(2).lower() == "both" and m.group(2) != "BOTH" and
+                    re.match(r"\s+(?:beds?\b|b\d+\b|(?:" + words + r")\b)", clause[m.end():], re.IGNORECASE))]
+                # A later comparison bed must not replace the pronoun's preceding antecedent.
+                if re.match(r"\s*(?:so\s+)?(?:its|it|their|(?:this|the) bed(?!\s*(?:b|bed\s*)?\d+\b))\b", clause, re.IGNORECASE):
+                    subjects = {last_named} if last_named is not None else set()
+                elif named:
+                    subjects = named | pending
+                elif not re.match(r"\s*(?:so\s+)?(?:it|they|not|never|no longer|is|are|still|now)\b", clause, re.IGNORECASE):
+                    subjects = set()
+                if named:
+                    last_named = named_beds[-1]
+                pending = subjects if not claims else set()
+                for match in claims:
+                    negated, claim = match.groups()
+                    claim = claim.lower()
+                    for b in subjects:
+                        records = incidents.get(b, [])
+                        statuses = {i["status"].lower() for i in records}
+                        verdicts = {i["verdict"].lower() for i in records}
+                        if claim in ("resolved", "closed", "open", "contained"):
+                            supported = bool(statuses & {"resolved", "closed"}) if claim in ("resolved", "closed") else claim in statuses
+                        elif claim in ("trusted", "untrusted"):
+                            supported = (b in untrusted) == (claim == "untrusted")
+                        elif claim in ("stable", "normal", "safe"):
+                            supported = b not in untrusted and not any(
+                                i["status"].lower() not in ("resolved", "closed") and i["verdict"].lower() != "normal" for i in records)
+                        else:
+                            supported = claim in verdicts or (claim in ("tampering", "emergency") and "both" in verdicts)
+                        if supported == bool(negated):
+                            return f"says bed {int(b)} is {match.group(0)} but that contradicts its structured facts"
     return None
 
 

@@ -2,8 +2,8 @@ import {useEffect, useRef} from 'react';
 import {seriesColour, useThemeTokens} from '../lib/theme';
 
 /** Monotone cubic interpolation passes through every sample without adding peaks. */
-export function Waveform({samples, label = 'ECG', frozen = false, large = false}: {
-  samples: number[]; label?: string; frozen?: boolean; large?: boolean;
+export function Waveform({samples, label = 'ECG', frozen = false, large = false, frozenLabel = 'Last trusted recording, held still.'}: {
+  samples: number[]; label?: string; frozen?: boolean; large?: boolean; frozenLabel?: string;
 }) {
   const tokens = useThemeTokens();
   const ref = useRef<HTMLCanvasElement>(null);
@@ -58,7 +58,7 @@ export function Waveform({samples, label = 'ECG', frozen = false, large = false}
   const signal = /abp/i.test(label) ? 'Arterial pressure signal' : /pleth/i.test(label) ? 'Finger pulse signal' : 'Heart electrical signal';
   return <div className={`waveform ${large ? 'wave-large' : ''}`}>
     <span className="wave-label">{lead}</span>
-    <canvas ref={ref} role="img" aria-label={`${signal}. ${frozen ? 'Last trusted recording, held still.' : 'Most recent received samples.'}${!samples.length ? ' No samples received.' : ''}`} />
+    <canvas ref={ref} role="img" aria-label={`${signal}. ${frozen ? frozenLabel : 'Most recent received samples.'}${!samples.length ? ' No samples received.' : ''}`} />
     {!samples.length && <span className="wave-empty">Awaiting first signal</span>}
   </div>;
 }

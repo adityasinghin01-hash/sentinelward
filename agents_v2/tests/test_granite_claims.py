@@ -31,6 +31,14 @@ def facts():
     "B05 is not currently untrusted.",
     "B05 is open but not untrusted.",
     "B05 is open; it is now resolved and trusted.",
+    "B05 is open and untrusted. Its incident is resolved and its data trusted.",
+    "B05 is open and untrusted. It is now resolved.",
+    "B05 is open and untrusted. This bed is trusted.",
+    "B07 is resolved. B05 is open. The bed is closed.",
+    "B05 is open and untrusted. Their data is trusted.",
+    "B05 is open and untrusted. Its incident is resolved, unlike B07.",
+    "The bed 5 is resolved and trusted.",
+    "B07 is resolved. This bed B05 is resolved and trusted.",
     "B05 is open, not resolved, and alarms were silenced.",
     "B05 and B07 are resolved.",
     "B12 is resolved and trusted.",
@@ -55,6 +63,10 @@ def test_rejects_false_bed_claims_and_silencing(text, facts):
     "B05 has suspected tampering and remains untrusted.",
     "B05 is both open and untrusted.",
     "Untrusted beds: B05. Loose-sensor episodes: 1.",
+    "B05 is open and untrusted. B07 is resolved. It is trusted; this bed is resolved.",
+    "B07 is resolved. Its incident is resolved, unlike B05.",
+    "B05 is open and untrusted. The bed B07 is resolved and trusted.",
+    "B05 is open and untrusted.\n\nThe bed is resolved and its data trusted.",
 ])
 def test_accepts_truthful_bed_claims(text, facts):
     assert GraniteWriter.problem(text, facts) is None
