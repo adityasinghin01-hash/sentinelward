@@ -14,12 +14,14 @@ def test_schema_preserves_zero_and_null_and_checks_topic(frame):
         with pytest.raises(ValueError): decode('ward/bed/B01/vitals', json.dumps(frame(**changes)))
 
 
-def test_all_six_scores_align_and_fault_has_channel(frame):
+def test_available_scores_align_and_fault_has_channel(frame):
     bus=MemoryBus(); service=BrainService(bus)
     for i in range(10): service.receive('ward/bed/B01/vitals', json.dumps(frame(i,ecg=[0]*125)), received_ms=i*1000)
     service.tick(10000)
     scores=[m for t,m,q,r in bus.published if '/score/' in t]
-    assert len(scores)==6
+    assert len(scores)==4
+    assert service.invalid_outgoing==2
+    assert {s['model'] for s in scores}=={'M1','M3','M4','M5'}
     assert {s['window_start'] for s in scores}=={0}
     assert all(s['model_version']==s['model']+'-live-2026-10-17' for s in scores)
     m1=next(s for s in scores if s['model']=='M1')

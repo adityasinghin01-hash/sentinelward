@@ -1,5 +1,5 @@
 """Approved first-match policy; numeric confidence and trust are uncalibrated."""
-from .io import PRIORITIES
+from sw_common import make_verdict
 
 
 def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_trusted_ts=None,patient_not_ok=False,confirmed_low_pressure=False):
@@ -29,4 +29,4 @@ def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_t
     elif not all_clean: verdict='UNSURE'; confidence=.5; reasons=['Some checks are unavailable, warming up or inconclusive']
     else: verdict='NORMAL'; confidence=1-max([values[m] for m in values if eligible(m)] or [0.]); reasons=['All applicable live checks are clear']
     if verdict=='NORMAL': last_trusted_ts=None
-    return {'v':1,'type':'verdict','bed_id':bed_id,'ts':now_ms,'window_start':window_start,'verdict':verdict,'priority':PRIORITIES[verdict],'confidence':float(confidence),'trust':float(trust),'last_trusted_ts':last_trusted_ts,'reasons':[s[:120] for s in reasons[:3]],'scores':values}
+    return make_verdict(bed_id=bed_id,ts=now_ms,window_start=window_start,verdict=verdict,confidence=float(confidence),trust=float(trust),last_trusted_ts=last_trusted_ts,reasons=[s[:120] for s in reasons[:3]],scores=values)

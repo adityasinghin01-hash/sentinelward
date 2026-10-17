@@ -243,3 +243,40 @@ def test_same_run_newer_delivery_cannot_reset_origin_or_flood_budget(tmp_path):
     assert control(service,ts=721000,run_id='same') is False
     assert service.origin_ms==0
     assert service.states['network_B11']['count']==500
+
+
+@pytest.mark.parametrize('corruption', ['missing', 'nonfinite', 'device'])
+def test_invalid_attack_output_is_counted_logged_and_never_sent(tmp_path, frame, monkeypatch, caplog, corruption):
+    import sw_attacks.service as module
+    bus = MemoryBus(); service = AttackService(bus, runs_dir=tmp_path)
+    capture(service, frame(360)); control(service)
+    def broken_transform(spec, source, script_s):
+        message = dict(source)
+        if corruption == 'missing': del message['nibp']
+        elif corruption == 'nonfinite': message['extra'] = {'bad': float('nan')}
+        else: message['device_id'] = 'MON-03'
+        return message
+    monkeypatch.setattr(module, 'transform', broken_transform)
+    service.tick(600000)
+    assert not bus.published
+    assert service.invalid_outgoing == 1
+    assert 'Rejected outgoing attack message' in caplog.text
+    assert not any(row['event'] == 'attack_start' for row in events(tmp_path))
+    assert any(row['event'] == 'attack_unavailable' for row in events(tmp_path))
+
+
+def test_invalid_attack_input_is_counted_and_does_not_pollute_history(tmp_path, frame):
+    service = AttackService(MemoryBus(), runs_dir=tmp_path)
+    assert not capture(service, frame(device_id='MON-03'))
+    assert service.invalid_incoming == 1
+    assert not service.history
+
+
+def test_transport_drop_never_records_success(tmp_path, frame):
+    class Dropping(MemoryBus):
+        def publish(self, *args, **kwargs): return False
+    service = AttackService(Dropping(), runs_dir=tmp_path)
+    capture(service, frame(360)); control(service); service.tick(600000)
+    assert service.states['replay_B05']['count'] == 0
+    assert not any(row['event'] == 'attack_start' for row in events(tmp_path))
+    assert any(row['event'] == 'attack_unavailable' for row in events(tmp_path))

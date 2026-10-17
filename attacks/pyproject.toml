@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "sentinelward-attacks"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["sentinelward-brain>=0.1.0", "PyYAML>=6,<7"]
+dependencies = ["sw_common>=1.1.0", "sentinelward-brain>=0.1.0", "PyYAML>=6,<7"]
 
 [project.scripts]
 sw-attacks = "sw_attacks.__main__:main"

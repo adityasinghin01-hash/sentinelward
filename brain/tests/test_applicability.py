@@ -37,10 +37,13 @@ def test_no_line_no_alarm_bed_publishes_applicability_and_can_become_normal(fram
             verdict = service.tick((sec + 1) * 1000)[0]
     assert verdict['verdict'] == expected
     for model in ('M2', 'M6'):
-        published = [m for t, m, _, _ in bus.published if t.endswith('/score/' + model)][-1]
+        assert not [m for t, m, _, _ in bus.published if t.endswith('/score/' + model)]
+        wire = [m for t, m, _, _ in bus.published if t.endswith('/verdict')][-1]
+        published = wire['unavailable_scores'][model]
         assert published['score'] is None
         assert published['extra']['not_applicable'] is True
         assert published['reason']
+        assert model not in wire['scores']
     if seconds == 10:
         assert verdict['scores']['M3'] is None
     else:

@@ -4,7 +4,9 @@ from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass,field
 import logging
-from .io import decode
+from sw_common import make_score
+from sw_common.topics import BEDSIDE_SUB, DEMO_CONTROL_TOPIC, NET_SUB, VITALS_SUB, score_topic, verdict_topic
+from .io import decode,publish_checked
 from .windows import VitalsWindowAssembler
 from .detectors import DetectorSuite,LABELS,confirmed_low_pressure
 from .decision import decide
@@ -36,15 +38,18 @@ class BrainService:
         self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite(research)
         self.beds={}; self.snapshots={}; self.last_trusted_snapshots={}; self.last_verdicts={}; self.running=True; self.controls=deque(maxlen=128)
         self.last_tick_ms=None
+        self.invalid_incoming=0; self.invalid_outgoing=0
         self.last_control_ts=-1; self.run_started_ms=None; self.active_run_id=None
-        for topic,qos in [('ward/bed/+/vitals',0),('net/device/+/features',1),('ward/bed/+/bedside',1),('ward/demo/control',1)]: bus.subscribe(topic,self.receive,qos=qos)
+        for topic,qos in [(VITALS_SUB,0),(NET_SUB,1),(BEDSIDE_SUB,1),(DEMO_CONTROL_TOPIC,1)]: bus.subscribe(topic,self.receive,qos=qos)
     def reset(self):
         self.beds.clear(); self.assembler.reset(); self.suite.reset(); self.last_tick_ms=None
     def receive(self,topic,payload,received_ms=None,sender_id=None,received_mono_ms=None):
         try: receipt=decode(topic,payload,received_ms,sender_id,received_mono_ms)
         except ValueError as exc:
+            self.invalid_incoming+=1
             log.warning('Rejected message on %s: %s',topic,exc); return False
         message=receipt.data; kind=message['type']; now=receipt.received_ms
+        if kind not in {'vitals','net_features','bedside_check','demo_control'}: return False
         if kind=='demo_control':
             if message['cmd']=='run' and self.active_run_id==message['run_id'] and self.running: return False
             if message['ts']<self.last_control_ts: return False
@@ -119,16 +124,30 @@ class BrainService:
             offline=now_ms-state.last_received_ms>=3000
             window=next((w for w in reversed(state.windows) if w['window_start']==start),None)
             results=self.suite.evaluate(window,state,now_ms)
+            unavailable_scores={}
             for model,value in results.items():
-                envelope={'v':1,'type':'score','bed_id':bed,'model':model,'model_version':model+'-live-2026-10-17','window_start':start,'window_s':10,'score':value['score'],'label':LABELS[model],'reason':value['reason'][:120],'extra':{**value['extra'],'offline':offline}}
-                self.bus.publish(f'ward/bed/{bed}/score/{model}',envelope,qos=1,retain=False)
+                envelope=make_score(bed_id=bed,model=model,model_version=model+'-live-2026-10-17',window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
+                self._publish(score_topic(bed,model),envelope)
+                if value['score'] is None:
+                    unavailable_scores[model]={'score':None,'label':envelope['label'],'reason':envelope['reason'],'extra':envelope['extra']}
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
             verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
             if verdict['verdict']=='NORMAL':
                 state.last_trusted_ts=int(now_ms)
                 self.last_trusted_snapshots[bed]=deepcopy(state.last_message)
             self.last_verdicts[bed]=verdict
-            self.bus.publish(f'ward/bed/{bed}/verdict',verdict,qos=1,retain=True)
+            # Keep nulls for internal decisions/display. The shared contract only
+            # permits numeric scores on the wire, with optional model keys.
+            wire_verdict={**verdict,'scores':{m:s for m,s in verdict['scores'].items() if s is not None}}
+            if unavailable_scores: wire_verdict['unavailable_scores']=unavailable_scores
+            self._publish(verdict_topic(bed),wire_verdict,retain=True)
             verdicts.append(verdict)
         self.last_tick_ms=end
         return verdicts
+
+    def _publish(self,topic,message,retain=False):
+        try: return publish_checked(self.bus,topic,message,qos=1,retain=retain)
+        except ValueError as exc:
+            self.invalid_outgoing+=1
+            log.warning('Rejected outgoing message on %s: %s',topic,exc)
+            return False

@@ -7,7 +7,8 @@ import json
 import logging
 from pathlib import Path
 
-from sw_brain.io import decode,encode
+from sw_common.topics import DEMO_CONTROL_TOPIC,VITALS_SUB,vitals_topic
+from sw_brain.io import decode,encode,publish_checked
 from .events import EventLog
 from .schedule import load_schedule
 from .scenarios import SourceUnavailable,transform
@@ -20,7 +21,8 @@ class AttackService:
         self.schedule=load_schedule(schedule_path); self.history={}; self.latest={}; self.fixture_history={}
         self.own_hashes=OrderedDict(); self.running=False; self.origin_ms=None; self.start_ms=None
         self.states={}; self.event_log=None; self.last_control_ts=-1; self.controls=deque(maxlen=128)
-        for topic,qos in [('ward/bed/+/vitals',0),('ward/demo/control',1)]: self.bus.subscribe(topic,self.receive,qos=qos)
+        self.invalid_incoming=0; self.invalid_outgoing=0
+        for topic,qos in [(VITALS_SUB,0),(DEMO_CONTROL_TOPIC,1)]: self.bus.subscribe(topic,self.receive,qos=qos)
         if fixtures is not None: self.load_fixtures(fixtures)
     def load_fixtures(self,path):
         """JSONL of original vitals or {'t_s': source-second, 'message': original vitals}."""
@@ -31,11 +33,11 @@ class AttackService:
                 if isinstance(item,dict) and 'message' in item:
                     t_s=item.get('t_s')
                     if isinstance(t_s,bool) or not isinstance(t_s,int) or not 0<=t_s<1200: raise ValueError(f'Fixture line {index}: t_s must be an integer source second')
-                    message=item['message']; topic=f"ward/bed/{message.get('bed_id')}/vitals"
+                    message=item['message']; topic=vitals_topic(message.get('bed_id'))
                     receipt=decode(topic,json.dumps(message))
                     self.fixture_history[(message['bed_id'],t_s)]=deepcopy(receipt.data)
                 else:
-                    topic=f"ward/bed/{item.get('bed_id')}/vitals"; receipt=decode(topic,json.dumps(item))
+                    topic=vitals_topic(item.get('bed_id')); receipt=decode(topic,json.dumps(item))
                     self._capture(receipt.data)
     @staticmethod
     def _digest(topic,message): return hashlib.sha256(encode(topic,message)).digest()
@@ -47,7 +49,9 @@ class AttackService:
         while len(history)>1200: history.popitem(last=False)
     def receive(self,topic,payload,received_ms=None,received_mono_ms=None):
         try: receipt=decode(topic,payload,received_ms)
-        except (ValueError,TypeError) as exc: log.warning('Rejected attack input: %s',exc); return False
+        except (ValueError,TypeError) as exc:
+            self.invalid_incoming+=1
+            log.warning('Rejected attack input: %s',exc); return False
         message=receipt.data; now=receipt.received_ms
         if message['type']=='demo_control':
             if message['cmd']=='run' and self.running and self.event_log.run_id==message['run_id']: return False
@@ -124,10 +128,18 @@ class AttackService:
             if state['count']>=spec.get('max_messages',10**9):
                 self._finish(now_ms,state,'maximum bounded message count reached'); continue
             try:
-                source=self._source(spec,now_ms,script_s); frame=transform(spec,source,script_s)
-                topic=f"ward/bed/{spec['bed_id']}/vitals"
-                digest=self._digest(topic,frame)
-                self.bus.publish(topic,frame,qos=0,retain=False)
+                source=self._source(spec,now_ms,script_s)
+                topic=vitals_topic(spec['bed_id'])
+                try:
+                    frame=transform(spec,source,script_s)
+                    digest=self._digest(topic,frame)
+                    sent=publish_checked(self.bus,topic,frame,qos=0,retain=False)
+                except SourceUnavailable: raise
+                except ValueError as exc:
+                    self.invalid_outgoing+=1
+                    log.warning('Rejected outgoing attack message on %s: %s',topic,exc)
+                    raise
+                if sent is False: raise RuntimeError('MQTT publish dropped')
             except (SourceUnavailable,ValueError,RuntimeError,OSError) as exc:
                 self._unavailable(now_ms,state,type(exc).__name__,str(exc)); continue
             self.own_hashes[digest]=now_ms+5000; self.own_hashes.move_to_end(digest)

@@ -191,7 +191,7 @@ def test_full_mqtt_queue_preserves_alarm_and_reset(frame):
     received=[]
     bus.subscribe('ward/bed/+/vitals',lambda topic,payload,**kw: received.append(json.loads(payload)))
     bus.subscribe('ward/demo/control',lambda topic,payload,**kw: received.append(json.loads(payload)))
-    def deliver(topic,data): bus._on_message(None,None,SimpleNamespace(topic=topic,payload=json.dumps(data).encode()))
+    def deliver(topic,data): bus.bus._on_message(None,None,SimpleNamespace(topic=topic,payload=json.dumps(data).encode()))
     deliver('ward/bed/B01/vitals',frame(0))
     deliver('ward/bed/B01/vitals',frame(1,monitor_alarm={'code':'VFIB','priority':'high'}))
     deliver('ward/demo/control',{'v':1,'type':'demo_control','ts':2000,'cmd':'reset','run_id':'test','start_at_s':0})
@@ -216,7 +216,7 @@ def test_cuff_persists_to_next_tick_and_reset_rejects_old_controls(frame):
     assert service.running is False
 
 
-def test_warmup_publishes_null_with_explicit_ineligibility(frame):
+def test_warmup_retains_null_ineligibility_without_invalid_score_publication(frame):
     import json
     from sw_brain.io import MemoryBus
     from sw_brain.service import BrainService
@@ -226,7 +226,13 @@ def test_warmup_publishes_null_with_explicit_ineligibility(frame):
     verdict=service.tick(5000)[0]
     assert verdict['verdict']=='UNSURE'
     assert verdict['scores']=={'M1':None,'M2':None,'M3':None,'M4':0.,'M5':0.,'M6':None}
-    for topic, message, _, _ in bus.published:
-        if '/score/' in topic and not message['extra']['eligible']:
-            assert message['score'] is None
-            assert message['extra']['unavailable_reason']
+    published_scores=[message for topic,message,_,_ in bus.published if '/score/' in topic]
+    assert {message['model'] for message in published_scores}=={'M4','M5'}
+    assert all(message['extra']['eligible'] for message in published_scores)
+    assert service.invalid_outgoing==4
+    wire=next(message for topic,message,_,_ in bus.published if topic.endswith('/verdict'))
+    assert set(wire['unavailable_scores'])=={'M1','M2','M3','M6'}
+    for observation in wire['unavailable_scores'].values():
+        assert observation['score'] is None
+        assert observation['extra']['eligible'] is False
+        assert observation['extra']['unavailable_reason']
