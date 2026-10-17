@@ -1,0 +1,10 @@
+# SentinelWard demo users. DEMO PINS ONLY: never reuse them anywhere real.
+# username becomes the staff ID "staff:<username>" used in every message.
+# roles: nurse, doctor, it, biomed, admin
+users:
+  - {username: priya, display_name: "Priya (Nurse)", role: nurse, pin: "4821"}
+  - {username: tom, display_name: "Tom (Nurse)", role: nurse, pin: "7305"}
+  - {username: dr_mehta, display_name: "Dr Mehta (Doctor)", role: doctor, pin: "1964"}
+  - {username: sam, display_name: "Sam (IT Security)", role: it, pin: "5530"}
+  - {username: lena, display_name: "Lena (Biomedical Eng.)", role: biomed, pin: "2687"}
+  - {username: admin, display_name: "Ward Admin", role: admin, pin: "9012"}

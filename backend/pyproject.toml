@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sw_api"
+version = "1.2.0"
+description = "SentinelWard backend: REST API, live WebSocket and PostgreSQL store (team TessNova)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.143,<0.144",
+    "pydantic>=2.14,<3",
+    "uvicorn>=0.54,<0.55",
+    "websockets>=15,<17",
+    "psycopg>=3.3,<3.4",
+    "paho-mqtt>=2.1,<2.2",
+    "pyyaml>=6",
+    "sw_common>=1.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "httpx>=0.28,<0.29"]
+
+[project.scripts]
+sw-api = "sw_api.__main__:main"
+
+[tool.setuptools]
+packages = ["sw_api"]
+
+[tool.setuptools.data-files]
+"share/sentinelward" = ["ward.yaml", "users.yaml", "schema.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["pg: needs PostgreSQL; runs only when SW_TEST_PG is set"]

@@ -1,0 +1,20 @@
+# SentinelWard demo ward. ALL PATIENT DATA HERE IS MADE UP for the IBM Z Datathon demo.
+# Bed Bxx always uses monitor MON-xx (sw_common contract). nurse is a staff ID from users.yaml.
+ward:
+  name: "Ward 4B (demo)"
+  # Beds shown read-only on the public landing page (/api/ward/preview), without patient details.
+  preview_beds: [B01, B02, B03, B04]
+
+beds:
+  - {bed_id: B01, device_id: MON-01, nurse: "staff:priya", patient: {initials: "A.K.", age: 67, sex: F}}
+  - {bed_id: B02, device_id: MON-02, nurse: "staff:priya", patient: {initials: "R.M.", age: 54, sex: M}}
+  - {bed_id: B03, device_id: MON-03, nurse: "staff:priya", patient: {initials: "S.T.", age: 72, sex: F}}
+  - {bed_id: B04, device_id: MON-04, nurse: "staff:priya", patient: {initials: "J.D.", age: 45, sex: M}}
+  - {bed_id: B05, device_id: MON-05, nurse: "staff:priya", patient: {initials: "L.P.", age: 81, sex: F}}
+  - {bed_id: B06, device_id: MON-06, nurse: "staff:priya", patient: {initials: "N.O.", age: 39, sex: M}}
+  - {bed_id: B07, device_id: MON-07, nurse: "staff:tom", patient: {initials: "E.V.", age: 63, sex: F}}
+  - {bed_id: B08, device_id: MON-08, nurse: "staff:tom", patient: {initials: "H.B.", age: 58, sex: M}}
+  - {bed_id: B09, device_id: MON-09, nurse: "staff:tom", patient: {initials: "C.W.", age: 76, sex: F}}
+  - {bed_id: B10, device_id: MON-10, nurse: "staff:tom", patient: {initials: "G.F.", age: 49, sex: M}}
+  - {bed_id: B11, device_id: MON-11, nurse: "staff:tom", patient: {initials: "M.I.", age: 69, sex: F}}
+  - {bed_id: B12, device_id: MON-12, nurse: "staff:tom", patient: {initials: "P.Q.", age: 33, sex: M}}
