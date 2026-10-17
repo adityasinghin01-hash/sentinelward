@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sw_sim"
+version = "1.0.0"
+description = "SentinelWard ward simulator: replays 12 bed packs as live bedside monitors on the MQTT hub"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "sw_common",
+    "numpy",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+sw-sim = "sw_sim.__main__:main"
+
+[tool.setuptools]
+packages = ["sw_sim"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

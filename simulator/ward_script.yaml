@@ -1,0 +1,42 @@
+# SentinelWard ward script (doc 12): every timing value of the 20-minute demo lives here.
+# T = seconds since the run started (T+00:00). All *_s values are whole seconds.
+version: 1
+run_length_s: 1200        # T+20:00
+fs: 125                   # samples per second per waveform channel
+lead_ms: 1000             # T+00:00 = next whole wall-clock second + this lead
+lag_budget_ms: 50         # a message is "on time" if sent within this many ms of its second
+mqtt_client_id: sw_sim
+
+# Decimals kept per waveform channel (a message is about 3 KB).
+rounding:
+  ecg: 3
+  ppg: 2
+  abp: 1
+
+# join_s: T at which the monitor starts sending. pack_start_s: pack second sent at that moment.
+# A bed whose pack runs out stops sending (source_end); recordings are never looped.
+beds:
+  - {bed_id: B01, source: mimic,         join_s: 0,   pack_start_s: 0, note: "quiet bed"}
+  - {bed_id: B02, source: mimic,         join_s: 0,   pack_start_s: 0, note: "quiet bed"}
+  - {bed_id: B03, source: physionet2015, join_s: 0,   pack_start_s: 0, note: "v221l; real VT alarm at pack second 300 = T+05:00; pack ends T+05:30"}
+  - {bed_id: B04, source: physionet2015, join_s: 90,  pack_start_s: 0, note: "a123l; new admission at T+01:30; false asystole at T+06:30; pack ends T+07:00"}
+  - {bed_id: B05, source: mimic,         join_s: 0,   pack_start_s: 0, note: "attack target"}
+  - {bed_id: B06, source: mimic,         join_s: 0,   pack_start_s: 0, note: "attack target"}
+  - {bed_id: B07, source: physionet2015, join_s: 540, pack_start_s: 0, note: "f543l; new admission at T+09:00; real VF alarm at T+14:00; pack ends T+14:30"}
+  - {bed_id: B08, source: vitaldb,       join_s: 0,   pack_start_s: 0, note: "arterial-line drift bed"}
+  - {bed_id: B09, source: vitaldb,       join_s: 0,   pack_start_s: 0, note: "pressure bed"}
+  - {bed_id: B10, source: vitaldb,       join_s: 0,   pack_start_s: 0, note: "pressure bed"}
+  - {bed_id: B11, source: mimic,         join_s: 0,   pack_start_s: 0, note: "attack target"}
+  - {bed_id: B12, source: mimic,         join_s: 0,   pack_start_s: 0, note: "attack target"}
+
+# Aditya Singh's drift injector: the B08 pressure transducer slips about 20 cm.
+# Straight ramp 0 -> peak on every abp sample from ramp_start_s to ramp_end_s,
+# hold the peak until hold_end_s, then the nurse re-zeroes: back to 0 at once.
+# Only the arterial line drifts; cuff, HR, ECG and PPG are never touched.
+drift:
+  bed_id: B08
+  channel: abp
+  ramp_start_s: 300       # T+05:00
+  ramp_end_s: 720         # T+12:00
+  hold_end_s: 900         # T+15:00
+  peak_mmHg: 15.0
