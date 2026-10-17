@@ -1,5 +1,7 @@
 # How our parts connect (read this before your own plan): v1.1 LOCKED
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 Team TessNova · SentinelWard · IBM Z Datathon 2026. **Locked by Aditya Singh on 6 Oct 2026 (v1). v1.1 approved by Aditya Singh on 11 Oct 2026.** Any change must go through Aditya Singh and bump the version, so nobody's code breaks.
 
 **What v1.1 changed (11 Oct):** nothing that existed was renamed or removed. Added: three new message topics (8 `ward/request`, 9 `ward/demo/control`, 10 `ward/record`) and two rules ("When a recording runs out", "Event log for the tests"). Search for "v1.1" to find each change.
@@ -227,7 +229,7 @@ Kartik may add fields after downloading CICIoMT2024 (that's his feature-subset t
 ### When a recording runs out (v1.1 rule)
 Three ward beds play 2015-challenge recordings that are only 5.5 minutes long: B03 ends at T+05:30, B04 at T+07:00 and B07 at T+14:30 of the 20-minute script.
 - When a recording ends, that monitor simply **stops sending**. The simulator never loops a recording, because a loop would look like a replay attack.
-- The screen shows "monitor offline since hh:mm" with the last values (safety rule 1: never blank).
+- The screen shows "monitor offline since hh:mm" with the last values (retain available last values; continuity is not guaranteed).
 - **Models and the decision layer must treat a monitor that goes silent this way as offline, not as an attack.**
 
 ### Event log for the tests (v1.1: simulator and attack script)
@@ -253,12 +255,12 @@ So the T8 test can time every reaction, the simulator and Kartik's attack script
 - **v1.1:** the buttons for ack, escalate, isolate and undo make the backend publish a `ward/request` (topic 8). The Demo button publishes `ward/demo/control` (topic 9). Records from `ward/record` (topic 10) feed the incident, report, ticket, workload and briefing addresses. Each bed has a `display` of `live`, `last_trusted` or `offline`.
 
 ## Signals and windows
-Every signal is resampled to **125 readings per second** and cut into **10-second windows every 5 seconds**, the same as the IoMT-SecAlarmBench test set.
+Every signal is resampled to **125 readings per second** and cut into **10-second windows every 5 seconds**, as used by the current window assembler; IoMT-SecAlarmBench was proposed but is not used in the build (`../../README.md`).
 
 ## The five safety rules every part must respect
-1. A patient is never shown as blank.
+1. Retain available last trusted values, marked untrusted; if no trusted pin exists show flagged last values. Nurse-visible continuity remains unverified for the 88 B07 blank-after-data API samples in N and each F run (`../evidence/WARD-RUN.md`).
 2. A "tampering" verdict never cancels an emergency alert.
-3. Every automatic action can be undone with one click and is logged.
+3. Actions are logged; cut-offs and supported reversible actions have Undo. Notifications, evidence and drafts are not undoable (`../../agents_v2/REPORT.md`).
 4. Nothing automatic touches treatment.
 5. Official reports are drafted by the agent and sent by a person.
 

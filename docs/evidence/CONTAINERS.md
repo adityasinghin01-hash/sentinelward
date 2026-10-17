@@ -7,4 +7,5 @@ Raw: `raw/containers/` (copied from the container job's evidence) and `raw/resou
 - Healthchecks: hub (mosquitto_sub) and api (`/api/health` ok) report `healthy`; db healthy.
 - Two full 20-minute 12-bed ward runs inside the containers: 11,790 messages each, 0 invalid; send lag p99 24.7 ms and 40.3 ms.
 - A real bug found and fixed by measuring: the attacks container was OOM-killed at its 128 MiB limit 13 minutes into run 1 (`raw/containers/oom-attacks-128m.txt`); limits were set from measured peaks and per-bed history was bounded, after which memory stays flat (`raw/memory-flat.txt`, `SCALE.md`).
-- Beds per brain container: `SCALE.md` (12, 24, 48, 96 beds; 96 beds use 22% of the 5 s tick on 1 CPU).
+- Beds per brain container: `SCALE.md` records a later 12/24/48/96-bed summary (96 beds: 22.4% of the 5 s tick on one CPU), with raw tick logs not bundled. The older bundled `raw/containers/scale-stats.txt` rejected all 5,220 extra-bed messages; it does not prove extra-bed inference.
+- This Compose stack is separate from the secured agents-on systemd ward: its hub permits anonymous MQTT internally and it omits agents, witness, Granite and chip services (`deploy/containers/compose.yaml`, `deploy/containers/mosquitto.conf`).

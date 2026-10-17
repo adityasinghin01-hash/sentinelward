@@ -3,7 +3,7 @@
 FastAPI + WebSocket + PostgreSQL server for the 13 SentinelWard screens and the Demo button. It
 subscribes to every hub message (MQTT, via `sw_common.Bus`), keeps the live ward in memory, stores
 everything in PostgreSQL in one-second batches, serves `/api/...` and pushes live bed updates on
-`/ws`. It enforces safety rule 1: a patient is never shown blank. Endpoint reference: [API.md](API.md)
+`/ws`. It retains available last trusted values when data becomes untrusted; this is not a measured guarantee of screen continuity (see `docs/evidence/WARD-RUN.md`). Endpoint reference: [API.md](API.md)
 and the OpenAPI page at `/docs`.
 
 ## Run it
@@ -98,12 +98,12 @@ then open `http://localhost:8000/` (screens) or `http://localhost:8000/docs` (AP
 - **Outbox.** Every publication (requests, bedside checks, staff actions, demo control) is validated,
   stored, then put in the outbox; it leaves the outbox only when the hub accepts it, in order. In
   PostgreSQL mode the outbox survives a restart.
-- **Never blank.** Each bed keeps 30 minutes of per-second values in RAM. A bed is trusted while the
+- **Retain available values.** Each bed keeps 30 minutes of per-second values in RAM. A bed is trusted while the
   latest verdict has `last_trusted_ts = null` and no isolation (`disable_client`/`set_bed_untrusted`
   not lifted by `enable_client` or an undo) is in force. Otherwise it shows the newest *trusted* values
   at or before the earliest boundary (`last_trusted_ts`, or the isolation moment); older pins come from
   the database. After 5 s without vitals the bed is offline but keeps showing its values (the trusted
-  pin if it is untrusted). A bed that never sent data shows `vitals: null`. Missing values are null,
+  pin if it is untrusted; if no trusted pin exists it uses flagged last values). A bed that never sent data shows `vitals: null`. B07 has 88 reported blank-after-data API samples in N and each F run; whether a nurse saw a blank screen is unknown (`../docs/evidence/WARD-RUN.md`). Missing values are null,
   0 stays 0; manual readings are kept apart (`manual`) and never replace monitor values.
 - **Actions with changing results.** Agents re-publish the same `action_id` when a result changes
   (`pending` → `ok`/`failed`); the newest version replaces the stored one and a late `failed`

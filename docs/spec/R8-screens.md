@@ -1,5 +1,7 @@
 # Phase 8 (R8): The screens. What real ICU screens look like, and our full screen spec
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 TessNova · IBM Z Datathon 2026 · 6 Oct 2026 (v2) · for **Antara Gupta** (and her Codex).
 Builds on R7 (`phase7-icu-reality.md`). Design rules also checked against the ui-ux-pro-max skill (WCAG 2.2 AA, dashboard and anti-pattern rules).
 
@@ -56,7 +58,7 @@ Builds on R7 (`phase7-icu-reality.md`). Design rules also checked against the ui
 1. **Alarm colours mean alarm only.** Red = high, yellow = medium, cyan = low, flashing as in A2. Nothing else in the app may be red, yellow or cyan: no red buttons, no yellow badges.
 2. **The base UI is calm navy and blue.** It matches our team look and keeps alarms standing out.
 3. **Untrusted = grey diagonal stripes**, a pattern not already used by any alarm, plus the words "UNTRUSTED", the last trusted value and how old it is.
-4. **Never blank a patient.** If data stops, show the last value, greyed, with "NO DATA · 6 s". If the server connection drops, a top banner says "Connection lost, showing data from 14:02:31".
+4. **Retain available values.** If data stops, show available last values, greyed, with "NO DATA · 6 s". If the server connection drops, a top banner says "Connection lost, showing data from 14:02:31".
 5. **Never colour alone.** Every state has colour, an icon and a word (for colour-blind users, WCAG 2.2 AA).
 6. **Looks familiar.** The ward screen is a grid of bed tiles with a coloured title bar, like GE and Philips central stations.
 7. **A trust bar on every bed**, like Masimo's Signal IQ: a thin bar under the waveform showing how much we trust this bed's data (from 0 to 1).
@@ -64,7 +66,7 @@ Builds on R7 (`phase7-icu-reality.md`). Design rules also checked against the ui
 9. **Privacy:** patient initials and age only. A "hide names" switch is on by default.
 10. **Readable from 2 metres:** heart rate and SpO2 numbers at least 40 px on the ward screen.
 11. **Dark theme**, because ICUs are dim at night. No pure black (#000).
-12. **Every automatic action shows an "Undo"** where it appears, and in the action log.
+12. **Supported reversible actions show an "Undo"** where it appears, and in the action log.
 13. **The bedside nurse is the referee.** Every untrusted or unsure bed asks "checked at the bedside?" with two buttons: Patient OK / Patient NOT OK.
 14. **Speed:** a bed tile updates within 1 second of the data. Waveforms are drawn on `<canvas>`, not SVG (12 live waveforms).
 15. **Motion:** only alarm flashing and the waveform sweep move. Respect "reduce motion": flashing becomes a steady thick border.
@@ -369,7 +371,7 @@ Landing ──► Login (pick a role)
 
 ### S11 · Action log
 - **Who:** all (read); IT (undo). **Route:** `/log`
-- **Purpose:** every automatic action, who or what did it, and its undo. This is safety rule 3.
+- **Purpose:** every automatic action, who or what did it, and Undo where supported. This is safety rule 3.
 - **Layout:** a filterable table (Time · Agent or person · Action · Bed / device · Approved by · Undo) plus a search box.
 - **Data:** `GET /api/actions?limit=200`.
 
@@ -440,10 +442,10 @@ Landing ──► Login (pick a role)
 - [ ] All 13 screens reachable; each role sees only its screens
 - [ ] Ward screen shows 12 live beds, each tile updating within 1 s
 - [ ] Every verdict's look matches the table in S2
-- [ ] No patient is ever blank (test: stop the data for a bed → "NO DATA · n s")
+- [ ] Available last trusted values are retained (test: stop data → "NO DATA · n s"); B07 continuity is not established by N/F summaries (`../evidence/WARD-RUN.md`)
 - [ ] Alarm colours used for alarms only; every state also has an icon and a word
 - [ ] Bedside "Patient OK / NOT OK" works from the app and from Telegram
-- [ ] Every automatic action shows an Undo, and the log matches
+- [ ] Supported reversible actions show Undo, and the log matches
 - [ ] Tablet layout works (1024×768)
 - [ ] Reduce-motion respected; contrast passes WCAG AA
 - [ ] Telegram: emergency with waveform image, ack edits the message, escalation after 30 s (demo)

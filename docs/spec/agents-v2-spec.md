@@ -1,5 +1,7 @@
 <role>You are a senior Python engineer building the agent layer of SentinelWard, a real-time hospital ward safety system (IBM Z Datathon 2026). It must run on IBM LinuxONE (s390x, Ubuntu 24.04, Python 3.12). Quality bar: it must work flawlessly in a live demo; every branch tested.</role>
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 <uploads>
 1. team_docs.json: doc00 = the LOCKED message contract v1.2 (topics, JSON formats, verdict table, allow-list, safety rules). It wins over everything. doc04 = the agents design plan. doc12 = the 20-minute ward script.
 2. sw_common_source.json: the REAL shared package. Recreate its files under common/ exactly, install it, never edit it. Use its topics, make_* builders, validate (every outgoing message must pass validate before publishing) and Bus (paho-mqtt, username/password/TLS options).

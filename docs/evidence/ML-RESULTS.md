@@ -1,6 +1,6 @@
 # M2 "is this alarm real?" model — results
 
-Every number below is read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/results/heldout2.json` (2-lead, deployed) and `ml_v2/results/cnn_result.json` (NNPA CNN, live as a shown-only second opinion).
+Held-out model results are read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/results/heldout2.json` (2-lead, deployed) and `ml_v2/results/cnn_result.json` (NNPA CNN, live as a shown-only second opinion).
 
 ## Data and split
 - PhysioNet/CinC Challenge 2015 (all 750 training records) + VTaC (5,037 labelled ventricular-tachycardia alarms).
@@ -21,7 +21,7 @@ Every number below is read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/re
 Per alarm type, 2-lead (CinC held-out, `heldout2.json`): ASYSTOLE 0.714, BRADY 0.778, TACHY 0.943 (TNR 0: the 2 false TACHY alarms were missed), VFIB 0.929, VTACH 0.906.
 
 ## Alarm fatigue at the live thresholds (advice only)
-Recomputed from the two JSON files by `ml_v2/results/fatigue.py` (output: `raw/fatigue.txt`; it also checks that the thresholds in the JSON equal the deployed artifacts: `True` for both). M2 never silences anything: the monitor alarm still sounds, nothing is suppressed, delayed or downgraded; M2 only labels the alarm "likely false" or "likely real".
+Recomputed from the two JSON files by `ml_v2/results/fatigue.py` (output: `raw/fatigue.txt`; it also checks that the thresholds in the JSON equal the deployed artifacts: `True` for both). M2 never silences anything: the monitor alarm still sounds, nothing is suppressed, delayed or downgraded; M2 only labels the alarm "likely false" or "likely real". These are held-out dataset classification rates, not rates for all ward alarms or a measured reduction in nurse workload.
 
 | Live 2-lead trees | False alarms marked likely-false | True alarms missed (marked likely-false) |
 |---|---|---|
@@ -41,11 +41,11 @@ Artifact pins: 1-lead SHA-256 `cc59fc61…2348` (97 features, 200 trees); 2-lead
 - Robustness (same held-out windows, perturbed; `ROBUSTNESS.md`, `ml_v2/results/robustness.json`): mild noise/mains/gain/≤1 s shift stay within the clean CI; worst for missed alarms is SNR 10 dB (CinC TPR 0.784); a forged calm pulse under a real ECG fools M2 (VTaC TPR 0.591), which is why forgery is M3/M4/M5's job and M2 never suppresses an alarm.
 
 ## IBM Z: Telum II on-chip AI (live second opinion)
-The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 1.5.0`, device `nnpa:0`) as a second opinion. For every bed alarm the live brain scores with M2, it scores the same 10 s window (125 Hz ECG + PPG, + ABP when present) and publishes its own "is this alarm real?" probability on `ward/chip/<bed>`. It is shown only: it never changes a verdict, an alert or an action, and its hub account may only read vitals and publish on `ward/chip/+`. The deployed M2 stays the trees.
+The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 1.5.0`, device `nnpa:0`) as a second opinion. For alarms it receives in time, it scores the same 10 s window (125 Hz ECG + PPG, + ABP when present) and publishes its own "is this alarm real?" probability on `ward/chip/<bed>`. It is shown only: it never changes a verdict, an alert or an action, and its hub account may only read vitals and publish on `ward/chip/+`. The deployed M2 stays the trees. Coverage is not guaranteed for every alarm: N had four M2-judged alarm episodes but chip scores only for B03, B04 and B07; B06’s forged ASYSTOLE got none (`raw/wardrun-night/chip_check.txt`).
 
 - Model: `chip/model/cnn_state.pt`, SHA-256 `c7ad2efe8dfb475619e336d437e1d4df4aaa3290470bec777f9a4894a571f1c6`, retrained on LinuxONE with the unchanged `ml_v2/stretch/cnn_nnpa.py`: best epoch 7, same thresholds, all 670 held-out scores identical to `cnn_result.json` (max |diff| 0.0).
 - Held-out: CinC 2015 score 0.623, VTaC 0.665, below the live trees (0.862 / 0.832). That is why it is a second opinion, not M2.
-- Live code path, 670 held-out windows one at a time: max |NNPA − CPU training| 0.0018, labels agree 670/670. Ward replay: chip windows = brain M2 windows (3/3: B03 VTACH, B04 ASYSTOLE, B07 VFIB).
+- Live code path, 670 held-out windows one at a time: max |NNPA − CPU training| 0.0018, labels agree 670/670. Offline pack replay: chip windows = brain M2 windows for that replay (3/3: B03 VTACH, B04 ASYSTOLE, B07 VFIB).
 - Live proof (demo run `run_20261017_172415`, start 270, `mosquitto_sub ward/chip/+` on the hub): B03 VTACH p 0.769 real, B04 ASYSTOLE p 0.166 false, B07 VFIB p 0.953 real, all `nnpa:0`; 0 hub denials. Acceptance 7/7 with the chip connected; security live test 15/15 (default `--tls-host 127.0.0.1`).
 
 | Per-alarm CNN (scaling + forward, batch 1, 1 thread, z17) | n | median ms | p95 ms |
@@ -56,7 +56,7 @@ The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 
 | cpu, ward alarm windows ×20 | 60 | 1.98 | 2.30 |
 | nnpa:0, live over TLS (3 alarms) | 3 | 8.13 | 29.96 (max) |
 
-Honest: at batch 1 this small CNN is not faster on the NNPA than on one CPU core (about 0.25 ms slower); both are about 0.05% of the 5 s tick. Where it runs: the TEST LinuxONE z17 guest, inside IBM's lab container (`notebook`, torch 2.11 + torch_nnpa 1.5.0) as `sw-chip.service` (Restart=always), connected to the hub on the BUILD guest over TLS 8883 as hub user `chip`. One message per alarm episode. Sources: `chip/README.md`, `chip/results/` (bench, parity, `live/chip-live-proof.txt`, `live/acceptance.md`), `ml_v2/results/cnn_result.json`.
+Honest: at batch 1 this small CNN is not faster on the NNPA than on one CPU core (about 0.25 ms slower); both are about 0.05% of the 5 s tick. Where it runs: the TEST LinuxONE z17 guest, inside IBM's lab container (`notebook`, torch 2.11 + torch_nnpa 1.5.0) as `sw-chip.service` (Restart=always), connected to the hub on the BUILD guest over TLS 8883 as hub user `chip`. At most one chip message per received, scoreable alarm episode; some episodes have no chip message. Sources: `chip/README.md`, `chip/results/` (bench, parity, `live/chip-live-proof.txt`, `live/acceptance.md`), `ml_v2/results/cnn_result.json`.
 
 ### Batched, at ward scale (does the NNPA help with many beds?)
 Measured 18 Oct 2026 on the TEST z17 guest (2 vCPUs) inside the `notebook` container (torch 2.11, torch_nnpa 1.5.0), with `sw-chip.service` left running, by `python -m sw_chip.batch_bench` (bench only; the live service still scores one alarm at a time). Same pinned CNN; each call = input scaling (numpy, on the CPU for both) + host→device + forward + sigmoid + device→host. Real held-out windows (670), 30 warm-up + 200 timed calls per row. The model's parameters and conv outputs are on `nnpa:0` (checked); we did not profile which individual ops the NNPA runs.

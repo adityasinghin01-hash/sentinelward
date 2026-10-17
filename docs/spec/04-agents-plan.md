@@ -1,5 +1,7 @@
 # Aditya (automation and AI agents): work plan v3 (7 Oct, updated 10 Oct: see "Added 10 Oct")
 
+**Historical design specification, not measured results.** Current implementation and deviations are in `../../README.md`; recorded cohorts and limits are in `../evidence/RESULTS-MANIFEST.md`. Expected timings, mock-screen numbers and unchecked criteria below are targets, not achieved guarantees.
+
 ## Your data and your AI
 - **Data:**
   - **VitalDB**: real surgeries where the arterial line and the arm cuff measure the same patient. You use it to catch slowly drifting blood-pressure sensors.
@@ -10,14 +12,14 @@
   - the **agent engine** that carries out the AI's decisions.
 
 ## Your job in one paragraph
-You make the AI's decisions happen. You build the agent engine that runs every agent safely (fixed allow-list, human approval where needed, every action logged with an undo). On top of it you build the alert ladder (with Antara), the CERT-In report draft, biomed tickets, the workload warning, the shift briefing, the Granite writer and the drift watcher M6. **Agents are the helpers; the AI decides.**
+You make the AI's decisions happen. You build the agent engine that runs every agent safely (fixed allow-list, human approval where needed, every action logged, Undo where supported). On top of it you build the alert ladder (with Antara), the CERT-In report draft, biomed tickets, the workload warning, the shift briefing, the Granite writer and the drift watcher M6. **Agents are the helpers; the AI decides.**
 
 ## What you own (full detail: R11, Drive doc 09)
 - **Agent engine:**
   - LangGraph (with `interrupt()` for human approval and a Postgres checkpointer) or IBM BeeAI;
   - routes each verdict to the right agent;
   - only allow-listed actions;
-  - every action goes on `ward/action` with an undo id (doc 00 v1, section 4).
+  - every action goes on `ward/action` with an undo id where supported (doc 00 v1, section 4).
 - **A1 alert and escalation** (with Antara):
 
   | Step | Who gets it | When |
@@ -71,7 +73,7 @@ You make the AI's decisions happen. You build the agent engine that runs every a
 | 16–19 | Drift tests: how fast drifts are caught; real BP drops never called drift |
 
 ## Done checklist
-- [ ] Only allow-listed actions; approvals where needed; every action logged with undo
+- [ ] Only allow-listed actions; approvals where needed; every action logged, Undo where supported
 - [ ] Ladder works (30 s demo); BOTH always alerts · [ ] CERT-In draft complete, never auto-sent
 - [ ] M6 scores per bed; passes the "real drop" test · [ ] injection test passed
 

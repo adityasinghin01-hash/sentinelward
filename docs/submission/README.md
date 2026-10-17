@@ -4,7 +4,7 @@ By Antara Gupta (17 Oct 2026). Primary versions used for the submission: judge g
 
 - `flowchart.mmd` — editable architecture source; rendered as `flowchart.svg` and `flowchart.png`.
 - `JUDGE-GUIDE.md` — one-page map from each judging criterion to repository or screen evidence.
-- `VIDEO-SHOTLIST.md` — exact 2:50 recording plan and spoken script.
+- `VIDEO-SHOTLIST.md` — planned 2:50 recording sequence and spoken script.
 
 Re-render the flowchart from the repository root:
 

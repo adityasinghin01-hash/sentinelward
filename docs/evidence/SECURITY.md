@@ -22,7 +22,7 @@ Raw: `raw/security-live-20261017T140649Z.json` (security_v2 live test against th
 | 15 | Plain MQTT on 8883 rejected | PASS |
 
 ## Containment audit trail (automatic cut-off + undo)
-`raw/containment.jsonl`: every `disable_client` (requested → confirmed), `clean_session` and `enable_client` the agents performed through Mosquitto dynamic security, with timestamps and device IDs (no secrets in the file). The agents cut a monitor off only after 20 s of sustained tampering evidence, or at once when an emergency is also present (so a real alarm is never hidden), and every cut-off has an Undo.
+`raw/containment.jsonl`: every `disable_client` (requested → confirmed), `clean_session` and `enable_client` the agents performed through Mosquitto dynamic security, with timestamps and device IDs (no secrets in the file). The agents cut a monitor off only after 20 s of sustained tampering evidence, or at once when an emergency is also present on BOTH, and every cut-off has an Undo. Known active emergency alerts remain visible; a disconnected monitor cannot supply later alarms, so bedside monitoring is required (`agents_v2/sw_agents/agents/a2_contain.py`, `raw/wardrun-night/judgeN.txt`, B07).
 
 ## Login and API hardening (backend tests, `backend/tests/test_auth_hardening.py`)
 scrypt-hashed PINs, lockout after repeated failures, session expiry, CSRF/origin checks on every write, login audit; one-click demo login can be switched off.
