@@ -233,3 +233,11 @@ def test_messages_are_not_undoable(world):
     assert send["undo_id"] is None
     world.request("undo_action", send["action_id"])
     assert any(l.get("reason") == "unknown or not undoable action" for l in world.log_lines())
+
+
+def test_it_notice_needs_confidence_or_two_verdicts(world):
+    world.verdict("B10", "TAMPERING", 0.6)
+    assert not [a for a in world.bus.actions("send_message") if a["device_id"] == "MON-10"]
+    world.advance(5)
+    world.verdict("B10", "TAMPERING", 0.6)
+    assert len([a for a in world.bus.actions("send_message") if a["device_id"] == "MON-10"]) == 1

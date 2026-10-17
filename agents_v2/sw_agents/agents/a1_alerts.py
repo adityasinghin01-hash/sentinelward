@@ -113,6 +113,7 @@ class A1Alerts(Agent):
         self.normal_streak: dict[str, int] = {}
         self.learning_noted: set[str] = set()
         self.it_open: dict[str, dict] = {}
+        self.it_streak: dict[str, int] = {}
         self.history: list[dict] = []  # for A8: {alert_id, bed_id, verdict, opened_ts, acked_s}
 
     # ------------------------------------------------------------------ text
@@ -309,6 +310,7 @@ class A1Alerts(Agent):
         bed, verdict = v["bed_id"], v["verdict"]
         if verdict == "NORMAL":
             self.streak[bed] = 0
+            self.it_streak[bed] = 0
             self.normal_streak[bed] = self.normal_streak.get(bed, 0) + 1
             self.learning_noted.discard(bed)
             if self.normal_streak[bed] >= self.e.s.clear_verdicts:
@@ -319,7 +321,12 @@ class A1Alerts(Agent):
             return
         self.normal_streak[bed] = 0
         if verdict in IT_VERDICTS:
-            self._it_notice(v)
+            self.it_streak[bed] = self.it_streak.get(bed, 0) + 1
+            if (bed in self.it_open or v["confidence"] >= self.e.s.a2_min_confidence
+                    or self.it_streak[bed] >= self.e.s.confirm_verdicts):
+                self._it_notice(v)
+        else:
+            self.it_streak[bed] = 0
         if verdict == "DEVICE_ATTACK":
             return  # IT only: nurses are not alerted
         if is_learning(v):

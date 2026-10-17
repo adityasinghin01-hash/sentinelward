@@ -109,10 +109,11 @@ class Telegram:
         ok, result = self._call("getUpdates", {"offset": self.offset, "timeout": timeout_s,
                                                "allowed_updates": ["callback_query"]})
         presses = []
-        for update in result or [] if ok else []:
-            if not isinstance(update, dict):
+        updates = result if ok and isinstance(result, list) else []
+        for update in updates:
+            if not isinstance(update, dict) or type(update.get("update_id")) is not int:
                 continue
-            self.offset = max(self.offset, int(update.get("update_id", 0)) + 1)
+            self.offset = max(self.offset, update["update_id"] + 1)
             cq = update.get("callback_query")
             if not isinstance(cq, dict):
                 continue
