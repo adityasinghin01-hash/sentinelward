@@ -47,7 +47,7 @@ export function BriefingPage() {
             ]} />
           </div>
           {brief.error && !b ? (
-            <Empty title="No briefing yet" detail={`${brief.error} The briefing agent (A8) publishes one during each run.`} />
+            <Empty title="No briefing yet" detail={`${brief.error.replace(/\.?$/, ".")} The briefing agent (A8) publishes one during each run.`} />
           ) : (
             <>
               <ResourceState loading={brief.loading && !b} error={b ? brief.error : ''} />
