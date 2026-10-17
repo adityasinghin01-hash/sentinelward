@@ -174,7 +174,7 @@
 
 /* Responsive */
 @media (max-width: 1080px) {
-  .l-hero-grid { grid-template-columns: 1fr; }
+  .l-hero-grid { grid-template-columns: minmax(0, 1fr); }
   .l-hero-art { min-height: 360px; }
   .l-cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .l-live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -187,6 +187,7 @@
   .l-live-note { margin-left: 0; }
   .holo { transform: scale(.86); }
 }
+@media (max-width: 520px) { .l-live-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* Login role preset (used by the sign-in page) */
 .role-card.is-preset { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
