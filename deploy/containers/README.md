@@ -1,6 +1,6 @@
 # SentinelWard in containers (IBM LinuxONE, s390x)
 
-The same ward runs as six containers: hub (Mosquitto 2.0.18), database (PostgreSQL 16), and four
+The same ward runs as six containers: hub (Mosquitto 2.0.22, the newest 2.0.x with an s390x image), database (PostgreSQL 16), and four
 app services from one image built on LinuxONE (`api`, `brain`, `sim`, `attacks`). It is a second,
 isolated copy next to the bare-metal systemd stack: its own private network, hub and database;
 only the web app is published, on `127.0.0.1:8001`.

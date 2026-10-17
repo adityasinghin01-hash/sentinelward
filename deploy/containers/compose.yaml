@@ -25,7 +25,7 @@ x-app: &app
 
 services:
   hub:
-    image: eclipse-mosquitto:2.0.18
+    image: eclipse-mosquitto:2.0.22  # 2.0.18 has no s390x build
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - hubdata:/mosquitto/data
