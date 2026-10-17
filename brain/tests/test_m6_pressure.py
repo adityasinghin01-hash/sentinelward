@@ -48,7 +48,32 @@ def test_m6_growing_gap_past_margin_crosses_point_eight():
 
 def test_m6_one_off_gap_without_growth_stays_below_point_eight():
     _, out = m6_run([(531000, 74, 66)])  # one cuff 8 mmHg off: no trend yet
-    assert .5 <= out[0]['score'] < .8 and not out[0]['extra']['drift_growing']
+    assert out[0]['score'] < .5 and not out[0]['extra']['drift_growing']
+
+
+def test_m6_steady_offset_is_watched_not_paged():
+    # B11 live run 4: no usable early cuff (prior 0), one later cuff 9 mmHg off scored ~0.6 (UNSURE page).
+    _, out = m6_run([(948000, 94, 85)])
+    assert out[0]['extra']['baseline_source'] == 'clinical_prior'
+    assert out[0]['score'] == PressureDrift.STEADY_CAP and not out[0]['extra']['drift_growing']
+    assert out[0]['reason'] == 'Steady line/cuff offset +9 mmHg; watching'
+    # The same steady offset on later cuffs is still not drift.
+    _, out = m6_run([(600000, 94, 85), (750000, 94.5, 85), (900000, 94, 85)])
+    assert all(r['score'] < .5 for r in out)
+    # An early-learned usual gap: a steady 12 mmHg step from it is watched too.
+    _, out = m6_run([(60000, 75, 80), (120000, 75, 80), (700000, 87, 80), (850000, 87, 80)])
+    assert all(r['score'] < .5 for r in out[2:]) and 'watching' in out[3]['reason']
+
+
+def test_m6_single_very_large_gap_asks_for_relevel():
+    _, out = m6_run([(531000, 84, 66)])  # 18 mmHg off on one cuff
+    assert out[0]['score'] == PressureDrift.LARGE_GAP_SCORE
+    assert 'large gap: re-level and re-check' in out[0]['reason']
+    _, out = m6_run([(531000, 81, 66)])  # exactly 15 mmHg
+    assert out[0]['score'] == PressureDrift.LARGE_GAP_SCORE
+    # A large gap that then grows is drift (>= .8), as before.
+    _, out = m6_run([(531000, 84, 66), (665000, 87, 66)])
+    assert out[1]['score'] >= .8 and out[1]['extra']['drift_growing']
 
 
 def test_m6_both_pressures_falling_is_not_drift():
