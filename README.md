@@ -314,6 +314,7 @@ version-manifest locations are documented in [docs/OPEN-SOURCE.md](docs/OPEN-SOU
 server and web dependencies are recorded in `deploy/requirements-server.txt`, the
 Python packages' `pyproject.toml` files, and `web/package.json` / `web/package-lock.json`.
 These upstream works are credited separately from the team's application code.
+The team's own code is released under the [MIT License](LICENSE); third-party works keep their own licences.
 
 - **Data:** [PhysioNet/CinC Challenge 2015](https://physionet.org/content/challenge-2015/1.0.0/)
   and [VTaC](https://physionet.org/content/vtac/1.0/) for M2 alarm training/evaluation;
