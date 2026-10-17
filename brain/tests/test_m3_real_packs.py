@@ -168,3 +168,22 @@ def test_known_pulse_replay_cannot_be_erased_by_irregular_ecg(packs):
     observation = observe(model,changed,'B01',120,pulse_sec=80)
     assert observation['score'] >= .8
     assert not observation['extra'].get('not_applicable', False)
+
+
+@pytest.mark.parametrize('sec', [85, 100])
+def test_b11_clipped_pulse_at_part_rate_is_detection_alias_not_body_mismatch(packs, sec):
+    # Live judged run: ECG 61-62 = monitor HR, clipped PPG read at 19-30 bpm, M3 scored up to 1.0.
+    model = BodyMismatch()
+    for s in range(30, sec, 5):
+        observe(model, packs, 'B11', s)
+    r = observe(model, packs, 'B11', sec)
+    assert r['score'] is not None and r['score'] < .5, r
+    assert 'unreliable' in r['reason'].lower() or 'alias' in r['reason'].lower(), r['reason']
+
+
+def test_b11_with_another_patients_pulse_still_scores_high(packs):
+    model = BodyMismatch()
+    for s in range(30, 90, 5):
+        observe(model, packs, 'B11', s)
+    scores = [observe(model, packs, 'B11', s, pulse_bed='B06')['score'] for s in range(90, 130, 5)]
+    assert sum(x is not None and x >= .8 for x in scores) >= 3, scores
