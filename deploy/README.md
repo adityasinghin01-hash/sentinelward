@@ -18,8 +18,8 @@ key path. Existing noninteractive sudo must permit unit installation and systemc
 never transfers a key or `.env`, never prints installer/registry output or journal messages, and
 never opens firewall ports. Access the site through the printed SSH port-forward command.
 
-The repo goes to `/home/linux1/sw/app`; **ml/ model artifacts are included**. Secrets, `.git`, venvs,
-node_modules, local caches, generated frontend/dist and test outputs are excluded. Existing packs,
+The repo goes to `/home/linux1/sw/app`; **ml_v2/ model artifacts are included**. Secrets, `.git`, venvs,
+node_modules, local caches, generated web/dist and test outputs are excluded. Existing packs,
 data, run logs and `/home/linux1/sw/.env` are preserved. No rsync delete is used. Repeating the
 script reinstalls editable packages and restarts the same four units. It intentionally restarts
 services, so run it between measurements. Existing server data remains outside the app checkout.
@@ -34,7 +34,7 @@ venv; do not solve that error by pip-installing numpy/scipy/pandas. No optional 
 installed: the brain's documented fallback remains available when an artifact runtime is absent.
 
 All four units run as linux1, load `/home/linux1/sw/.env`, restart automatically, and log to journal.
-The API binds 127.0.0.1:8000 and serves `app/frontend/dist`; simulator and attacks wait for demo
+The API binds 127.0.0.1:8000 and serves `app/web/dist`; simulator and attacks wait for demo
 control. Simulator events are in `~/sw/runs/simulator/<run_id>/events.jsonl`; attack events are in
 `~/sw/runs/attacks/<run_id>/events.jsonl`. `service_env.py` maps server `MQTT_*` credentials to the
 brain's `SW_MQTT_*` names, without overriding explicit brain or attack-specific settings.

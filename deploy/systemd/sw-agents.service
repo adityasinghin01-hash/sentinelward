@@ -1,18 +1,16 @@
 [Unit]
-Description=SentinelWard agents (LangGraph, A1-A8, optional research M6/Granite)
-After=network-online.target postgresql.service mosquitto.service sw-api.service
+Description=SentinelWard fresh agents (A1-A8)
+After=network-online.target mosquitto.service sw-api.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=@USER@
 Group=@GROUP@
-WorkingDirectory=@APP@/agents
+WorkingDirectory=@STATE_DIR@
 EnvironmentFile=@ENV@
 Environment=PYTHONUNBUFFERED=1
-Environment=PSYCOPG_IMPL=python
-Environment=LANGSMITH_TRACING=false
-ExecStart=@VENV@/bin/sentinelward serve
+ExecStart=@VENV@/bin/python @APP@/security_v2/scripts/run_agents.py
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30

@@ -164,6 +164,7 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
     user=pwd.getpwnam(service_user); mosquitto=pwd.getpwnam('mosquitto')
     service_state=Path(user.pw_dir)/'sw/security-v2'
     envdir=service_state/'env'
+    agent_state=Path(user.pw_dir)/'sw/agents-data'
     admin=service_state/'admin.conf'
     python=venv/'bin/python'
     scripts=app/'security_v2/scripts'
@@ -195,7 +196,7 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
         else:
             values=credentials()
             private_write(secretfile,json.dumps(values))
-        for directory in (service_state,envdir):
+        for directory in (service_state,envdir,agent_state):
             directory.mkdir(parents=True,exist_ok=True,mode=0o700)
             os.chmod(directory,0o700); os.chown(directory,user.pw_uid,user.pw_gid)
         BROKER_DIR.mkdir(exist_ok=True,mode=0o750)
@@ -213,7 +214,7 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
                 env['SW_MONITOR_CREDENTIALS']=str(service_state/'devices.json')
             if service=='agents':
                 env['SW_DYNSEC_OPTIONS']=str(admin)
-                env['SW_CONTAIN_AUDIT']=str(Path(user.pw_dir)/'sw/agents-data/containment.jsonl')
+                env['SW_CONTAIN_AUDIT']=str(agent_state/'containment.jsonl')
             if service=='extractor': env['SW_MOSQUITTO_LOG']=log_path
             owned_file(envdir/(service+'.env'),''.join(f'{k}={v}\n' for k,v in env.items()),user)
         # Timer is armed BEFORE any broker/service config mutation. It survives
@@ -239,7 +240,7 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
                     if not packs.is_dir(): packs=Path(user.pw_dir)/'sw'/'packs'
                     content+=f'ExecStart=\nExecStart={python} {scripts}/run_simulator.py listen --packs {packs} --runs {user.pw_dir}/sw/runs/simulator --script {app}/simulator/ward_script.yaml\n'
                 if unit=='sw-agents':
-                    content+=f'ExecStart=\nExecStart={python} {scripts}/run_agents.py serve\n'
+                    content+=f'WorkingDirectory={agent_state}\nExecStart=\nExecStart={python} {scripts}/run_agents.py\n'
                 private_write(dropin_path(unit),content,mode=0o644)
             net=f'''[Unit]
 Description=SentinelWard receive and broker-log network features

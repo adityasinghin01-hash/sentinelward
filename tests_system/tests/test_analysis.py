@@ -148,3 +148,11 @@ def test_both_preserves_emergency_detection_even_if_strict_verdict_differs():
 def test_no_run_evidence_is_not_run_not_a_failed_clinical_test():
     results = analyze_t8([], [], [], [], ['Missing simulator events.jsonl'])
     assert all(r['status'] == 'NOT RUN' and r['value'] is None for r in results)
+
+
+def test_resource_roles_include_fresh_agents_and_security_launchers():
+    from tests_system.t10_resources import process_role
+    for command in (['python','-m','sw_agents'], ['python','security_v2/scripts/run_agents.py'],
+                    ['python','security_v2/scripts/extractor.py'], ['python','-m','sw_sec.extractor_service']):
+        assert process_role(command,'python')=='agent/model/network'
+    assert process_role(['python','unrelated.py'],'python') is None

@@ -60,9 +60,9 @@ services:
       MQTT_HOST: hub
       SW_API_HOST: 0.0.0.0
       SW_API_PORT: "8000"
-      SW_FRONTEND_DIST: /srv/frontend
+      SW_FRONTEND_DIST: /srv/web/dist
     volumes:
-      - ${SW_FRONTEND_DIR:-../../frontend/dist}:/srv/frontend:ro
+      - ${SW_FRONTEND_DIR:-../../web/dist}:/srv/web/dist:ro
     ports: ["127.0.0.1:8001:8000"]
     depends_on:
       hub: {condition: service_started}
