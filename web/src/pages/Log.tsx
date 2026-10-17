@@ -43,7 +43,7 @@ export function LogPage() {
               {group && <tr className="log-minute"><th colSpan={7} scope="rowgroup"><time dateTime={new Date(a.occurred_at).toISOString()}>{new Date(a.occurred_at).toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})} · {time(a.occurred_at)}</time></th></tr>}
               <tr><td className="mono log-time"><time dateTime={new Date(a.occurred_at).toISOString()}>{time(a.occurred_at, true)}</time></td>
                 <td><span className="log-actor"><ActorIcon kind={v.kind} />{v.who}</span></td>
-                <td className="log-what">{v.what}{a.references_action_id && <span className="tiny muted"> · reversal</span>}</td>
+                <td className="log-what"><span className="event-summary" title={v.summary}>{v.summary}</span>{a.references_action_id && <span className="tiny muted"> · reversal</span>}</td>
                 <td className="mono nowrap">{v.bed}</td><td className="log-why">{v.why}</td>
                 <td><Button size={36} variant="ghost" aria-expanded={expanded.has(a.id)} aria-controls={expanded.has(a.id) ? `record-${a.id}` : undefined} onClick={() => setExpanded(old => {const next = new Set(old); if (next.has(a.id)) next.delete(a.id); else next.add(a.id); return next;})}>Details</Button></td>
                 <td>{a.mode === 'automatic' && a.undoable && <UndoAction action={a} />}</td>

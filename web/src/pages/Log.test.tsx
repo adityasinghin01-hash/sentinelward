@@ -15,9 +15,9 @@ afterEach(cleanup);
 describe('readable action log', () => {
   it('keeps the raw record behind an explicit Details row', () => {
     render(<LogPage />);
-    expect(screen.getByText('Cut off MON-06 at the hub')).toBeInTheDocument();
+    expect(screen.getByText('B06 · Cut off MON-06 at the hub')).toBeInTheDocument();
     expect(screen.queryByText(/disable_client/, {selector: 'pre'})).toBeNull();
-    const row = screen.getByText('Cut off MON-06 at the hub').closest('tr')!;
+    const row = screen.getByText('B06 · Cut off MON-06 at the hub').closest('tr')!;
     fireEvent.click(within(row).getByRole('button', {name: 'Details'}));
     expect(screen.getByText(/disable_client/, {selector: 'pre'})).toHaveTextContent('act_secret');
     expect(within(row).getByRole('button', {name: 'Details'})).toHaveAttribute('aria-expanded', 'true');
@@ -33,7 +33,7 @@ describe('readable action log', () => {
     expect(screen.queryByText('Priya')).toBeNull();
     fireEvent.click(screen.getByRole('radio', {name: 'All'}));
     fireEvent.change(screen.getByRole('searchbox'), {target: {value: 'Network agent'}});
-    expect(screen.getByText('Cut off MON-06 at the hub')).toBeInTheDocument();
+    expect(screen.getByText('B06 · Cut off MON-06 at the hub')).toBeInTheDocument();
     expect(screen.queryByText('Acknowledged the alert')).toBeNull();
   });
 });

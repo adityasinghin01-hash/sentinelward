@@ -27,7 +27,7 @@ export function ActionFeed({actions, emptyTitle = 'No actions recorded'}: {actio
     const v = actionView(a);
     return <li key={a.id}>
       <span className={`actor-icon actor-${v.kind}`}><ActorIcon kind={v.kind} /></span>
-      <div className="feed-copy"><strong>{v.what}</strong><p>{v.who} · {v.bed} · <time className="mono">{time(a.occurred_at, true)}</time></p>
+      <div className="feed-copy"><strong title={v.summary}>{v.summary}</strong><p>{v.who} · <time className="mono">{time(a.occurred_at, true)}</time></p>
         <p>{v.why}</p><ActionDetails action={a} /></div>
       {a.mode === 'automatic' && a.undoable && <UndoAction action={a} />}
     </li>;

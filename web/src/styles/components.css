@@ -34,7 +34,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 /* Badges: colour + icon + word, alarm colours only for alarm priorities */
 .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .04em; border: 1px solid var(--border); color: var(--text-2); background: var(--surface-sunken); }
-.badge.tone-high { color: var(--st-emergency-ink); background: var(--st-emergency); border-color: var(--st-emergency); }
+.badge.tone-high { color: var(--st-emergency-text); background: var(--st-emergency-soft); border-color: var(--st-emergency); }
 .badge.tone-medium { color: var(--st-check-ink); background: var(--st-check); border-color: var(--st-check); }
 .badge.tone-low { color: var(--st-check-ink); background: var(--st-maint); border-color: var(--st-maint); }
 
@@ -159,7 +159,7 @@ button:disabled { opacity: .45; }
 .badge, .chip, .state-chip, .cutoff-badge { white-space: nowrap; flex-shrink: 0; }
 .badge, .chip { font-size: 12px; line-height: 16px; min-height: 24px; }
 .state-chip { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid transparent; padding: 4px 10px; border-radius: var(--radius-chip); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .02em; }
-.state-emergency, .state-both { background: var(--st-emergency); color: var(--st-emergency-ink); }
+.state-emergency, .state-both { background: var(--st-emergency-soft); color: var(--st-emergency-text); border-color: var(--st-emergency); }
 .state-both { border-color: var(--st-security); border-left-width: 4px; }
 .state-check { background: var(--st-check); color: var(--st-check-ink); }
 .state-security { background: var(--st-security); color: var(--st-security-ink); }
@@ -227,3 +227,10 @@ button.danger-outline:hover:not(:disabled) { background: var(--surface-raised); 
 .alert-actions .button-primary, .bed-header-actions .button-primary, .sheet-actions .button-primary { min-height: 44px; height: 44px; }
 .stat-sub, .stamp { font-size: 13px; line-height: 18px; }
 .table-wrap .table th { top: 0; }
+
+/* Audit summaries stay scannable; the full sentence is available on hover. */
+.action-copy { flex: 1; min-width: 0; }
+.action-row strong, .event-summary, .feed-copy > strong {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}

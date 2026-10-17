@@ -47,6 +47,19 @@ it('labels received values as untrusted when no trusted snapshot exists', async 
   expect(screen.queryByText(/Frozen at the newest trusted recording|showing the last good recording/)).not.toBeInTheDocument();
   expect(screen.queryByRole('img', {name: /Last trusted recording/})).not.toBeInTheDocument();
 });
+it('explains a monitor that has never sent data without claiming there are frozen readings', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(
+    url.includes('/history') ? {points: []} : {...detail, verdict: null, isolated: false,
+      display: 'empty', last_updated_at: null, last_trusted: null, vitals: null, waveform: {ecg: [], ppg: []}}
+  ))));
+  open();
+  await screen.findByRole('heading', {name: 'No monitor data yet'});
+  expect(screen.getByRole('heading', {name: 'Waiting for the first reading'})).toBeInTheDocument();
+  expect(screen.queryByRole('group', {name: 'Vital signs'})).not.toBeInTheDocument();
+  expect(screen.queryByText(/showing the last values received/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', {name: 'Patient OK'})).toBeInTheDocument();
+  expect(screen.getByRole('button', {name: 'Patient NOT OK'})).toBeInTheDocument();
+});
 it.each(['Patient OK','Patient NOT OK'])('preserves the %s request', async label => {
   open();
   fireEvent.click(await screen.findByRole('button',{name:label}));
@@ -79,7 +92,8 @@ it('keeps a confirmed B05 hub cut-off visible in the action history', async () =
     action: 'Cut off MON-05 at the hub after TAMPERING; session wiped', bed_id: 'B05', device_id: 'MON-05',
     approved_by: null, mode: 'automatic', undoable: true, references_action_id: null}]});
   open();
-  expect(await screen.findByText('Cut off MON-05 at the hub')).toBeInTheDocument();
+  expect(await screen.findByText('B05 · Cut off MON-05 at the hub')).toBeInTheDocument();
+  expect(screen.getByText('Cut off by IT', {exact: true})).toBeInTheDocument();
 });
 
 it('puts bedside confirmation and the directive before signal evidence', async () => {
@@ -89,4 +103,7 @@ it('puts bedside confirmation and the directive before signal evidence', async (
   const directive = screen.getByRole('heading', {name: 'What to do now'});
   expect(bedside.compareDocumentPosition(signals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(directive.compareDocumentPosition(signals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const why = screen.getByRole('heading', {name: 'Why SentinelWard says this'}).closest('.panel')!;
+  expect(directive.closest('.panel')!.nextElementSibling).toBe(why);
+  expect(why.parentElement).toHaveClass('bed-side');
 });

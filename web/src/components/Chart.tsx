@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useEffect, useId, useRef} from 'react';
 import {useThemeTokens, seriesColour} from '../lib/theme';
 
 export interface Series {label: string; color: string; values: (number | null)[]; unit?: string}
@@ -19,6 +19,14 @@ export function TrendChart({ts, series, untrusted, height = 94, label}: {
   ts: number[]; series: Series[]; untrusted?: boolean[]; height?: number; label: string;
 }) {
   const tokens = useThemeTokens();
+  const summaryId = useId();
+  const summary = series.map(s => {
+    const values = s.values.filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    const unit = s.unit ? ` ${s.unit}` : '';
+    const latest = s.values.at(-1);
+    return values.length ? `${s.label}: minimum ${reading(Math.min(...values))}${unit}, maximum ${reading(Math.max(...values))}${unit}, latest ${typeof latest === 'number' && Number.isFinite(latest) ? `${reading(latest)}${unit}` : 'not available'}.`
+      : `${s.label}: no readings in this window.`;
+  }).join(' ');
   const ref = useRef<HTMLCanvasElement>(null);
   const t0 = ts[0] ?? 0, t1 = ts.at(-1) ?? t0, span = t1 - t0 || 1;
   const percent = (t: number) => Math.max(0, Math.min(100, (t - t0) / span * 100));
@@ -73,11 +81,12 @@ export function TrendChart({ts, series, untrusted, height = 94, label}: {
     return () => observer.disconnect();
   }, [ts, series, untrusted, tokens, height]);
   return <div className="trend-multiples" aria-label={label}>
+    <p className="sr-only" id={summaryId}>{ts.length > 1 ? `Window ${clock(ts[0])} to ${clock(ts.at(-1)!)}. ` : ''}{summary}{untrusted?.some(Boolean) ? ' Includes readings marked not trusted.' : ''}</p>
     <div className="trend-body" style={{height: series.length * height}}>
       <div className="trend-plot">
         {ranges.map((r, i) => <div className="trend-untrusted" key={i} style={{left: `${r.start}%`, width: `${Math.max(.3, r.end - r.start)}%`}} title="Not trusted" />)}
         {ticks.map(t => <i className="trend-time-grid" key={t} style={{left: `${percent(t)}%`}} />)}
-        <canvas ref={ref} role="img" aria-label={`${label}. Each row has its own labelled scale and unit. Shaded periods are not trusted.`} />
+        <canvas ref={ref} role="img" aria-describedby={summaryId} aria-label={`${label}. Each row has its own labelled scale and unit. Shaded periods are not trusted.`} />
       </div>
       <span className="trend-latest">Latest</span>
       {series.map((s, i) => <div className="trend-series" key={s.label} style={{top: i * height, height}}>

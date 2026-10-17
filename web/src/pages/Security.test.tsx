@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {cleanup, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {cleanup, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {SecurityPage} from './Security';
 import {useWard} from '../lib/store';
@@ -31,10 +31,12 @@ describe('security monitor controls', () => {
   });
   it('reconnects using the original reversible action, only after confirmation', async () => {
     isolated = true;
-    const a: Action = {id: 'act_1', actor: 'A2', action_code: 'disable_client', action: 'Cut off MON-01', occurred_at: 1, bed_id: 'B01', device_id: 'MON-01', mode: 'automatic', undoable: true, approved_by: null, references_action_id: null};
+    const a: Action = {id: 'act_1', actor: 'A2', action_code: 'disable_client', action: 'Cut off MON-01 at the hub after TAMPERING; session wiped', occurred_at: 1, bed_id: 'B01', device_id: 'MON-01', mode: 'automatic', undoable: true, approved_by: null, references_action_id: null};
     useWard.setState({actions: [a]});
     render(<MemoryRouter><SecurityPage /></MemoryRouter>);
-    fireEvent.click((await screen.findAllByRole('button', {name: 'Undo'}))[0]);
+    const row = (await screen.findByRole('cell', {name: 'MON-01'})).closest('tr')!;
+    expect(within(row).getByText('Cut off', {exact: true})).toBeInTheDocument();
+    fireEvent.click(within(row).getByRole('button', {name: 'Undo'}));
     expect(writes).toHaveLength(0);
     expect(screen.getByRole('alertdialog')).toHaveTextContent('Reconnect this monitor?');
     fireEvent.click(screen.getByRole('button', {name: 'Reconnect monitor'}));

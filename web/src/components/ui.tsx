@@ -38,7 +38,18 @@ export function Undo({action}: {action: Action}) {
     <Feedback message={cmd.feedback} failed={cmd.failed} />
   </span>;
 }
-export function ActionList({actions}:{actions:Action[]}){return actions.length?<div className="action-list">{actions.map(a=><div className="action-row" key={a.id}><span className="event-icon"><Shield size={14}/></span><div><strong title={a.action}>{humanText(a.action)}</strong><p><time title="Time this action was recorded">{time(a.occurred_at,true)}</time> · {humanName(a.actor)} · {a.bed_id||a.device_id||'Ward'}</p></div>{a.mode==='automatic'&&a.undoable&&<Undo action={a}/>}</div>)}</div>:<Empty title="No actions recorded" detail="Automatic and staff actions will appear here with their audit trail."/>}
+export function ActionList({actions}: {actions: Action[]}) {
+  if (!actions.length) return <Empty title="No actions recorded" detail="Automatic and staff actions will appear here with their audit trail." />;
+  return <div className="action-list">{actions.map(a => {
+    const v = actionView(a);
+    return <div className="action-row" key={a.id}>
+      <span className="event-icon"><Shield size={14} aria-hidden="true" /></span>
+      <div className="action-copy"><strong title={v.summary}>{v.summary}</strong>
+        <p>{v.who} · <time title="Time this action was recorded">{time(a.occurred_at, true)}</time></p></div>
+      {a.mode === 'automatic' && a.undoable && <Undo action={a} />}
+    </div>;
+  })}</div>;
+}
 export function BedLink({id}:{id:string}){return <Link className="inline-link" title={`Open live readings and checks for ${id}`} to={`/bed/${id}`}>{id}<ChevronRight size={12}/></Link>}
 export function Stamp({ts}:{ts:number|null}){return <Tip text="Elapsed time since this information was received. All displayed clock times use this device’s local time."><span className="stamp"><Clock size={12}/>{age(ts)} ago</span></Tip>}
 

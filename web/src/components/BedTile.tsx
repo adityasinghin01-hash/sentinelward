@@ -18,12 +18,16 @@ export function BedTile({bed, hidden = true, now, mini = false, alerts = []}: {b
   const t = tileView(bed, alerts, now);
   const v = displayVitals(bed);
   const f = vitalFlags(bed);
+  // The API reports values, but has no channel-capability flag. Do not infer a missing channel.
+  const hasPressure = [bed.vitals, bed.last_trusted?.vitals].some(v =>
+    [v?.systolic, v?.diastolic].some(n => typeof n === 'number' && Number.isFinite(n)));
+  const empty = bed.display === 'empty' && !bed.last_updated_at && t.key === 'NO_SIGNAL' && !t.alert;
   const frozen = t.untrusted || t.offline;
   const wave = t.untrusted && bed.last_trusted ? bed.last_trusted.waveform : bed.waveform;
   const Icon = bed.verdict === 'LOOSE_SENSOR' ? Wrench : ICONS[t.tone];
   const patient = !hidden && bed.patient ? `${bed.patient.initials} · ${bed.patient.age ?? '—'} ${bed.patient.sex ?? ''}` : '';
   return (
-    <article className={`tile tone-${t.tone} ${t.untrusted ? 'is-untrusted' : ''} ${t.offline ? 'is-offline' : ''}`} data-state={t.key} data-group={t.group}>
+    <article className={`tile tone-${t.tone} ${t.untrusted && !empty ? 'is-untrusted' : ''} ${t.offline && !empty ? 'is-offline' : ''} ${empty ? 'is-awaiting' : ''}`} data-state={t.key} data-group={t.group}>
       <Link className="tile-link" to={mini ? '/login' : `/bed/${bed.bed_id}`} aria-label={`${bed.bed_id}: ${t.word}${t.reason ? '. ' + t.reason : ''}. Open bed.`}>
         <div className="tile-band">
           <Icon size={15} aria-hidden="true" className="band-icon" />
@@ -35,19 +39,23 @@ export function BedTile({bed, hidden = true, now, mini = false, alerts = []}: {b
             <span className="tile-bed">{bed.bed_id}</span>
             <span className="tile-dev mono">{bed.device_id}</span>
             {patient && <span className="tile-patient">{patient}</span>}
-            {bed.isolated && <span className="tile-cut"><Ban size={11} aria-hidden="true" />Data untrusted · device flagged</span>}
+            {bed.isolated && ![t.word, t.reason, t.footer].some(line => line?.includes('Data untrusted · device flagged')) && <span className="tile-cut"><Ban size={11} aria-hidden="true" />Data untrusted · device flagged</span>}
           </div>
-          <div className="tile-wave">
+          {empty ? <div className="tile-waiting"><Unplug size={22} aria-hidden="true" />
+            <p>{t.reason}</p><small>Readings will appear when the monitor starts sending.</small>
+          </div> : <><div className="tile-wave">
             <Waveform samples={wave?.ecg || []} frozen={frozen} label="ECG" />
             <Waveform samples={wave?.ppg || []} frozen={frozen} label="PLETH" />
           </div>
           <div className="tile-vitals mono" aria-label="Vital signs">
             <span className={`tv tv-hr ${f.hr ? 'out' : ''}`}><small>HR</small><b>{value(v?.hr)}</b><Flag dir={f.hr} /></span>
             <span className={`tv tv-spo2 ${f.spo2 ? 'out' : ''}`}><small>SpO₂</small><b>{value(v?.spo2)}</b><Flag dir={f.spo2} /></span>
-            <span className={`tv tv-bp ${f.sys ? 'out' : ''}`}><small>BP</small><b>{value(v?.systolic)}<i>/</i>{value(v?.diastolic)}</b><Flag dir={f.sys} /></span>
+            <span className={`tv tv-bp ${f.sys ? 'out' : ''}`} title={!hasPressure ? 'No blood pressure reading supplied. This monitor’s available channels are not reported.' : undefined}>
+              <small>BP</small>{hasPressure ? <><b>{value(v?.systolic)}<i>/</i>{value(v?.diastolic)}</b><Flag dir={f.sys} /></> : <span className="tv-unavailable">Not supplied</span>}
+            </span>
           </div>
           {t.reason && <p className="tile-reason">{t.reason}</p>}
-          {t.footer && <p className="tile-footer">{t.footer}</p>}
+          {t.footer && <p className="tile-footer">{t.footer}</p>}</>}
         </div>
       </Link>
     </article>

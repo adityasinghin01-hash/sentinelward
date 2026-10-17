@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {Activity, ClipboardList, ShieldCheck, Stethoscope, Wrench} from 'lucide-react';
+import {Activity, ClipboardList, Pause, Play, ShieldCheck, Stethoscope, Wrench} from 'lucide-react';
 import {prefersReducedMotion} from '../../lib/reveal';
 import {useTilt} from '../../lib/tilt';
 
@@ -35,6 +35,7 @@ const ROLES = [
 export function RoleViews() {
   const root = useRef<HTMLElement>(null);
   useTilt(root);
+  const [paused, setPaused] = useState(false);
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -60,10 +61,10 @@ export function RoleViews() {
   }, []);
 
   useEffect(() => {
-    if (reduced || hovered || focused || !onscreen || !visible) return;
+    if (paused || reduced || hovered || focused || !onscreen || !visible) return;
     const timer = window.setInterval(() => setActive(index => (index + 1) % ROLES.length), 2800);
     return () => window.clearInterval(timer);
-  }, [reduced, hovered, focused, onscreen, visible]);
+  }, [paused, reduced, hovered, focused, onscreen, visible]);
 
   return (
     <section className="l-section l-role-views" id="role-views" ref={root} aria-labelledby="l-role-views-title" data-static={reduced}>
@@ -71,6 +72,11 @@ export function RoleViews() {
         <p className="l-eyebrow" data-reveal>One shared incident · Bed B07</p>
         <h2 className="l-h2" id="l-role-views-title" data-reveal>One event. Five role views.</h2>
         <p className="l-lead" data-reveal>A hacked monitor, then real ventricular fibrillation. The emergency alert stays high while the device is cut off.</p>
+        <button type="button" className="l-role-playback" aria-pressed={paused || reduced} disabled={reduced}
+          onClick={() => setPaused(value => !value)}>
+          {paused || reduced ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
+          {reduced ? 'Automatic rotation off' : paused ? 'Play role views' : 'Pause role views'}
+        </button>
         <ol className="l-incident-timeline" aria-label="B07 night run N timeline" data-reveal>
           {TIMELINE.map((step, i) => (
             <li key={step.time} id={`l-b07-step-${i}`} data-active={!reduced && ROLES[active].step === i}>
