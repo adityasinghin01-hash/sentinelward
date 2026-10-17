@@ -43,9 +43,11 @@ class AttackService:
     def _digest(topic,message): return hashlib.sha256(encode(topic,message)).digest()
     # Margin on top of each replay's look-back (start_s - source_start_s) for late or seeked starts.
     HISTORY_MARGIN_S=60
+    MASK_LOOKBACK_S=60  # flood_second_sender masks the patient with this bed's own frames from 60 s earlier
     def _history_lookback_ms(self,bed):
-        """Only replay reads history: keep its look-back plus a margin; other beds need just `latest`."""
+        """Replay and the B07 masking loop read history: keep their look-back plus a margin; other beds need just `latest`."""
         lookbacks=[s['start_s']-s['source_start_s'] for s in self.schedule if s['kind']=='replay' and s['bed_id']==bed]
+        lookbacks+=[self.MASK_LOOKBACK_S for s in self.schedule if s['kind']=='flood_second_sender' and s['bed_id']==bed]
         return int((max(lookbacks)+self.HISTORY_MARGIN_S)*1000) if lookbacks else None
     def _capture(self,message):
         bed=message['bed_id']
@@ -117,7 +119,7 @@ class AttackService:
             # Mask the patient with this bed's real signal from one minute ago.
             # Require a current frame for its envelope; never extend an offline
             # recording or substitute another bed / invented physiology.
-            older_ms=source['ts']-60000
+            older_ms=source['ts']-self.MASK_LOOKBACK_S*1000
             older=self.history.get(bed,{}).get(older_ms)
             if older is None:
                 source_s=(older_ms-self.origin_ms+500)//1000
