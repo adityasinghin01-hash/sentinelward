@@ -404,3 +404,7 @@ tr.row-tone-check td:first-child { box-shadow: inset 3px 0 0 var(--st-check); }
 .log-table .log-details td { padding: 12px; border-bottom: 1px solid var(--border); background: var(--surface-sunken); }
 .log-table .log-details .record-original { margin: 0; max-width: 100%; width: 100%; border: 0; padding: 4px; }
 .log-table .log-details pre { max-width: 100%; }
+/* Action log: keep the Details control on one line */
+.record-details > summary { white-space: nowrap; cursor: pointer; font-size: 12.5px; color: var(--text-2); }
+.record-details > summary:hover { color: var(--text); }
+.record-details[open] .record-original { position: relative; z-index: 2; min-width: min(520px, 70vw); }
