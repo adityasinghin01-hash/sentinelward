@@ -19,10 +19,10 @@ class BodyMismatch:
 
     def __call__(self, window, state, now_ms):
         if not window:
-            return result(0, 'Waiting for ECG and pulse window', eligible=False, path='live_rate_and_pat')
+            return result(None, 'Waiting for ECG and pulse window', eligible=False, path='live_rate_and_pat')
         ecg, ppg = pulse_metrics(window), pulse_metrics(window, 'ppg')
         if ecg is None or ppg is None:
-            return result(0, 'Not enough observed ECG and pulse samples', eligible=False, path='live_rate_and_pat')
+            return result(None, 'Not enough observed ECG and pulse samples', eligible=False, path='live_rate_and_pat')
         rates = {'ecg_rate_bpm':ecg['rate'], 'ppg_rate_bpm':ppg['rate']}
         if (ecg['rate'] < 20) != (ppg['rate'] < 20):
             return result(.99, 'Heartbeat and pulse disagree: one signal has no usable beats', **rates, path='live_rate_and_pat')
@@ -100,10 +100,10 @@ class PressureDrift:
             self.seen[bed] = cuff['ts']
         current = self.current.get(bed)
         if current is None:
-            return result(0., 'Arterial line present; waiting for a paired cuff reading', eligible=False,
+            return result(None, 'Arterial line present; waiting for a paired cuff reading', eligible=False,
                           baseline_samples=len(baseline), path='live_patient_gap')
         if now_ms-current['cuff_ts'] > 300000:
-            return result(0., 'Cuff reading is too old for a pressure comparison', eligible=False,
+            return result(None, 'Cuff reading is too old for a pressure comparison', eligible=False,
                           baseline_samples=len(baseline), path='live_patient_gap')
         usual = current['baseline_gap_mmhg']
         reason = (f"Line/cuff gap {current['gap_mmhg']:.0f} mmHg; this patient's usual is {usual:.0f} mmHg"
@@ -170,7 +170,7 @@ class NetworkAttack:
                     score=max(score,output['score'])
                     extra.update(path='topic7_artifact',artifact_score=output['score'],features=model_features)
         if not recent:
-            return result(0, 'No recent packets; silence alone is not a network attack', eligible=False, **extra)
+            return result(None, 'No recent packets; silence alone is not a network attack', eligible=False, **extra)
         reason = ('Message flood at '+str(round(features['msg_rate'],1))+' messages/s' if features['msg_rate']>5 else
                   'Repeated or regressed packet sequences' if features['seq_dup_count']>=2 else
                   'Second sender observed; bedside confirmation needed' if sender_count>1 else

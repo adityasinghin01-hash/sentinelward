@@ -8,7 +8,11 @@ LABELS={'M1':'sensor_unusable','M2':'real_emergency','M3':'body_mismatch','M4':'
 
 
 def result(score,reason,**extra):
-    return {'score':None if score is None else float(np.clip(score,0,1)), 'reason':reason[:120], 'extra':{'eligible':score is not None,**extra}}
+    eligible=score is not None and extra.get('eligible',True)
+    if not eligible:
+        score=None
+        extra.setdefault('unavailable_reason',reason[:120])
+    return {'score':None if score is None else float(np.clip(score,0,1)), 'reason':reason[:120], 'extra':{**extra,'eligible':bool(eligible)}}
 
 
 def waveform(window,channel):
@@ -34,7 +38,7 @@ def pulse_metrics(window,channel='ecg'):
 
 class QualityDetector:
     def evaluate(self,window,state,now_ms):
-        if not window: return result(0.,'Waiting for 10 seconds of ECG and pulse',eligible=False,unavailable_reason='window_unavailable')
+        if not window: return result(None,'Waiting for 10 seconds of ECG and pulse',eligible=False,unavailable_reason='window_unavailable')
         checks={}
         for channel in ('ecg','ppg'):
             x=waveform(window,channel); valid=np.isfinite(x); issues=[]; severity=0.
@@ -67,7 +71,7 @@ class QualityDetector:
 class EmergencyDetector:
     def __init__(self,research=None): self.research=research
     def evaluate(self,window,state,now_ms):
-        if not window: return result(0.,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable')
+        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable')
         metrics=pulse_metrics(window); alarms=window.get('monitor_alarms',[])
         code=state.last_alarm_code if state.alarm_until_ms>now_ms else None
         research={'status':'unavailable','extra':{'unavailable_reason':'not_a_full_prealarm_VTACH_window'}}
@@ -75,7 +79,7 @@ class EmergencyDetector:
             research=self.research.m2(state.prealarm_window)
             if research.get('status')=='active':
                 return result(research['score'],'Verified VTACH research model evaluated full pre-alarm window',path='research_primary_seed_20261015',research=research,positive=research['positive'],threshold=research['threshold'])
-        if metrics is None: return result(0.,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',research=research)
+        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',research=research)
         rate=metrics['rate']; width=metrics['qrs_ms']; regularity=metrics['regularity']
         if code=='ASYSTOLE': positive=rate<20; evidence='ECG has very few beats'
         elif code=='BRADY': positive=rate<40; evidence=f'ECG rate is {rate:.0f} bpm'
@@ -147,13 +151,13 @@ class DetectorSuite:
             if i==4:
                 state.baseline_admission_allowed=all(values[m]['score'] is not None and values[m]['score']<.5 and values[m]['extra'].get('eligible',False) for m in ('M1','M2','M5')) and state.alarm_until_ms<now_ms and not state.patient_not_ok
             if i==3:
-                state.baseline_admission_allowed=state.baseline_admission_allowed and values['M4']['score']<.5
+                state.baseline_admission_allowed=state.baseline_admission_allowed and values['M4']['score'] is not None and values['M4']['score']<.5
             if model in self.detectors:
                 try: values[model]=self.detectors[model].evaluate(window,state,now_ms)
-                except Exception as exc: values[model]=result(0.,'Live detector unavailable',eligible=False,unavailable_reason=f'{type(exc).__name__}: {exc}')
+                except Exception as exc: values[model]=result(None,'Live detector unavailable',eligible=False,unavailable_reason=f'{type(exc).__name__}: {exc}')
             else: values[model]=result(None,'Detector is not enabled in this working step',unavailable_reason='step_2_pending')
         # A body mismatch discovered after fingerprint evaluation invalidates that reference.
-        if window and values['M3']['score']>=.5:
+        if window and values['M3']['score'] is not None and values['M3']['score']>=.5:
             history=self.detectors['M4'].history.get(state.bed_id)
             if history and history[-1][1]['window_start']==window['window_start']: history.pop()
         return {f'M{i}':values[f'M{i}'] for i in range(1,7)}

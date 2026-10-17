@@ -28,7 +28,7 @@ def test_m3_uses_this_beds_baseline_and_explains_arrival_shift():
     assert 180 <= shifted['extra']['baseline_pat_ms'] <= 220
     other = model(waves(delay_ms=480, start=40000, bed='B02'), state(), 50000)
     assert other['extra']['baseline_pat_ms'] is None
-    assert other['score'] < .2
+    assert other['score'] is None
 
 
 def test_m3_flat_ecg_with_present_pulse_and_rate_disagreement():
@@ -47,13 +47,13 @@ def test_m6_relative_gap_and_only_new_cuffs_update_baseline():
         bed.messages = [{'message':frame, 'received_ms':cuff_ts, 'payload_bytes':100,'sender_id':None}]
         bed.last_message = frame
         return detector({'bed_id':bed_id,'window_start':cuff_ts-10000}, bed, cuff_ts)
-    assert sample(10000, 100)['score'] == 0
+    assert sample(10000, 100)['score'] is None
     assert sample(10000, 100)['extra']['baseline_samples'] == 1
     normal = sample(20000, 100)
-    assert normal['score'] < .1  # own normal gap is +20, not a fixed +10 threshold
+    assert normal['score'] is None  # two observations establish the baseline for the next cuff
     assert sample(30000, 115)['score'] >= .9
     assert sample(40000, 100)['score'] < .1
-    assert sample(50000, 115, 'B09')['score'] == 0  # no cross-patient baseline
+    assert sample(50000, 115, 'B09')['score'] is None  # no cross-patient baseline
 
 
 def test_m6_no_arterial_line_null_and_both_pressures_fall_not_drift():
@@ -106,7 +106,7 @@ def test_m5_topic7_model_path_and_load_failure_fallback():
     assert 'bad hash' in str(result['extra'])
 
 
-def test_integrated_six_live_scores_and_m6_only_null_without_line(frame):
+def test_integrated_six_live_scores_include_null_warmup_and_no_line(frame):
     from sw_brain.io import MemoryBus
     from sw_brain.service import BrainService
     import json
@@ -115,7 +115,8 @@ def test_integrated_six_live_scores_and_m6_only_null_without_line(frame):
     for i in range(10):
         service.receive('ward/bed/B01/vitals',json.dumps(frame(i)),received_ms=i*1000)
     verdict = service.tick(10000)[0]
-    assert all(isinstance(verdict['scores'][f'M{i}'],float) for i in range(1,6))
+    assert all(isinstance(verdict['scores'][m],float) for m in ('M1','M2','M4','M5'))
+    assert verdict['scores']['M3'] is None
     assert verdict['scores']['M6'] is None
     assert verdict['verdict'] == 'UNSURE'  # patient pulse-arrival baseline is still warming
 
@@ -135,8 +136,11 @@ def test_drifting_plus_network_is_tampering_and_low_cuff_is_emergency():
     assert emergency['extra']['positive'] is True
 
 
-def test_missing_inputs_are_numeric_but_ineligible_and_seq_gaps_alone_not_attack():
-    assert BodyMismatch()(None,state(),10000)['extra']['eligible'] is False
+def test_missing_inputs_are_null_and_seq_gaps_alone_not_attack():
+    missing = BodyMismatch()(None,state(),10000)
+    assert missing['score'] is None
+    assert missing['extra']['eligible'] is False
+    assert missing['extra']['unavailable_reason']
     data = records()
     for i,row in enumerate(data): row['message']['seq']=i*3
     observation = NetworkAttack()({'bed_id':'B01'},state(data),10000)
@@ -208,11 +212,17 @@ def test_cuff_persists_to_next_tick_and_reset_rejects_old_controls(frame):
     assert service.running is False
 
 
-def test_warmup_is_numeric_with_explicit_ineligibility(frame):
+def test_warmup_publishes_null_with_explicit_ineligibility(frame):
     import json
     from sw_brain.io import MemoryBus
     from sw_brain.service import BrainService
-    service=BrainService(MemoryBus())
+    bus=MemoryBus()
+    service=BrainService(bus)
     service.receive('ward/bed/B01/vitals',json.dumps(frame(0)),received_ms=0)
-    scores=service.tick(5000)[0]['scores']
-    assert all(isinstance(scores[f'M{i}'],float) for i in range(1,6))
+    verdict=service.tick(5000)[0]
+    assert verdict['verdict']=='UNSURE'
+    assert verdict['scores']=={'M1':None,'M2':None,'M3':None,'M4':0.,'M5':0.,'M6':None}
+    for topic, message, _, _ in bus.published:
+        if '/score/' in topic and not message['extra']['eligible']:
+            assert message['score'] is None
+            assert message['extra']['unavailable_reason']

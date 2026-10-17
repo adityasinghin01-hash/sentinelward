@@ -72,13 +72,13 @@ def test_first_match_all_verdicts_and_numeric_trust(expected,overrides):
     assert result['trust']==pytest.approx(1-max(scores[m]['score'] for m in ('M3','M4','M5')))
 
 
-def test_saved_m2_threshold_preserves_research_emergency_and_no_line_normal():
+def test_saved_m2_threshold_preserves_research_emergency_and_no_line_unknown():
     scores={f'M{i}':{'score':.05,'reason':'clean','extra':{'eligible':True}} for i in range(1,7)}
     scores['M2']={'score':.62,'reason':'VTACH supported','extra':{'eligible':True,'positive':True,'threshold':.61}}
     assert decide('B01',0,10000,scores)['verdict']=='EMERGENCY'
     scores['M2']={'score':.05,'reason':'clean','extra':{'eligible':True,'positive':False}}
     scores['M6']={'score':None,'reason':'No arterial line','extra':{'eligible':False,'no_arterial_line':True}}
-    assert decide('B01',0,10000,scores)['verdict']=='NORMAL'
+    assert decide('B01',0,10000,scores)['verdict']=='UNSURE'
 
 
 def test_second_sender_alone_is_uncertain_not_tampering(frame):

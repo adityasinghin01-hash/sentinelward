@@ -10,9 +10,9 @@ def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_t
     emergency=alarm or patient_not_ok or (eligible('M2') and results['M2'].get('extra',{}).get('positive',positive('M2')))
     tampering=(positive('M4') and results['M4'].get('extra',{}).get('independent_evidence',False)) or (positive('M3') and positive('M5')) or (positive('M6') and positive('M5'))
     tamper_model='M4' if positive('M4') and results['M4'].get('extra',{}).get('independent_evidence',False) else ('M3' if positive('M3') else 'M6')
-    tamper_confidence=values[tamper_model] if tamper_model=='M4' else min(values[tamper_model] or 0,values['M5'] or 0)
+    tamper_confidence=(values[tamper_model] if tamper_model=='M4' else min(values[tamper_model],values['M5'])) if tampering else None
     physiology=all(eligible(m) and values[m]<.5 for m in ('M1','M2','M3')) and not offline
-    all_clean=all(eligible(m) and values[m]<.5 for m in values if not (m=='M6' and results[m].get('extra',{}).get('no_arterial_line')))
+    all_clean=all(eligible(m) and values[m]<.5 for m in values)
     reasons=[]
     if emergency:
         verdict='BOTH' if tampering else 'EMERGENCY'

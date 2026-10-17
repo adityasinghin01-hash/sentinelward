@@ -44,7 +44,7 @@ def test_natural_end_and_late_join_are_not_attacks(frame):
     service.tick(310000)
     verdict=service.tick(330000)[0]
     assert verdict['verdict']=='UNSURE'
-    assert verdict['scores']['M4']<.5 and verdict['scores']['M5']<.5
+    assert verdict['scores']['M4'] is None and verdict['scores']['M5'] is None
     service.receive('ward/bed/B07/vitals',json.dumps(frame(540,bed='B07')),received_ms=540000)
     assert next(v for v in service.tick(545000) if v['bed_id']=='B07')['verdict']=='UNSURE'
 
