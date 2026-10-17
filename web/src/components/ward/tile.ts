@@ -37,10 +37,10 @@ export function tileView(bed: Bed, alerts: Alert[], now: number): TileView {
     ({key, group, tone, word, reason, untrusted: s.untrusted, offline: s.offline, footer, alert});
 
   let view: TileView;
-  if (v === 'BOTH') view = base('BOTH', 'emergency', 'both', 'Emergency · monitor hacked', 'Go now · check by hand', bed.isolated ? 'Monitor cut off by IT' : footerUntrusted);
+  if (v === 'BOTH') view = base('BOTH', 'emergency', 'both', 'Emergency · monitor hacked', 'Go now · check by hand', bed.isolated ? 'Data untrusted · device flagged' : footerUntrusted);
   else if (v === 'EMERGENCY') view = base('EMERGENCY', 'emergency', 'emergency', 'Emergency', 'Go now · monitor alarm');
-  else if (v === 'TAMPERING' || v === 'DEVICE_ATTACK') view = base(v, 'security', 'security', 'Monitor hacked', bed.isolated ? 'Cut off by IT · check by hand' : 'Numbers not trusted · IT alerted', bed.isolated ? 'Monitor cut off by IT' : footerUntrusted);
-  else if (bed.isolated) view = base('TAMPERING', 'security', 'security', 'Monitor cut off', 'Isolated by IT · check by hand', 'Nothing it sends is trusted');
+  else if (v === 'TAMPERING' || v === 'DEVICE_ATTACK') view = base(v, 'security', 'security', 'Monitor hacked', bed.isolated ? 'Data untrusted · device flagged' : 'Numbers not trusted · IT alerted', bed.isolated ? 'Data untrusted · device flagged' : footerUntrusted);
+  else if (bed.isolated) view = base('TAMPERING', 'security', 'security', 'Data untrusted · device flagged', 'Check by hand · IT review needed', 'Nothing it sends is trusted');
   else if (s.offline && v !== 'UNSURE') view = base('NO_SIGNAL', 'nosignal', 'nodata', bed.last_updated_at ? `No signal · ${age(bed.last_updated_at, now)}` : 'No signal', bed.last_updated_at ? 'Monitor silent · check by hand' : 'Awaiting first signal');
   else if (v === 'UNSURE') view = base('UNSURE', 'check', 'check', 'Check by hand', 'Readings unclear', s.untrusted ? footerUntrusted : null);
   else if (v === 'DRIFTING') view = base('DRIFTING', 'maint', 'maint', 'Sensor drift', 'Pressure line drifting · re-zero');

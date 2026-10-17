@@ -36,7 +36,7 @@ const PROOF = [
   {n: '85.1%', l: 'false alarms marked likely false on CinC held-out (2.7% of true alarms missed); VTaC test: 84.1% (4.4% missed). Advice only; alarms still sound', s: 'docs/evidence/raw/fatigue.txt'},
   {n: '19.2 s', l: 'B07 real VF during a hack, F1–F3 median: attack start → bed untrusted, nurse told, monitor cut off', s: 'docs/evidence/WARD-RUN.md'},
   {n: '15 / 15', l: 'saved systemd hub security checks passed: per-device accounts, TLS 1.3, no anonymous access', s: 'docs/evidence/SECURITY.md'},
-  {n: '96', l: 'beds reported in a 3-minute, one-CPU brain test (22.4% of the 5 s tick); raw tick logs not bundled', s: 'docs/evidence/SCALE.md'},
+  {n: '96', l: 'beds in a 3-minute, one-CPU brain test; median/max tick 640.44/1,121.65 ms, 0 recorded drops; raw logs bundled', s: 'docs/evidence/SCALE.md'},
 ];
 
 function Section({id, eyebrow, title, lead, children}: {id?: string; eyebrow: string; title: string; lead?: string; children: React.ReactNode}) {
@@ -82,7 +82,7 @@ export function LandingPage() {
             <div className="l-hero-copy">
               <p className="l-eyebrow">Real-time AI on IBM LinuxONE · IBM Z Datathon 2026</p>
               <h1 className="l-h1">Patient, sensor,<br />or hacker?</h1>
-              <p className="l-sub">SentinelWard checks every ICU bed every five seconds and tells the nurse whether an alarming reading is a real emergency, a faulty sensor or a hacked monitor. When data turns doubtful, the last trusted values stay on screen for a bedside check.</p>
+              <p className="l-sub">SentinelWard checks every ICU bed every five seconds and tells the nurse whether an alarming reading is a real emergency, a faulty sensor or a hacked monitor. When data turns doubtful, available last trusted values stay on screen for a bedside check.</p>
               <div className="l-cta">
                 <Link to="/login?role=nurse" className="l-btn l-btn-primary">Open the live ward <ArrowRight size={16} aria-hidden="true" /></Link>
                 <a href="#how" className="l-btn l-btn-ghost">See how it works</a>
@@ -163,8 +163,8 @@ export function LandingPage() {
 
         <Section id="ibmz" eyebrow="IBM Z" title="Built on IBM LinuxONE, end to end." lead="Hospitals need decisions that stay up, stay private and stay on site. Everything that decides runs on the LinuxONE guest.">
           <div className="l-cards four">
-            <article className="l-card" data-reveal><span className="l-card-icon"><Server size={20} aria-hidden="true" /></span><h3>Native s390x</h3><p>Models trained and served on LinuxONE; a 3-minute test reports 96 beds per brain. Raw tick logs are not bundled.</p></article>
-            <article className="l-card" data-reveal style={{transitionDelay: '50ms'}}><span className="l-card-icon"><Boxes size={20} aria-hidden="true" /></span><h3>Six containers</h3><p>Hub, database, API, brain, simulator and attacks form a separate Compose stack; agents and the witness run in the systemd ward.</p></article>
+            <article className="l-card" data-reveal><span className="l-card-icon"><Server size={20} aria-hidden="true" /></span><h3>Native s390x</h3><p>Models trained and served on LinuxONE; 96-bed short-run ticks had median/max 640.44/1,121.65 ms and 0 recorded drops. Raw logs are bundled.</p></article>
+            <article className="l-card" data-reveal style={{transitionDelay: '50ms'}}><span className="l-card-icon"><Boxes size={20} aria-hidden="true" /></span><h3>Six containers</h3><p>Hub, database, API, brain, simulator and attacks form a separate Compose stack: four hardened app containers, authenticated service accounts and topic ACLs, plaintext internal MQTT, anonymous refused (137/137 checks). Agents and the witness run in the systemd ward.</p></article>
             <article className="l-card" data-reveal style={{transitionDelay: '100ms'}}><span className="l-card-icon"><Sparkles size={20} aria-hidden="true" /></span><h3>IBM Granite</h3><p>Writes the end-of-shift briefing on the box. Its numbers are checked against the ward's own records, and the structured facts sit beside it.</p></article>
             <article className="l-card" data-reveal style={{transitionDelay: '150ms'}}><span className="l-card-icon"><Cpu size={20} aria-hidden="true" /></span><h3>Telum II on-chip AI</h3><p>A second-opinion model on the z17 AI accelerator, shown only. In run N it scored the B03, B04 and B07 alarms; it is not guaranteed for every alarm and showed no speed advantage.</p></article>
           </div>

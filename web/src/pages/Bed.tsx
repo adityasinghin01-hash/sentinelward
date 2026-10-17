@@ -47,8 +47,8 @@ function Witnesses({detail}: {detail: BedDetail}) {
                   value={rate === null ? '—' : `${rate.toFixed(1)}/s`} />
             <Fact label="Sequence gaps / repeats" hint="Missing or repeated message numbers. Repeats can mean old data is being replayed."
                   value={`${gaps === null ? '—' : gaps} / ${dups === null ? '—' : dups}`} />
-            <Fact label="Device link" hint="Whether the hub hears this monitor now, and whether IT has cut it off."
-                  value={detail.device?.isolated ? 'Cut off by IT' : detail.device?.online ? 'Online' : 'Not heard'} />
+            <Fact label="Device link" hint="Whether the hub hears this monitor now, and whether its data has been flagged."
+                  value={detail.device?.isolated ? 'Data untrusted · device flagged' : detail.device?.online ? 'Online' : 'Not heard'} />
             <Fact label="Finding" hint="Plain summary from the network check (M5)." value={plainEvidence(detail.scores?.M5?.reason || 'No score yet')} />
           </dl>
         </div>
@@ -257,7 +257,7 @@ export function BedPage() {
               <ol className="verdict-list">
                 {detail.recent_verdicts.slice(0, 6).map((r, i) => (
                   <li key={`${r.ts}-${i}`}><time className="mono">{time(r.ts, true)}</time><span>{plainEvidence(verdictWords[r.verdict] ?? r.verdict)}</span>
-                    <Tip text="Data trust attached to this verdict, 0 to 1. Verdicts made after the monitor was cut off or went silent show “not trusted”."><span className="bed-history-trust">{verdictTrust(r.trust, r.ts, detail) === 'not trusted' ? 'Not trusted' : r.trust == null ? 'Checking' : r.trust >= .5 ? 'Trusted' : 'Checking'}</span></Tip></li>
+                    <Tip text="Data trust attached to this verdict, 0 to 1. Verdicts made after the device was flagged or went silent show “not trusted”."><span className="bed-history-trust">{verdictTrust(r.trust, r.ts, detail) === 'not trusted' ? 'Not trusted' : r.trust == null ? 'Checking' : r.trust >= .5 ? 'Trusted' : 'Checking'}</span></Tip></li>
                 ))}
               </ol>
             )}

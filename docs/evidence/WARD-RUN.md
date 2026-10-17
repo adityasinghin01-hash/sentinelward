@@ -20,13 +20,20 @@ B07 time-to-safe in N was 21.3 s, 0.1 s slower than the slowest F run (cut at 14
 
 **Chip coverage:** `raw/wardrun-night/chip_check.txt` shows four M2-judged alarm episodes but only three chip messages: B03, B04 and B07. B06's forged ASYSTOLE got no chip score. The chip scores alarms it receives in time; not guaranteed for every alarm.
 
-## B07's 88 blank-after-data samples (N and F1–F3)
+## B07: 88 legacy counts are a counter artefact (N and F1–F3)
 
-`raw/wardrun-night/metricsN.txt` and each `raw/wardrun-final/metricsF*.txt` report **88 B07 blank-after-data samples**. These are API sampler observations, not 88 incidents, seconds, or screen captures. The repository's related `tests_system/metrics.py::never_blank` check starts after received vitals and flags a bed whose `latest` (or `vitals`) is absent, not a dictionary, an empty dictionary, or all-null; zeros remain valid (`tests_system/tests/test_metrics.py::test_never_blank_preserves_zero_and_ignores_unreceived_beds`). This is separate from the `blind_time` metric, which integrates pre-notification `last_trusted`/`offline` intervals. The exact counter script and underlying N/F polls are not bundled, so the 88 observations cannot be independently mapped to timestamps or a root cause here.
+The preserved `metricsN.txt` / `metricsF*.txt` outputs call 88 samples per run “blank-after-data”. Recomputing the original saved ward polls shows that **all 88 occur before first data in every run**, approximately T+103–539 s. B07 deliberately joins at **540 s** (`simulator/ward_script.yaml`). The original `metrics2.py` expression tests `display == "empty" and time > 100`, not previous receipt. These are pre-admission samples, not post-data blanks.
 
-N reports B07 `display=empty` in 108 of the 240 in-window samples, alongside 47 live, 11 last-trusted/not-isolated, 4 last-trusted/isolated and 70 offline/isolated samples. The separate "while isolated" summary reports retained HR 167 and last-trusted/offline displays; its counts differ from the 0–1200-second table and must not be merged with it. `judgeN.txt` checks B07's BOTH, cut-off and uncancelled alert; its PASS is **not** a rendered-screen continuity check.
+| Run | In-window ward polls | Legacy counts before first data | Legacy counts after first data | First values T+ s | Empty-value samples after first data |
+|---|---|---|---|---|---|
+| N | 240 | 88 | 0 | 543.573 | 0 |
+| F1 | 240 | 88 | 0 | 543.827 | 0 |
+| F2 | 240 | 88 | 0 | 543.594 | 0 |
+| F3 | 240 | 88 | 0 | 543.658 | 0 |
 
-The display code retains available last trusted values (or flagged last values when no trusted pin exists): `backend/sw_api/state.py::_view`, `backend/sw_api/presenters.py::bed`, `web/src/lib/domain.ts::displayVitals`. That code cannot create values when none are available. **Whether a nurse actually saw a blank patient screen during those 88 samples is unknown** without the underlying polls and synchronized UI capture. Do not claim a measured zero-blank run from these summaries.
+Reproduce: `python3 docs/evidence/raw/wardrun-night/b07_blank_check.py`. The [script](raw/wardrun-night/b07_blank_check.py), [output](raw/wardrun-night/b07_blank_check.txt), B07-only extracts, original counter text, T0 loader and source hashes are in [raw/wardrun-night/b07-README.md](raw/wardrun-night/b07-README.md). The same script was also run against the full local N/F1/F2/F3 source JSONL files and produced identical counts. It considers absent, empty or all-null vitals empty; zero remains valid. The repository's separate `tests_system/metrics.py::never_blank` already tests previous receipt and is not the legacy counter.
+
+**0 empty samples after first data in all four runs establishes sampled API continuity only. Rendered-screen continuity was not measured.** The display code retains available last trusted values (or flagged last values when no trusted pin exists): `backend/sw_api/state.py::_view`, `backend/sw_api/presenters.py::bed`, `web/src/lib/domain.ts::displayVitals`. It cannot create values before receipt. B07's 108 `display=empty` samples in N include pre-admission samples; do not interpret that category count as a post-data screen failure or combine the in-window table with the separate “while isolated” summary.
 
 ## Final runs F1–F3 on build f7fef1c (17 Oct 2026)
 
@@ -79,7 +86,7 @@ Build after the hub-log fix (`fea3a03`) and before the B11 fix. Same sampler and
 
 ## Ward run 3 (history, build before the hub-log fix)
 
-*History only: superseded by F1–F3 and N above. The B12 "re-run pending" below was done in run 4 and F1–F3 (B12 seen in 1 of 3 final runs).*
+*History only: superseded by F1–F3 and N above. The B12 re-run was done in run 4 and F1–F3 (B12 seen in 1 of 3 final runs).*
 
 Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–14:38:53 UTC, speed 1, 12 real patient recordings, the scripted attacks, and four human steps played through the API as the real staff (nurse Tom acks B03 at 05:50, nurse Priya marks B05 "patient OK" at 11:30, IT (Sam) undoes B05's cut-off at 15:30, nurse marks B12 OK at 18:00; all returned 201/202). Raw samples: `.work/wardrun3/` (every 5 s: ward, alerts, actions, health; every 30 s: each bed's six scores). 0 API errors, 0 agent errors.
 
@@ -103,6 +110,6 @@ Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–1
 - Time-to-safe (attack start → bed untrusted AND nurse told AND device cut off): B07 19.3 s, B05 24.2 s, B10 29.3 s, B06 4.3 s (emergency present → cut off at once). B11 is IT-only by design.
 - Event → verdict: B03 +2 s, B04 +2 s, B05 +3 s, B06 +3 s, B07 +2 s (BOTH after VFIB), B08 +2 s after cuff, B10 +3 s, B11 +3 s.
 - Nurse alerts: 13 in 20 minutes for 12 beds (B01/B02: 0). Telegram: 24 messages sent + 27 edited, 0 failed (agents status counters).
-- The run-3 summary reported retained last trusted numbers while cut off. This historical observation does not resolve the 88 B07 blank-after-data samples in each later run; see the limits above.
+- The run-3 summary reported retained last trusted numbers while cut off. The later B07 counter recomputation found all 88 legacy counts before first data and 0 empty samples after first data in N/F1/F2/F3; rendered-screen continuity was not measured.
 
 **Known gaps (honest):** B12's weak attack did not surface live (network witness blind; fixed in build 4348467 and confirmed in night run N); B05 took 92 s to return to NORMAL after IT's Undo (the tampering latch waits for 30 s of clean data after the replay attack ends); B11 had 3 UNSURE hand-check pages from a clipped pulse signal.

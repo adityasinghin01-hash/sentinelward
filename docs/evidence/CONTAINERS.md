@@ -26,8 +26,8 @@ Raw: `raw/containers/` and `raw/resources-now.txt` (2026-10-17 14:27 UTC).
   bounded-history soak is described in `SCALE.md` and `raw/memory-flat.txt`.
 - `SCALE.md` reports 12/24/48/96 beds per brain container, with three-minute runs and a
   maximum 96-bed tick of 1.12 s on one CPU. These measurements predate this auth change,
-  do not include agents/witness, and are not a long 96-bed soak. Its referenced raw tick
-  logs must be supplied separately; `raw/containers/scale-stats.txt` is an older run that
+  do not include agents/witness, and are not a long 96-bed soak. The unchanged raw tick
+  logs are bundled in `raw/scale/` with hashes and a recomputation script; `raw/containers/scale-stats.txt` is an older run that
   rejected extra beds and cannot substitute for those logs.
 
 ## Configured container security and its limits

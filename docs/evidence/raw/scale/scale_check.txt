@@ -1,0 +1,5 @@
+beds ticks median_ms max_ms max_dropped_total max_invalid_in_total
+12 38 79.54 111.64 0 0
+24 37 160.51 229.35 0 0
+48 38 311.15 376.53 0 0
+96 37 640.44 1121.65 0 0

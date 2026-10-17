@@ -73,7 +73,7 @@ How to pick MIMIC patients #4–#6 at H1:
 3. **Safety rules:**
    - B09 is never `DRIFTING`.
    - B07's emergency alert is never cancelled.
-   - Retain available last trusted values; screen continuity for B07’s 88 blank-after-data API samples remains unknown (`../evidence/WARD-RUN.md`).
+   - Retain available last trusted values; B07’s 88 legacy counts per run are a counter artefact before first data; 0 empty samples after first data in all four runs (N/F1/F2/F3). Rendered-screen continuity was not measured (`../evidence/WARD-RUN.md`).
    - Supported reversible actions have Undo, including B05 cut-off (`../../agents_v2/REPORT.md`).
 4. **Numbers for the results table (T8):**
    - Time-to-safe for B05 and B07 (attack start → isolated **and** nurse told).

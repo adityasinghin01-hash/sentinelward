@@ -35,7 +35,7 @@ export function BedTile({bed, hidden = true, now, mini = false, alerts = []}: {b
             <span className="tile-bed">{bed.bed_id}</span>
             <span className="tile-dev mono">{bed.device_id}</span>
             {patient && <span className="tile-patient">{patient}</span>}
-            {bed.isolated && <span className="tile-cut"><Ban size={11} aria-hidden="true" />Cut off</span>}
+            {bed.isolated && <span className="tile-cut"><Ban size={11} aria-hidden="true" />Data untrusted · device flagged</span>}
           </div>
           <div className="tile-wave">
             <Waveform samples={wave?.ecg || []} frozen={frozen} label="ECG" />

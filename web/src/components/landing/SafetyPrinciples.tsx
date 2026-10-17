@@ -21,7 +21,7 @@ export function SafetyPrinciples() {
     <section className="l-section l-safety" id="safety" aria-labelledby="l-safety-title">
       <div className="l-wrap">
         <p className="l-eyebrow" data-reveal>Safety principles</p>
-        <h2 className="l-h2" id="l-safety-title" data-reveal>Doubtful data never makes the ward go dark.</h2>
+        <h2 className="l-h2" id="l-safety-title" data-reveal>When data turns doubtful, available trusted values stay visible.</h2>
         <div className="l-cards four">
           {PRINCIPLES.map(principle => (
             <article key={principle.title} className="l-card l-safety-card" data-reveal data-tilt>

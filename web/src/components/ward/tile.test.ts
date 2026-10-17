@@ -1,0 +1,23 @@
+import {expect, it} from 'vitest';
+import type {Bed} from '../../lib/types';
+import {trustView} from '../../lib/domain';
+import {tileView} from './tile';
+
+it.each(['DEVICE_ATTACK', 'NORMAL', null] as const)('shows flagged B11 (%s) as untrusted without inventing a completed cut-off', verdict => {
+  const bed = {bed_id: 'B11', device_id: 'MON-11', verdict, isolated: true,
+    is_trusted: false, connected: true, display: 'last_trusted', last_updated_at: 1000,
+    trust_score: 0, last_trusted: null} as Bed;
+  const view = tileView(bed, [], 1000);
+  expect(`${view.word} ${view.reason} ${view.footer}`).toContain('Data untrusted · device flagged');
+  expect(`${view.word} ${view.reason} ${view.footer} ${trustView(bed).why}`).not.toMatch(/cut off|disconnected|isolated by IT/i);
+  expect(view.untrusted).toBe(true);
+});
+
+it('keeps the emergency urgent when an isolated flag has no action evidence', () => {
+  const bed = {bed_id: 'B07', verdict: 'BOTH', isolated: true, is_trusted: false,
+    connected: true, display: 'last_trusted', last_updated_at: 1000, last_trusted: null} as Bed;
+  const view = tileView(bed, [], 1000);
+  expect(view.group).toBe('emergency');
+  expect(view.reason).toContain('Go now');
+  expect(view.footer).toBe('Data untrusted · device flagged');
+});

@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Ward run 2 (agents on): timelines from run2.jsonl + agents_actions.jsonl. Read-only.
+T0 = sim first second (epoch 1792242658000 ms, sw-sim journal)."""
+import json, collections
+
+T0 = 1792264341000
+BEDS = [f"B{i:02d}" for i in range(1, 13)]
+rows = [json.loads(l) for l in open("runN.jsonl")]
+verdicts = collections.defaultdict(dict)
+scores = collections.defaultdict(list)
+ward, slow, bedpolls = [], [], []
+alerts = {}          # alert_id -> list of states seen (from /api/alerts)
+api_actions = {}
+for r in rows:
+    k = r["kind"]
+    if k == "bed":
+        bedpolls.append(r)
+        if "data" in r:
+            for v in r["data"].get("recent_verdicts") or []:
+                verdicts[r["bed_id"]][v["ts"]] = v
+            scores[r["bed_id"]].append(((r["wall_ms"] - T0) / 1000, r["data"].get("scores") or {}))
+    elif k == "ward":
+        ward.append(r)
+        for a in r.get("alerts") or []:
+            if isinstance(a, dict):
+                alerts.setdefault(a["alert_id"], {})[(a.get("status"), a.get("ladder_step"), a.get("priority"), a.get("verdict"))] = a
+        for a in r.get("actions") or []:
+            if isinstance(a, dict):
+                api_actions[a["id"]] = a
+    elif k == "slow":
+        slow.append(r)
+
+ag = [json.loads(l) for l in open("agents_actions.jsonl")]
+ag = [a for a in ag if (a.get("ts") or 0) >= T0 - 12000]
+
+
+def t(ms):
+    return (ms - T0) / 1000
+
+
+def mmss(s):
+    sign = "-" if s < 0 else ""
+    s = abs(int(round(s)))
+    return f"{sign}{s // 60:02d}:{s % 60:02d}"
+
+
+def timeline(bed, lo=-5, hi=1260):
+    vs = sorted(verdicts[bed].values(), key=lambda v: v["ts"])
+    vs = [v for v in vs if lo <= t(v["ts"]) <= hi]
+    segs = []
+    for v in vs:
+        key = v["verdict"]
+        if segs and segs[-1][2] == key:
+            segs[-1][1] = t(v["ts"])
+        else:
+            segs.append([t(v["ts"]), t(v["ts"]), key, v.get("reasons"), v.get("priority")])
+    return segs
+
+
+def first(bed, verdict, after, before=1300):
+    for v in sorted(verdicts[bed].values(), key=lambda v: v["ts"]):
+        if after <= t(v["ts"]) <= before and v["verdict"] == verdict:
+            return t(v["ts"])
+    return None
+
+
+def ever(bed, verdict, lo=0, hi=1200):
+    return any(lo <= t(v["ts"]) < hi and v["verdict"] == verdict for v in verdicts[bed].values())
+
+
+if __name__ == "__main__":
+    import sys
+    what = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if what in ("all", "verdicts"):
+        for bed in BEDS:
+            print("==", bed, len(verdicts[bed]), "verdicts")
+            for s in timeline(bed):
+                print(f"  {mmss(s[0])}-{mmss(s[1])} {s[2]:<13} {s[4] or '':<6} {'; '.join(s[3] or [])[:170]}")
+    if what in ("all", "agents"):
+        for a in ag:
+            ev = a["event"]
+            if ev == "note":
+                continue
+            if ev == "alert":
+                txt = f"ALERT {a['alert_id']} {a['bed_id']} {a['verdict']} {a['priority']} step{a['ladder_step']} {a['status']} to={a['to']} acked_by={a.get('acked_by')} | {a['text'][:80]}"
+            elif ev == "action":
+                txt = f"{a['by']} {a['action']} {a.get('bed_id') or ''} {a.get('device_id') or ''} undoes={a.get('undoes')} res={a.get('result')} | {a.get('detail', '')[:150]}"
+            elif ev == "record":
+                txt = f"RECORD {a.get('kind')} {a.get('record_id')} by {a.get('by')}"
+            else:
+                txt = json.dumps(a)[:200]
+            print(f"{mmss(t(a['ts']))} {txt}")

@@ -103,7 +103,7 @@ then open `http://localhost:8000/` (screens) or `http://localhost:8000/docs` (AP
   not lifted by `enable_client` or an undo) is in force. Otherwise it shows the newest *trusted* values
   at or before the earliest boundary (`last_trusted_ts`, or the isolation moment); older pins come from
   the database. After 5 s without vitals the bed is offline but keeps showing its values (the trusted
-  pin if it is untrusted; if no trusted pin exists it uses flagged last values). A bed that never sent data shows `vitals: null`. B07 has 88 reported blank-after-data API samples in N and each F run; whether a nurse saw a blank screen is unknown (`../docs/evidence/WARD-RUN.md`). Missing values are null,
+  pin if it is untrusted; if no trusted pin exists it uses flagged last values). A bed that never sent data shows `vitals: null`. B07’s 88 legacy counts per run are a counter artefact before first data; 0 empty samples after first data in all four runs (N/F1/F2/F3). Rendered-screen continuity was not measured (`../docs/evidence/WARD-RUN.md`). Missing values are null,
   0 stays 0; manual readings are kept apart (`manual`) and never replace monitor values.
 - **Actions with changing results.** Agents re-publish the same `action_id` when a result changes
   (`pending` → `ok`/`failed`); the newest version replaces the stored one and a late `failed`
