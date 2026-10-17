@@ -98,6 +98,24 @@ def test_scale_cap(script, packs, n):
         build_scale_script(script, packs, n, 10)
 
 
+def test_scale_first_bed_one_covers_b01_to_b96(script, packs, tmp_path):
+    s = build_scale_script(script, packs, 96, 10, first_bed=1)
+    assert [b.bed_id for b in s.beds] == [f"B{n:02d}" for n in range(1, 97)]
+    assert all(b.device_id == "MON-" + b.bed_id[1:] and b.suppress_alarms for b in s.beds)
+    assert len({(b.pack, b.pack_start_s) for b in s.beds}) == 96
+    bus = FakeBus()
+    report = run_scale(script, packs, n_beds=3, seconds=5, run_id="scale_first", runs_dir=tmp_path,
+                       clock=FakeClock(), bus=bus, first_bed=1)
+    assert sorted(bus.by_bed()) == ["B01", "B02", "B03"] and bus.validation_errors == []
+    assert report.messages_sent == 15
+
+
+@pytest.mark.parametrize("first,n", [(0, 1), (100, 1), (1, 100), (90, 11)])
+def test_scale_first_bed_stays_within_two_digit_ids(script, packs, first, n):
+    with pytest.raises(ValueError):
+        build_scale_script(script, packs, n, 10, first_bed=first)
+
+
 # ---------------------------------------------------------------- CLI
 
 def test_cli_dry_run(packs_dir, tmp_path, capsys):

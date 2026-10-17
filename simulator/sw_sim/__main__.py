@@ -18,7 +18,7 @@ from .config import Env, ScriptError, WardScript, check_run_id, format_t, load_e
 from .engine import STOP_RESET, STOP_SIGNAL, WardRun
 from .listen import ControlError, Controller, parse_control
 from .packs import PackError, load_packs
-from .scale import MAX_SCALE_BEDS, run_scale, scale_templates
+from .scale import FIRST_SCALE_BED, MAX_SCALE_BEDS, run_scale, scale_templates
 
 log = logging.getLogger("sw_sim")
 
@@ -133,6 +133,7 @@ def cmd_scale(args: argparse.Namespace, env: Env) -> int:
             script, packs, n_beds=args.beds, seconds=args.seconds, run_id=default_run_id("scale"),
             runs_dir=runs_dir, clock=RealClock(), bus=bus,
             on_run=lambda run: install_stop_signals(lambda: run.request_stop(STOP_SIGNAL)),
+            first_bed=args.first_bed,
         )
     finally:
         bus.close()
@@ -169,6 +170,8 @@ def build_parser() -> argparse.ArgumentParser:
     common(p_scale)
     p_scale.add_argument("--beds", type=int, required=True, help=f"number of extra beds, 1..{MAX_SCALE_BEDS}")
     p_scale.add_argument("--seconds", type=int, required=True, help="run length in seconds")
+    p_scale.add_argument("--first-bed", type=int, default=FIRST_SCALE_BED,
+                         help=f"first bed number (default {FIRST_SCALE_BED}; 1 = beds B01.. with the ward sim stopped)")
     p_scale.set_defaults(func=cmd_scale)
     return parser
 
