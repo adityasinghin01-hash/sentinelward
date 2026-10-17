@@ -29,7 +29,7 @@ def chat_to_prompt(messages):
 
 def make_handler(llm, model_name):
     class Handler(BaseHTTPRequestHandler):
-        def log_message(self, fmt, *args):  # keep request bodies out of logs
+        def log_message(self, format, *args):  # noqa: A002 (base-class name)  # keep request bodies out of logs
             pass
 
         def _send(self, code, body):
