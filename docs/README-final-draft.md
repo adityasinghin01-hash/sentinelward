@@ -32,7 +32,7 @@ Verdicts: NORMAL · EMERGENCY · BOTH (emergency during an attack) · TAMPERING 
 
 ## Why IBM LinuxONE
 - The whole ward's decision-making runs on one IBM z17 (s390x) server: hub, six checks, decision layer, agents, database, evidence store. The shown-only chip second opinion reads vitals over TLS on a second LinuxONE guest (`evidence/ML-RESULTS.md`).
-- Systemd is the secured agents-on ward. The separate six-container stack has process hardening but omits agents/witness and permits anonymous MQTT internally (`EXPLORE.md`).
+- Systemd is the secured agents-on ward. The separate six-container stack uses authenticated static service accounts + topic ACLs, anonymous refused (137/137 checks, `docs/evidence/raw/containers-auth/auth.txt`), plaintext internal MQTT, four hardened app containers and no agents/witness. The authenticated replay is a 40-second spot check only; the systemd ward uses TLS 1.3, per-device dynsec, agents and the witness (15/15 security checks) (`EXPLORE.md`).
 - Hub locked down with per-device accounts: each monitor may publish only its own bed; TLS for anything off the box.
 - The M2 model is trained and served on LinuxONE; IBM Granite writes the shift briefing on LinuxONE. A shown-only CNN second opinion runs on the z17 NNPA (`evidence/ML-RESULTS.md`).
 - Load: [x]% CPU and [y] GB RAM for the whole 12-bed ward (measured, see Results).

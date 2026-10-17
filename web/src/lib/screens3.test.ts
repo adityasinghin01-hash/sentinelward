@@ -7,10 +7,10 @@ const m2 = (score: number | null, extra: Record<string, unknown> = {}): Score =>
 
 describe('data trust display', () => {
   it('shows the number for a live, checked monitor', () => expect(trustView(live)).toMatchObject({value: 0.86, text: '0.86'}));
-  it('never shows 1.00 for a cut-off monitor', () => expect(trustView({...live, isolated: true, trust_score: 100})).toMatchObject({value: null, text: 'not trusted'}));
+  it('never shows 1.00 for a flagged monitor', () => expect(trustView({...live, isolated: true, trust_score: 100})).toMatchObject({value: null, text: 'not trusted'}));
   it('never shows 1.00 for an offline monitor', () => expect(trustView({...live, connected: false, display: 'offline', trust_score: 100})).toMatchObject({value: null, text: 'not trusted'}));
   it('shows a dash before the first verdict', () => expect(trustView({...live, verdict: null, display: 'empty', trust_score: 0}).text).toBe('—'));
-  it('hides trust on verdicts made after the cut-off only', () => {
+  it('hides trust on verdicts made after the device was flagged', () => {
     const bed = {isolated: true, connected: false, display: 'offline' as const, offline_since: 900, device: {isolated_since: 1000}};
     expect(verdictTrust(1, 1500, bed)).toBe('not trusted');
     expect(verdictTrust(0.8, 500, bed)).toBe('0.80');

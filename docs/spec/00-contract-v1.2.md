@@ -258,7 +258,7 @@ So the T8 test can time every reaction, the simulator and Kartik's attack script
 Every signal is resampled to **125 readings per second** and cut into **10-second windows every 5 seconds**, as used by the current window assembler; IoMT-SecAlarmBench was proposed but is not used in the build (`../../README.md`).
 
 ## The five safety rules every part must respect
-1. Retain available last trusted values, marked untrusted; if no trusted pin exists show flagged last values. Nurse-visible continuity remains unverified for the 88 B07 blank-after-data API samples in N and each F run (`../evidence/WARD-RUN.md`).
+1. Retain available last trusted values, marked untrusted; if no trusted pin exists show flagged last values. B07’s 88 legacy counts per run are a counter artefact before first data; 0 empty samples after first data in all four runs (N/F1/F2/F3). Rendered-screen continuity was not measured (`../evidence/WARD-RUN.md`).
 2. A "tampering" verdict never cancels an emergency alert.
 3. Actions are logged; cut-offs and supported reversible actions have Undo. Notifications, evidence and drafts are not undoable (`../../agents_v2/REPORT.md`).
 4. Nothing automatic touches treatment.

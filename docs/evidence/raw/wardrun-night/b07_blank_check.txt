@@ -1,0 +1,7 @@
+run polls legacy_count legacy_before_first legacy_after_first first_values_s empty_after_first legacy_range_s
+N 240 88 88 0 543.573 0 103.468..538.542
+F1 240 88 88 0 543.827 0 103.871..538.794
+F2 240 88 88 0 543.594 0 103.617..538.560
+F3 240 88 88 0 543.658 0 103.790..538.623
+B07 joins at 540 s in simulator/ward_script.yaml. Legacy time > 100 is not prior receipt.
+These are saved API polls; rendered-screen continuity was not measured.

@@ -1,0 +1,12 @@
+2026-10-17 14:02:28,431 INFO sw_common.bus: MQTT connected to hub:1883
+2026-10-17 14:02:28,431 INFO sw_sim: connected to MQTT hub hub:1883 as sw_sim_scale
+2026-10-17 14:02:28,432 INFO sw_sim: run scale_20261017_140228: 96 beds, T+00:00 to T+03:00, first second at epoch 1792245750000 ms -> /runs/simulator/scale_20261017_140228
+2026-10-17 14:05:30,004 INFO sw_sim: run scale_20261017_140228 complete at T+03:00: 17280 sent, 0 invalid, 0 publish errors, lag p99 33.71 ms
+scale run scale_20261017_140228 (complete): 96 beds x 180 s
+  sent 17280/17280 messages; 17280 on time (<= 50 ms) = 100.00%
+  on-time messages per second: mean 96.0, min 96 (offered 96/s)
+  send lag ms: p50 8.52, p99 33.71, max 44.18
+  CPU 3.35 s (1.8% of one core), max RSS 59.0 MB
+  report: /runs/simulator/scale_20261017_140228/report.json
+sim exit 0
+restarts=0 oom=false

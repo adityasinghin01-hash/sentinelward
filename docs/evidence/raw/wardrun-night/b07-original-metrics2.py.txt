@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Ward run 2 metrics (read-only). Prints facts used by the report and writes events.csv."""
+import csv, collections, json
+from timeline2 import T0, BEDS, ward, slow, bedpolls, verdicts, scores, ag, t, mmss, first, ever, timeline
+
+P = print
+# ---------- HTTP status of every sampled call ----------
+st = collections.Counter()
+for r in ward:
+    for k in ("status", "alerts_status", "actions_status", "health_status"):
+        st[(k, r.get(k))] += 1
+for r in bedpolls:
+    st[("bed", r.get("status"))] += 1
+for r in slow:
+    for k in list(r):
+        if k.endswith("_status"):
+            st[(k, r[k])] += 1
+P("sampler HTTP statuses:", dict(st))
+P("samples: ward", len(ward), "bed", len(bedpolls), "slow", len(slow))
+hum = [json.loads(l) for l in open("humansN.jsonl")]
+for h in hum:
+    if h["kind"] == "human":
+        P("HUMAN", h["step"], "T(my clock)", h["T"], "sim T", round((h["wall_ms"] - T0) / 1000, 1), h.get("user"),
+          h.get("call"), "HTTP", h.get("status"))
+
+# ---------- display / blank / isolated ----------
+P("\ndisplay,isolated counts per bed (T 0..1200):")
+iso_ranges = collections.defaultdict(list)
+for bed in BEDS:
+    c = collections.Counter()
+    blank = 0
+    for r in ward:
+        tt = (r["wall_ms"] - T0) / 1000
+        if not r.get("beds") or not (0 <= tt <= 1200):
+            continue
+        b = next(x for x in r["beds"] if x["bed_id"] == bed)
+        c[(b["display"], b["isolated"])] += 1
+        if b["display"] == "empty" and tt > 100 or (b.get("vitals") is None and b["display"] != "empty"):
+            blank += 1
+        if b["isolated"]:
+            iso_ranges[bed].append(tt)
+    P(" ", bed, dict(c), "blank-after-data:", blank,
+      "isolated:", f"{mmss(min(iso_ranges[bed]))}-{mmss(max(iso_ranges[bed]))}" if iso_ranges[bed] else "never")
+
+# last_trusted during isolation for B05/B07
+for bed in ("B05", "B07"):
+    for r in ward:
+        tt = (r["wall_ms"] - T0) / 1000
+        if r.get("beds") and tt in () or False:
+            pass
+    vals = [(round((r["wall_ms"] - T0) / 1000), b["display"], (b.get("vitals") or {}).get("hr"))
+            for r in ward if r.get("beds") for b in r["beds"] if b["bed_id"] == bed and b["isolated"]]
+    P(f"  {bed} while isolated: display {collections.Counter(v[1] for v in vals)}, hr shown {sorted(set(v[2] for v in vals))[:6]}")
+for r in bedpolls:
+    if r["bed_id"] in ("B05", "B07") and r.get("data", {}).get("isolated"):
+        P("  ", r["bed_id"], mmss((r["wall_ms"] - T0) / 1000), "last_trusted", r["data"].get("last_trusted"))
+        break
+
+# ---------- agent log ----------
+acts = [a for a in ag if a["event"] == "action"]
+alerts = [a for a in ag if a["event"] == "alert"]
+first_ts = {}
+for a in acts:
+    first_ts.setdefault((a["by"], a["action"], a.get("bed_id")), a["ts"])
+P("\nalerts per bed (nurse alerts, T0..20:00):")
+by_alert = collections.OrderedDict()
+for a in alerts:
+    if t(a["ts"]) <= 1200:
+        by_alert.setdefault(a["alert_id"], []).append(a)
+per_bed = collections.defaultdict(list)
+for aid, sts in by_alert.items():
+    per_bed[sts[0]["bed_id"]].append((aid, sts))
+nurse_alert_total = len(by_alert)
+for bed in BEDS:
+    items = per_bed.get(bed, [])
+    desc = []
+    for aid, sts in items:
+        vs = "->".join(dict.fromkeys(f"{s['verdict']}/{s['priority']}" for s in sts))
+        steps = max(s["ladder_step"] for s in sts)
+        ack = next((s for s in sts if s["status"] == "acked"), None)
+        end = sts[-1]["status"]
+        desc.append(f"{aid[-3:]}@{mmss(t(sts[0]['ts']))} {vs} step{steps} {end}"
+                    + (f" ack {ack['acked_by']} {mmss(t(ack['acked_ts'] or ack['ts']))}" if ack else ""))
+    P(f"  {bed} n={len(items)}: " + "; ".join(desc))
+P("nurse alerts total (unique alert_ids opened T0..20:00):", nurse_alert_total)
+it_notices = [a for a in acts if a["action"] == "send_message" and "IT notified" in a.get("detail", "") and t(a["ts"]) <= 1200]
+P("IT notices:", len(it_notices), [(a["bed_id"], mmss(t(a["ts"]))) for a in it_notices])
+tg = [a for a in acts if "telegram" in a.get("detail", "") and t(a["ts"]) <= 1200]
+P("actions with 'telegram queued' T0..20:00:", len(tg), collections.Counter(a["action"] for a in tg))
+tg_all = [a for a in acts if "telegram" in a.get("detail", "")]
+P("  incl. after 20:00 until stop:", len(tg_all))
+
+P("\nA2/undo actions:")
+for a in acts:
+    if a["action"] in ("disable_client", "set_bed_untrusted", "enable_client") and t(a["ts"]) >= 0:
+        P(f"  {t(a['ts']):7.1f} {a['action']} {a['bed_id']} {a['action_id']} undo_id={a.get('undo_id')} undoes={a.get('undoes')} {a['result']}")
+P("records:", collections.Counter((a.get("kind"), a.get("by")) for a in ag if a["event"] == "record" and t(a["ts"]) <= 1200))
+
+# ---------- time to safe ----------
+def ts_of(by, action, bed, after=0):
+    for a in acts:
+        if a["by"] == by and a["action"] == action and a.get("bed_id") == bed and t(a["ts"]) >= after:
+            return t(a["ts"])
+
+def alert_told(bed, verdicts_ok, after):
+    for a in alerts:
+        if a["bed_id"] == bed and t(a["ts"]) >= after and a["verdict"] in verdicts_ok and a["status"] in ("open", "escalated"):
+            return t(a["ts"])
+
+P("\ntime to safe:")
+for bed, atk in (("B05", 598.8), ("B07", 823.8), ("B10", 358.8), ("B11", 718.8), ("B06", 958.8), ("B12", 1018.8)):
+    iso = ts_of("A2", "disable_client", bed, atk - 5)
+    unt = ts_of("A2", "set_bed_untrusted", bed, atk - 5)
+    told = alert_told(bed, ("TAMPERING", "BOTH", "EMERGENCY", "DEVICE_ATTACK"), atk - 5)
+    P(f"  {bed} attack {atk} untrusted {unt} cut {iso} nurse-told {told} -> safe {None if iso is None or told is None else round(max(iso, told) - atk, 1)} s")
+
+# ---------- scores B08/B11 ----------
+P("\nB08 M6 at bed polls 08:30-12:00 and 15:30-16:40:")
+for tt, sc in scores["B08"]:
+    if 510 <= tt <= 720 or 930 <= tt <= 1000:
+        m6 = sc.get("M6") or {}
+        P(f"  {mmss(tt)} M6={m6.get('score')} {str((m6.get('extra') or {}).get('reason') or (m6.get('extra') or {}).get('unavailable_reason') or '')[:90]}")
+P("B11 scores at 12:00-12:20:")
+for tt, sc in scores["B11"]:
+    if 715 <= tt <= 760:
+        P(f"  {mmss(tt)} " + " ".join(f"{k}={(v or {}).get('score')}" for k, v in sorted(sc.items())))
+for bed in ("B11", "B12", "B10", "B07"):
+    vs = [v for v in verdicts[bed].values() if v["verdict"] == "TAMPERING"]
+    if vs:
+        v = sorted(vs, key=lambda v: v["ts"])[0]
+        P(f"  first TAMPERING {bed} {mmss(t(v['ts']))} scores={ {k: (s if not isinstance(s, dict) else s.get('score')) for k, s in (v.get('scores') or {}).items()} } reasons={v.get('reasons')}")
+
+# ---------- slow records (last sample) ----------
+last = slow[-1]
+P("\nlast slow sample", mmss((last["wall_ms"] - T0) / 1000))
+for inc in last["incidents"] or []:
+    ev = (inc.get("data") or {}).get("evidence") or []
+    P("  INC", inc["record_id"], (inc.get("data") or {}).get("bed_id"), mmss(t(inc["ts"])), "status", (inc.get("data") or {}).get("status"),
+      "evidence", [(e.get("filename") or e.get("label"), (e.get("sha256") or "")[:12]) for e in ev])
+for rp in last["reports"] or []:
+    d = rp.get("data") or {}
+    P("  RPT", rp["record_id"], d.get("incident_id"), "status", d.get("status"), "deadline", d.get("deadline") or d.get("deadline_ts") or d.get("clock"),
+      "missing", d.get("missing_fields"), "keys", sorted(d)[:25])
+for tk in last["tickets"] or []:
+    d = tk.get("data") or {}
+    P("  TKT", tk["record_id"], d.get("bed_id"), d.get("device_id"), d.get("status"), str(d.get("issue"))[:90], mmss(t(tk["ts"])))
+P("  workload", json.dumps(last["workload"])[:400])
+b = last["briefing"]
+P("  briefing status", last["briefing_status"], "generated_by", (b or {}).get("generated_by"), "ts", mmss(t(b["ts"])) if isinstance(b, dict) and b.get("ts") else None)
+P("  briefing first 2 lines:", json.dumps(((b or {}).get("summary") or "").splitlines()[:2]))
+P("  briefing counts", {k: (b or {}).get(k) for k in ("incidents", "untrusted_beds", "open_tickets", "blind_time")})
+for r in slow:
+    if r["briefing_status"] == 200:
+        P("  first briefing seen at", mmss((r["wall_ms"] - T0) / 1000)); break
+devs = last["devices"] or []
+P("  devices isolated at end:", [d["device_id"] for d in devs if d.get("isolated")])

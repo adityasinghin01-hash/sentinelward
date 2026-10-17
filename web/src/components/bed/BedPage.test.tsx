@@ -55,3 +55,18 @@ it('saves manual readings to the same endpoint and clears the form only after su
   expect(writes[0]).toEqual({url:'/api/beds/B05/manual-reading',body:{type:'record_manual_reading',bedId:'B05',notes:'Portable oximeter',heartRate:72,spo2:98}});
   await waitFor(() => expect(fields[0]).toHaveValue(''));
 });
+
+it('shows a flagged device without claiming a cut-off when no action confirms it', async () => {
+  open();
+  await screen.findByRole('heading', {name: 'Last trusted signals'});
+  const link = screen.getByText('Device link').closest('div')!;
+  expect(within(link).getByText('Data untrusted · device flagged')).toBeInTheDocument();
+  expect(screen.queryByText(/cut off by IT|monitor cut off/i)).not.toBeInTheDocument();
+});
+it('keeps a confirmed B05 hub cut-off visible in the action history', async () => {
+  useWard.setState({actions: [{id: 'cut-b05', occurred_at: now, actor: 'A2', action_code: 'disable_client',
+    action: 'Cut off MON-05 at the hub after TAMPERING; session wiped', bed_id: 'B05', device_id: 'MON-05',
+    approved_by: null, mode: 'automatic', undoable: true, references_action_id: null}]});
+  open();
+  expect(await screen.findByText('Cut off MON-05 at the hub')).toBeInTheDocument();
+});

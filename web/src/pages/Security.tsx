@@ -25,11 +25,11 @@ function senders(d: Device) {
 function DeviceStatus({d}: {d: Device}) {
   return <Chip className={`device-status ${d.isolated ? 'status-cutoff' : d.online ? 'status-online' : 'status-quiet'}`}>
     {d.isolated ? <Ban size={13} aria-hidden="true" /> : d.online ? <Circle size={9} aria-hidden="true" /> : <WifiOff size={13} aria-hidden="true" />}
-    {d.isolated ? 'Cut off' : d.online ? 'Online' : 'Not heard'}
+    {d.isolated ? 'Data untrusted · device flagged' : d.online ? 'Online' : 'Not heard'}
   </Chip>;
 }
 function DeviceState({view, device}: {view: TileView | null; device: Device}) {
-  if (!view && device.isolated) return <span className="state-chip state-security"><Ban size={14} aria-hidden="true" />Monitor cut off</span>;
+  if (!view && device.isolated) return <span className="state-chip state-security"><Ban size={14} aria-hidden="true" />Data untrusted · device flagged</span>;
   const Icon = view?.group === 'security' ? ShieldAlert : view?.group === 'normal' ? Circle : view?.group === 'maint' ? Activity : AlertTriangle;
   return <span className={`state-chip state-${view?.tone || 'nodata'}`}><Icon size={14} aria-hidden="true" />{view?.word || (device.online ? 'Awaiting first signal' : 'No signal')}</span>;
 }
@@ -100,7 +100,7 @@ export function SecurityPage() {
     <Feedback message={hunt.feedback} failed={hunt.failed} />
     <Stats items={[
       {label: 'Monitors', value: devices.data ? list.length : '—', hint: 'Monitors known to the ward hub.', sub: devices.data ? `${list.filter(d => d.online).length} online now` : 'awaiting the monitor list'},
-      {label: 'Cut off', value: devices.data ? list.filter(d => d.isolated).length : '—', hint: 'Monitors cut off from the ward network.'},
+      {label: 'Flagged', value: devices.data ? list.filter(d => d.isolated).length : '—', hint: 'Devices flagged as untrusted; completed cut-offs are recorded in the action history.'},
       {label: 'Open incidents', value: incidents.data ? open.length : '—', hint: 'Incidents still being investigated.'},
       {label: 'Report clock', value: due ? countdown(due, now) : '—', hint: 'Time left on the earliest unsent report.', sub: !reports.data ? 'checking report deadlines' : due ? 'left on earliest report' : 'no report due'},
     ]} />

@@ -42,14 +42,14 @@ export const openAlerts=(alerts:Alert[])=>alerts.filter(isOpenAlert);
 export const isAckedAlert=(a:Alert)=>!!a.acked_by||a.status==='acked';
 export const isAutoClosedAlert=(a:Alert)=>!isOpenAlert(a)&&!isAckedAlert(a);
 
-/** Data trust as shown: a cut-off, offline or never-checked monitor is "not trusted", whatever number it last carried. */
+/** Data trust as shown: a flagged, offline or never-checked monitor is "not trusted", whatever number it last carried. */
 export function trustView(b:Pick<Bed,'isolated'|'connected'|'display'|'verdict'|'trust_score'>):{value:number|null;text:string;why:string}{
- if(b.isolated)return {value:null,text:'not trusted',why:'Monitor cut off by IT: nothing it sends is trusted, whatever score it last carried.'};
+ if(b.isolated)return {value:null,text:'not trusted',why:'Data untrusted · device flagged. This flag does not confirm a completed cut-off.'};
  if(!b.connected||b.display==='offline')return {value:null,text:'not trusted',why:'Monitor offline: no live data to trust. The screen keeps the last trusted values.'};
  if(b.display==='empty'||b.verdict===null)return {value:null,text:'—',why:'No verdict yet, so there is no trust score.'};
  const v=Math.max(0,Math.min(1,(b.trust_score||0)/100));return {value:v,text:v.toFixed(2),why:''};
 }
-/** Trust attached to one past verdict: not shown for verdicts made after the monitor was cut off or went silent. */
+/** Trust attached to one past verdict: not shown after the device was flagged or went silent. */
 export function verdictTrust(trust:number|null|undefined,ts:number,b:Pick<Bed,'isolated'|'connected'|'display'|'offline_since'>&{device?:{isolated_since:number|null}}){
  const since=b.isolated?(b.device?.isolated_since??0):(!b.connected||b.display==='offline')?(b.offline_since??0):null;
  return since!==null&&ts>=since?'not trusted':score01(trust);

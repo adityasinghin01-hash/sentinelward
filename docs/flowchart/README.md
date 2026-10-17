@@ -6,7 +6,7 @@
 | `decision.mmd` → `decision.svg`, `decision.png` | What happens for one bed every 5 s: vitals → window assembler (10 s window every 5 s, 125 Hz) → M1-M6 scores (0..1, or null when not eligible) → the fixed precedence BOTH > EMERGENCY > TAMPERING > DRIFTING > LOOSE_SENSOR > DEVICE_ATTACK > UNSURE > NORMAL (first match wins; who gets told comes from `docs/ARCHITECTURE.md`) → one retained verdict with trust and up to 3 reasons → agents. |
 
 Sources: `README.md`, `docs/ARCHITECTURE.md`, `docs/spec/00-contract-v1.2.md`, `brain/README.md`, `agents_v2/REPORT.md`, `security_v2/SECURITY.md`, `deploy/containers/README.md`, `docs/spec/R8-screens.md`.
-The diagram describes the secured systemd ward. The separate six-container stack (api, brain, sim, attacks, hub, db) omits agents and the witness and permits anonymous internal MQTT (`docs/evidence/CONTAINERS.md`). Diagram emergency paths refer to active monitor alarms, not proof of detection of every future emergency after disconnection.
+The diagram describes the secured systemd ward. The separate six-container stack (api, brain, sim, attacks, hub, db) uses authenticated static service accounts + topic ACLs, anonymous refused (137/137 checks, `docs/evidence/raw/containers-auth/auth.txt`), plaintext internal MQTT, four hardened app containers and no agents/witness. The authenticated replay is a 40-second spot check only; the systemd ward uses TLS 1.3, per-device dynsec, agents and the witness (15/15 security checks) (`docs/evidence/CONTAINERS.md`). Diagram emergency paths refer to active monitor alarms, not proof of detection of every future emergency after disconnection.
 
 ## Render
 
