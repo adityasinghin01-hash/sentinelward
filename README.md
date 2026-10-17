@@ -9,6 +9,41 @@ Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM L
 
 [Architecture](docs/ARCHITECTURE.md) · [Video script](docs/VIDEO-SCRIPT.md) · [Open source used](docs/OPEN-SOURCE.md)
 
+## Check it yourself in 5 minutes
+Needs Python 3.12 and Node 22. No data download, no broker, no database. Tested from a fresh clone on a Mac (17 Oct 2026).
+
+```bash
+git clone <this repo> sentinelward && cd sentinelward
+python3.12 -m venv .venv && . .venv/bin/activate
+pip install -e common -e simulator -e brain -e attacks -e backend -e data -e security_v2 -e agents_v2 pytest httpx
+chflags nohidden .venv/lib/python3*/site-packages/*.pth   # macOS only: lets Python see the -e installs
+
+# Run each folder on its own (a single combined pytest run clashes on shared conftest names)
+for d in common simulator brain attacks backend data security_v2 agents_v2; do python -m pytest -q $d/tests; done
+python -m pytest -q tests_system
+
+cd web && npm ci && npx vitest run && npm run build
+```
+
+Expected (measured on that fresh clone):
+
+| Suite | Result |
+|---|---|
+| common | 243 passed, 1 skipped (live MQTT, needs `MQTT_TEST_HOST`) |
+| simulator | 114 passed |
+| brain | 253 passed, 50 skipped (M3 on real ward packs, need `SW_M3_PACKS`) |
+| attacks | 35 passed |
+| backend | 99 passed, 6 skipped (need `SW_TEST_PG`, a throwaway PostgreSQL) |
+| data | 71 passed (synthetic records, no download) |
+| security_v2 | 21 passed |
+| agents_v2 | 121 passed, 1 skipped (needs `SW_AGENTS_LIVE_MOSQUITTO`) |
+| tests_system | 32 passed |
+| web (vitest) | 39 passed in 4 files; `npm run build` succeeds |
+
+The 50 brain skips are optional: they run M3 on the real bed packs. With `SW_M3_PACKS=<packs-v13 folder>` set, brain gives 303 passed. Without the packs they skip; nothing fails.
+
+Full stack with Docker (`deploy/containers/README.md`) is heavier. The simulator needs the 12 ward bed packs mounted (`SW_PACKS_DIR`), and these are not in the repo: you build them yourself from the public datasets (PhysioNet/CinC 2015, MIMIC-III Waveform sample, VitalDB) with `python -m sw_data build data/beds.yaml --out packs` (after pointing the `paths:` in `data/beds.yaml` at your downloaded copies), as described in `data/README.md` and `docs/spec/12-ward-script.md`. That means downloading the recordings, and the VitalDB beds (B08–B10) must be built on a little-endian machine. Our container runs were on LinuxONE (s390x); we did not time a from-scratch Docker run on a laptop.
+
 ## The problem
 - ICU monitors raise so many false alarms that nurses learn to tune them out (alarm fatigue).
 - The same monitors stream vital signs over the hospital network, where data can be replayed, forged or flooded.
