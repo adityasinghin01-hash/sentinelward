@@ -37,7 +37,7 @@ def roles():
         role('backend',('ward/request','ward/demo/control','ward/action','ward/bed/+/bedside'),ALL_SUB),
         role('agents',('ward/action','ward/alert','ward/record','ward/bed/+/bedside'),
              ('ward/request','ward/bed/+/verdict','ward/bed/+/bedside',
-              'ward/bed/+/score/M3','ward/bed/+/score/M5','ward/demo/control','ward/action','ward/alert')),
+              'ward/bed/+/score/M3','ward/bed/+/score/M5','ward/demo/control','ward/action','ward/alert','ward/record')),
         # Deliberate demo attacker; never grant verdict/feature/control/admin writes.
         role('attacks',vitals,('ward/bed/+/vitals','ward/demo/control')),
         role('extractor',('net/device/+/features',),('ward/bed/+/vitals','ward/demo/control')),
