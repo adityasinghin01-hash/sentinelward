@@ -2,7 +2,8 @@
 
 The six-container copy and the secured agents-on systemd ward are separate deployments.
 The service-account authentication change below is configured in source; its LinuxONE
-acceptance results are **to be filled by the deploy run**. Existing captures predate it.
+acceptance results were captured on LinuxONE on 18 Oct 2026 (03:20 IST) in `raw/containers-auth/`.
+Older captures in `raw/containers/` predate it.
 
 ## What the existing container evidence establishes
 
@@ -102,6 +103,13 @@ Do not overwrite old captures or label them as this run.
   0600/0700 permissions); password format cross-check with installed `mosquitto_passwd`.
   Docker CLI is absent; Compose YAML is validated with Python instead. A local broker could
   not listen under the sandbox, so no local MQTT authentication result is claimed.
-- Authenticated LinuxONE build/start/health: **to be filled by the deploy run**.
-- Anonymous refusal and service-account ACL matrix: **to be filled by the deploy run**.
-- Authenticated container replay/scale rerun: **to be filled by the deploy run**.
+- Authenticated LinuxONE build/start/health: PASS. All six containers healthy/up after
+  `--force-recreate`; API `ok`, MQTT and database connected (`raw/containers-auth/compose-ps.txt`,
+  `health.json`, `hardening.txt`, `image.txt`, `platform.txt`, `stats.txt`). First deploy found a real bug:
+  the internal-only network stopped Docker publishing the API port; the API now also joins an `edge`
+  network, the `ward` network stays internal.
+- Anonymous refusal and service-account ACL matrix: PASS, 138 checks, 0 failed; anonymous connect
+  refused with CONNACK 135 (`raw/containers-auth/auth.txt`).
+- Authenticated container replay: 40-second spot check only. Ward script started at 9:00; 10 beds online,
+  0 invalid messages, verdicts on all reporting beds incl. B10 TAMPERING, no auth errors in the logs
+  (`raw/containers-auth/replay-check.txt`). No full 20-minute or scale rerun on the authenticated stack.

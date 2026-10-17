@@ -1,0 +1,9 @@
+Authenticated container replay check, 2026-10-17 21:55 UTC (18 Oct 03:25 IST), build server s390x.
+Stack: the six-container Compose copy after the no-anonymous hub change (round2), API on 127.0.0.1:8001.
+POST /api/session {"role":"operator"} -> 200
+POST /api/demo/run {"scenario":"full_ward_script","speed":1,"start_at_s":540} -> 202, run_id run_20261017_215522
+40 s later GET /api/health:
+{"ok":true,"mqtt_connected":true,"db_ok":true,"storage":"postgresql","durable":true,"beds_online":10,"last_message_ts":1792274162178,"invalid_messages":0,"pending_publications":0,"db_queued_rows":11}
+GET /api/ward verdicts: B01 NORMAL, B02 NORMAL, B03 -, B04 -, B05 NORMAL, B06 NORMAL, B07 NORMAL, B08 NORMAL, B09 NORMAL, B10 TAMPERING, B11 NORMAL, B12 NORMAL
+docker compose logs (brain, sim, last 2 min): no auth errors, no denied publishes.
+Scope: a 40-second spot check that sim -> hub -> brain -> api works with service accounts. Not a full 20-minute run, not a scale rerun.

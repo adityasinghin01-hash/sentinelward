@@ -1,0 +1,7 @@
+NAME                     IMAGE                      COMMAND                  SERVICE   CREATED          STATUS                   PORTS
+sentinelward-api-1       sentinelward:latest        "python -m sw_api"       api       11 seconds ago   Up 8 seconds (healthy)   127.0.0.1:8001->8000/tcp
+sentinelward-attacks-1   sentinelward:latest        "python -m sw_attack…"   attacks   2 minutes ago    Up About a minute        
+sentinelward-brain-1     sentinelward:latest        "python -m sw_brain"     brain     2 minutes ago    Up About a minute        
+sentinelward-db-1        postgres:16                "docker-entrypoint.s…"   db        2 minutes ago    Up 2 minutes (healthy)   5432/tcp
+sentinelward-hub-1       eclipse-mosquitto:2.0.22   "/bin/sh /etc/hub-st…"   hub       2 minutes ago    Up 2 minutes (healthy)   1883/tcp
+sentinelward-sim-1       sentinelward:latest        "python -m sw_sim li…"   sim       2 minutes ago    Up About a minute        

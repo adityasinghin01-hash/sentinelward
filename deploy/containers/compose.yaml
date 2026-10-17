@@ -86,6 +86,8 @@ services:
     volumes:
       # world-readable copy made by ./sync-frontend.sh (the api runs as uid 10001, not the file owner)
       - ${SW_FRONTEND_DIR:-./web-dist}:/srv/web/dist:ro
+    # ward is internal (no route out); edge exists only so Docker can publish the API port.
+    networks: [ward, edge]
     ports: ["127.0.0.1:8001:8000"]
     depends_on:
       hub: {condition: service_healthy}
@@ -138,6 +140,7 @@ services:
 
 networks:
   ward: {internal: true}
+  edge: {}
 
 volumes:
   hubdata: {}

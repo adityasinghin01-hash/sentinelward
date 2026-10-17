@@ -112,8 +112,8 @@ mkdir -p evidence-out
 SW_EVIDENCE_OUT=./evidence-out ./evidence.sh
 ```
 
-Deployment acceptance output is **to be filled by the deploy run**. See
-`docs/evidence/CONTAINERS.md` for the commands and evidence boundaries.
+Deployment acceptance (18 Oct 2026, LinuxONE): 138/138 auth checks pass, anonymous connect refused;
+see `docs/evidence/CONTAINERS.md` and `docs/evidence/raw/containers-auth/`.
 
 ## What is outside this stack
 

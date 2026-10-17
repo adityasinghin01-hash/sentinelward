@@ -1,0 +1,1 @@
+{"ok":true,"mqtt_connected":true,"db_ok":true,"storage":"postgresql","durable":true,"beds_online":0,"last_message_ts":1792274073743,"invalid_messages":0,"pending_publications":0,"db_queued_rows":0}
