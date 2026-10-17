@@ -110,6 +110,8 @@ def _password():
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+    import warnings
+    warnings.filterwarnings('ignore', message='All-NaN slice')   # absent channel: scaled to 0, as in training
     from paho.mqtt import client as mqtt
     from .model import ChipModel
     model = ChipModel()

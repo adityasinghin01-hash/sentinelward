@@ -1,0 +1,65 @@
+{
+ "device": "cpu",
+ "model": "M2-cnn-nnpa-2026-10-17",
+ "sha256": "c7ad2efe8dfb475619e336d437e1d4df4aaa3290470bec777f9a4894a571f1c6",
+ "host": "testserver",
+ "machine": "s390x",
+ "torch": "2.11.0+cpu",
+ "vitals": 11790,
+ "alarm_windows": 3,
+ "latency_live_ms": {
+  "n": 3,
+  "median": 2.13,
+  "p95": 2.22
+ },
+ "latency_repeat_ms": {
+  "n": 60,
+  "median": 1.9778420100919902,
+  "p95": 2.301827073097229,
+  "repeat": 20
+ },
+ "messages": [
+  {
+   "v": 1,
+   "bed_id": "B03",
+   "ts": 1792254008000,
+   "alarm_code": "VTACH",
+   "p_real": 0.7687,
+   "label": "real",
+   "threshold": 0.211,
+   "model": "M2-cnn-nnpa-2026-10-17",
+   "device": "cpu",
+   "latency_ms": 2.01,
+   "heldout_challenge_cinc": 0.623,
+   "heldout_challenge_vtac": 0.665
+  },
+  {
+   "v": 1,
+   "bed_id": "B04",
+   "ts": 1792254098000,
+   "alarm_code": "ASYSTOLE",
+   "p_real": 0.1663,
+   "label": "false",
+   "threshold": 0.1837,
+   "model": "M2-cnn-nnpa-2026-10-17",
+   "device": "cpu",
+   "latency_ms": 2.22,
+   "heldout_challenge_cinc": 0.623,
+   "heldout_challenge_vtac": 0.665
+  },
+  {
+   "v": 1,
+   "bed_id": "B07",
+   "ts": 1792254548000,
+   "alarm_code": "VFIB",
+   "p_real": 0.953,
+   "label": "real",
+   "threshold": 0.3265,
+   "model": "M2-cnn-nnpa-2026-10-17",
+   "device": "cpu",
+   "latency_ms": 2.13,
+   "heldout_challenge_cinc": 0.623,
+   "heldout_challenge_vtac": 0.665
+  }
+ ]
+}
