@@ -94,7 +94,7 @@ class EmergencyDetector:
                 if confirmed_low_pressure(state,now_ms):
                     positive=True; evidence='Low arterial pressure confirmed by cuff; '+evidence
                 from .m2gbt import MODEL_VERSION
-                return result(p,evidence,path='gbt_prealarm',model_version=MODEL_VERSION,alarm_code=code,positive=positive,threshold=gbt['threshold'],features=x,alarm_preserved=True)
+                return result(p,evidence,path='gbt_prealarm',model_version=gbt.get('model_version',MODEL_VERSION),alarm_code=code,positive=positive,threshold=gbt['threshold'],features=x,alarm_preserved=True)
         if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable',gbt=gbt)
         metrics=pulse_metrics(window)
         research={'status':'unavailable','extra':{'unavailable_reason':'not_a_full_prealarm_VTACH_window'}}

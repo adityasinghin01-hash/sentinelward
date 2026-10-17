@@ -1,6 +1,7 @@
 """Build the training table on LinuxONE: the exact 10 s window the live brain sees.
 
-Live path (simulator + brain): sw_data picks ECG lead II (else first ECG lead), PLETH and
+Live path (simulator + brain): sw_data picks ECG lead II (else first ECG lead), the second
+ECG lead of doc 00 v1.3 (lead V, else the next ECG lead; sw_data.dsp.pick_ecg2), PLETH and
 ABP/ART, maps -32768 to NaN, converts uV to mV, resamples the whole record to 125 Hz
 with gap-safe resample_poly; the simulator rounds ECG/PPG/ABP to 3/2/1 decimals and
 raises the monitor alarm in the message of pack second 300. The brain's pre-alarm
@@ -22,12 +23,10 @@ ROUND = {'ecg': 3, 'ppg': 2, 'abp': 1}   # simulator/ward_script.yaml rounding
 
 
 def _other_ecg(names, first):
-    from sw_data.dsp import ECG_LEADS, _norm
-    leads = {_norm(e) for e in ECG_LEADS}
-    for i, n in enumerate(names):
-        if i != first and (_norm(n) in leads or _norm(n).startswith('ECG')):
-            return i
-    return None
+    """Second ECG lead, the same rule as the live loader (sw_data.dsp.pick_ecg2, doc 00 v1.3):
+    lead V if present, else the next ECG lead in channel order."""
+    from sw_data.dsp import pick_ecg2
+    return pick_ecg2(names, first)[0]
 
 
 def _round(key, y):

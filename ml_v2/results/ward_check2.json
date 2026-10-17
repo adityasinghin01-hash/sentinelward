@@ -1,0 +1,90 @@
+{
+ "vitals_messages": 11790,
+ "invalid": 0,
+ "beds_sending_ecg2": {
+  "B01": [
+   "II",
+   "V"
+  ],
+  "B02": [
+   "II",
+   "V"
+  ],
+  "B03": [
+   "II",
+   "V"
+  ],
+  "B05": [
+   "II",
+   "V"
+  ],
+  "B06": [
+   "II",
+   "V"
+  ],
+  "B11": [
+   "II",
+   "V"
+  ],
+  "B12": [
+   "II",
+   "V"
+  ],
+  "B04": [
+   "II",
+   "V"
+  ],
+  "B07": [
+   "II",
+   "V"
+  ]
+ },
+ "alarms": [
+  {
+   "bed_id": "B03",
+   "alarm": "VTACH",
+   "t_s": 300,
+   "model_version": "M2-gbt2-2026-10-17",
+   "score": 0.2708,
+   "threshold": 0.1658,
+   "ecg_leads_used": 2,
+   "ecg_lead_names": [
+    "II",
+    "V"
+   ],
+   "verdict": "EMERGENCY"
+  },
+  {
+   "bed_id": "B04",
+   "alarm": "ASYSTOLE",
+   "t_s": 390,
+   "model_version": "M2-gbt2-2026-10-17",
+   "score": 0.0087,
+   "threshold": 0.0282,
+   "ecg_leads_used": 2,
+   "ecg_lead_names": [
+    "II",
+    "V"
+   ],
+   "verdict": "EMERGENCY"
+  },
+  {
+   "bed_id": "B07",
+   "alarm": "VFIB",
+   "t_s": 840,
+   "model_version": "M2-gbt2-2026-10-17",
+   "score": 0.928,
+   "threshold": 0.1148,
+   "ecg_leads_used": 2,
+   "ecg_lead_names": [
+    "II",
+    "V"
+   ],
+   "verdict": "EMERGENCY"
+  }
+ ],
+ "n_alarms_in_run": 3,
+ "median_tick_ms_12_beds": 29.522301047109067,
+ "max_tick_ms": 57.078993995673954,
+ "invalid_incoming": 0
+}
