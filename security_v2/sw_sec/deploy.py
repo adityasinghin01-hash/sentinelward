@@ -234,7 +234,10 @@ def setup(*, server_ip, service_user='linux1', state=STATE,
                 if not present[unit]: continue
                 content=f'[Service]\nEnvironmentFile={envdir}/{service}.env\n'
                 if unit=='sw-sim':
-                    content+=f'ExecStart=\nExecStart={python} {scripts}/run_simulator.py listen --packs {user.pw_dir}/sw/packs --runs {user.pw_dir}/sw/runs/simulator --script {app}/simulator/ward_script.yaml\n'
+                    # 2-lead packs (doc 00 v1.3) when built; the 1-lead packs otherwise.
+                    packs=Path(user.pw_dir)/'sw'/'packs-v13'
+                    if not packs.is_dir(): packs=Path(user.pw_dir)/'sw'/'packs'
+                    content+=f'ExecStart=\nExecStart={python} {scripts}/run_simulator.py listen --packs {packs} --runs {user.pw_dir}/sw/runs/simulator --script {app}/simulator/ward_script.yaml\n'
                 if unit=='sw-agents':
                     content+=f'ExecStart=\nExecStart={python} {scripts}/run_agents.py serve\n'
                 private_write(dropin_path(unit),content,mode=0o644)
