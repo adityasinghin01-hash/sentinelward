@@ -11,17 +11,20 @@ x-hardening: &hardening
   restart: unless-stopped
   networks: [ward]
 
+x-mqtt-env: &mqtt-env
+  SW_MQTT_HOST: hub
+  MQTT_HOST: hub
+  SW_MQTT_PORT: "1883"
+  MQTT_PORT: "1883"
+
 x-app: &app
   <<: *hardening
   image: sentinelward:latest
   env_file: [.env.containers]
   environment:
-    SW_MQTT_HOST: hub
-    MQTT_HOST: hub
-    SW_MQTT_PORT: "1883"
-    MQTT_PORT: "1883"
+    <<: *mqtt-env
   depends_on:
-    hub: {condition: service_started}
+    hub: {condition: service_healthy}
 
 services:
   hub:
@@ -33,6 +36,13 @@ services:
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
     mem_limit: 128m
+    # Healthy = the broker answers a real subscribe (its own uptime topic) within 3 s.
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-h", "127.0.0.1", "-p", "1883", "-t", "$$SYS/broker/uptime", "-C", "1", "-W", "3"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
   db:
     image: postgres:16
@@ -56,8 +66,7 @@ services:
     build: {context: ../.., dockerfile: deploy/containers/Dockerfile}
     command: ["python", "-m", "sw_api"]
     environment:
-      SW_MQTT_HOST: hub
-      MQTT_HOST: hub
+      <<: *mqtt-env
       SW_API_HOST: 0.0.0.0
       SW_API_PORT: "8000"
       SW_FRONTEND_DIST: /srv/web/dist
@@ -66,15 +75,29 @@ services:
       - ${SW_FRONTEND_DIR:-./web-dist}:/srv/web/dist:ro
     ports: ["127.0.0.1:8001:8000"]
     depends_on:
-      hub: {condition: service_started}
+      hub: {condition: service_healthy}
       db: {condition: service_healthy}
+    # Healthy only when /api/health answers ok=true (it also reports MQTT and database state).
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,sys,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=4); sys.exit(0 if json.load(r).get('ok') is True else 1)"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 20s
     mem_limit: 384m
     cpus: 1.0
 
+  # brain, sim and attacks serve no port, so they have no healthcheck: `docker compose ps` shows
+  # them as plain "Up" (with restart counts) rather than a health state that would prove nothing.
   brain:
     <<: *app
     command: ["python", "-m", "sw_brain"]
-    # Measured: 384 MiB at the end of a full 20-min 12-bed run (per-bed message history); 2x headroom.
+    environment:
+      <<: *mqtt-env
+      # Highest accepted bed number (B01..B<n>, MON-01..MON-<n>); 12 = the ward. Scale tests raise it.
+      SW_BRAIN_MAX_BED: ${SW_BRAIN_MAX_BED:-12}
+      SW_BRAIN_TICK_STATS: ${SW_BRAIN_TICK_STATS:-0}
+    # Per-bed history is bounded (300 s look-back); 768m kept from the earlier measured peaks.
     mem_limit: 768m
     cpus: 1.0
 

@@ -19,7 +19,8 @@ from .engine import Publisher, RunResult, WardRun
 from .packs import BedPack
 
 FIRST_SCALE_BED = 13
-MAX_SCALE_BEDS = 87       # B13 .. B99
+LAST_BED = 99             # two-digit IDs only (sw_common contract)
+MAX_SCALE_BEDS = 87       # B13 .. B99 with the default first bed
 OFFSET_STEP_S = 61        # pack-second step between copies of the same pack
 MIMIC_SOURCE = "mimic"
 
@@ -32,22 +33,31 @@ def scale_templates(script: WardScript) -> list[str]:
     return names
 
 
-def build_scale_script(script: WardScript, packs: Mapping[str, BedPack], n_beds: int, seconds: int) -> WardScript:
-    """A script of n_beds quiet copies (B13.., MON-13..) all joining at T+00:00, lasting `seconds`."""
-    if not 1 <= n_beds <= MAX_SCALE_BEDS:
-        raise ValueError(f"--beds must be 1..{MAX_SCALE_BEDS} (IDs B13-B99), got {n_beds}")
+def build_scale_script(script: WardScript, packs: Mapping[str, BedPack], n_beds: int, seconds: int,
+                       first_bed: int = FIRST_SCALE_BED, loop: bool = False) -> WardScript:
+    """A script of n_beds quiet copies (B<first_bed>.., MON-<first_bed>..) all joining at T+00:00, lasting `seconds`.
+
+    first_bed defaults to 13 (on top of the ward). first_bed=1 replaces the ward's IDs, for a
+    beds-per-brain test with the ward simulator stopped. loop=True restarts each pack at its end
+    (seq and ts keep counting), for soak runs longer than a pack.
+    """
+    if not 1 <= first_bed <= LAST_BED:
+        raise ValueError(f"--first-bed must be 1..{LAST_BED}, got {first_bed}")
+    max_beds = LAST_BED - first_bed + 1
+    if not 1 <= n_beds <= max_beds:
+        raise ValueError(f"--beds must be 1..{max_beds} (IDs B{first_bed:02d}-B{LAST_BED}), got {n_beds}")
     if seconds < 1:
         raise ValueError(f"--seconds must be >= 1, got {seconds}")
     templates = scale_templates(script)
     beds: list[BedEntry] = []
     for i in range(n_beds):
-        number = FIRST_SCALE_BED + i
+        number = first_bed + i
         name = templates[i % len(templates)]
-        room = max(1, packs[name].n_seconds - seconds)
+        room = packs[name].n_seconds if loop else max(1, packs[name].n_seconds - seconds)
         beds.append(BedEntry(
             bed_id=f"B{number:02d}", device_id=f"MON-{number:02d}", join_s=0,
             pack_start_s=((i // len(templates)) * OFFSET_STEP_S) % room, pack=name,
-            source=MIMIC_SOURCE, suppress_alarms=True, note=f"scale copy of {name}",
+            source=MIMIC_SOURCE, suppress_alarms=True, loop_pack=loop, note=f"scale copy of {name}",
         ))
     return replace(script, run_length_s=seconds, beds=tuple(beds), drift=None)
 
@@ -91,9 +101,10 @@ class ScaleReport:
 
 def run_scale(script: WardScript, packs: Mapping[str, BedPack], *, n_beds: int, seconds: int, run_id: str,
               runs_dir: str | Path, clock: Clock, bus: Publisher,
-              on_run: Callable[[WardRun], None] | None = None) -> ScaleReport:
+              on_run: Callable[[WardRun], None] | None = None, first_bed: int = FIRST_SCALE_BED,
+              loop: bool = False) -> ScaleReport:
     """Play the scale script and measure on-time sending. on_run(run) is called before it starts."""
-    scale_script = build_scale_script(script, packs, n_beds, seconds)
+    scale_script = build_scale_script(script, packs, n_beds, seconds, first_bed, loop)
     run = WardRun(scale_script, packs, run_id=run_id, runs_dir=runs_dir, clock=clock, bus=bus)
     if on_run is not None:
         on_run(run)

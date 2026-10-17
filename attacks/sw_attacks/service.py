@@ -41,11 +41,22 @@ class AttackService:
                     self._capture(receipt.data)
     @staticmethod
     def _digest(topic,message): return hashlib.sha256(encode(topic,message)).digest()
+    # Margin on top of each replay's look-back (start_s - source_start_s) for late or seeked starts.
+    HISTORY_MARGIN_S=60
+    def _history_lookback_ms(self,bed):
+        """Only replay reads history: keep its look-back plus a margin; other beds need just `latest`."""
+        lookbacks=[s['start_s']-s['source_start_s'] for s in self.schedule if s['kind']=='replay' and s['bed_id']==bed]
+        return int((max(lookbacks)+self.HISTORY_MARGIN_S)*1000) if lookbacks else None
     def _capture(self,message):
-        bed=message['bed_id']; history=self.history.setdefault(bed,OrderedDict())
+        bed=message['bed_id']
+        if bed not in self.latest or message['ts']>self.latest[bed]['ts']: self.latest[bed]=deepcopy(message)
+        lookback=self._history_lookback_ms(bed)
+        if lookback is None: return
+        history=self.history.setdefault(bed,OrderedDict())
         # Never let an old replay replace the latest observed source pointer.
         if message['ts'] not in history: history[message['ts']]=deepcopy(message)
-        if bed not in self.latest or message['ts']>self.latest[bed]['ts']: self.latest[bed]=deepcopy(message)
+        cutoff=self.latest[bed]['ts']-lookback
+        while history and next(iter(history))<cutoff: history.popitem(last=False)
         while len(history)>1200: history.popitem(last=False)
     def receive(self,topic,payload,received_ms=None,received_mono_ms=None):
         try: receipt=decode(topic,payload,received_ms)

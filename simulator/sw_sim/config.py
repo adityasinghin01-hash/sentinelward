@@ -64,6 +64,7 @@ class BedEntry:
     device_id: str | None = None  # None = use the pack's device_id
     source: str = ""
     suppress_alarms: bool = False
+    loop_pack: bool = False       # scale mode only: restart the pack at its end (seq/ts keep going)
     note: str = ""
 
     @property

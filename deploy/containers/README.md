@@ -30,7 +30,20 @@ The service image includes the fresh `ml_v2/` model code and artifacts required 
   same as the bare-metal server; only pure-Python packages come from pip (pinned in
   `requirements-container.txt`: `deploy/requirements-server.txt` minus `wfdb`, which only the
   pack builder in `data/` uses and whose deps would need a compiler on s390x). No compiler in the image.
-- **Scalability:** the simulator's scale mode (extra beds B13-B99) measures how many beds one brain
-  container keeps up with; `docker stats` shows the cost of each container.
+- **Scalability:** the simulator's scale mode measures how many beds one brain container keeps up
+  with; `docker stats` shows the cost of each container. Beds-per-brain test (ward sim and attacks
+  stopped so only scale beds reach the brain):
+
+      docker compose stop sim attacks
+      SW_BRAIN_MAX_BED=96 SW_BRAIN_TICK_STATS=1 docker compose up -d --no-deps --force-recreate brain
+      docker compose run --rm --no-deps -T sim python -m sw_sim scale --packs /packs --runs /runs/simulator \
+        --script /app/simulator/ward_script.yaml --first-bed 1 --beds 96 --seconds 180
+      docker logs sentinelward-brain-1 2>&1 | grep tick_stats     # tick ms, verdicts, msgs in, drops
+      docker compose up -d                                         # back to the 12-bed ward
+
+  `--loop` restarts each pack at its end, for soak runs longer than a pack (22 min).
+- **Health:** hub (a real `mosquitto_sub` of its uptime topic), api (`/api/health` must say
+  `ok: true`) and db (`pg_isready`) have healthchecks; app services wait for a healthy hub. brain,
+  sim and attacks serve no port, so they show plain `Up` rather than a health state.
 
 The agents join as their own container in Phase 3 (fresh agents_v2).

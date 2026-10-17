@@ -266,6 +266,8 @@ class WardRun:
             p = bed.pack_second(k)
             if p is None:
                 continue
+            if bed.entry.loop_pack:
+                p %= bed.pack.n_seconds
             if p >= bed.pack.n_seconds:
                 bed.ended = True
                 if bed.sent_any:
