@@ -18,14 +18,14 @@
 
 - Platform evidence shows `s390x`, machine type **9175**, IBM z/VM and the `nnpa` CPU feature (`deploy/evidence/lscpu.txt`, `deploy/evidence/proc-sysinfo.txt`, `deploy/evidence/nnpa-cpuinfo.txt`).
 - M2 training results record host `tessnovabuild`, machine `s390x`, held-out CiNC score **0.862** and VTaC VT score **0.832** for the two-lead model (`ml_v2/results/heldout2.json`). The separate CNN records NNPA availability and `nnpa:0` inference (`ml_v2/results/cnn_result.json`).
-- The hardened six-container design uses non-root users, read-only filesystems, dropped capabilities and resource limits (`deploy/containers/README.md`, `deploy/containers/compose.yaml`). **TODO(lead): capture a readable live `docker ps` plus hardening evidence screenshot.**
-- The secured hub design uses TLS, deny-by-default ACLs and per-device identities (`security_v2/SECURITY.md`). **TODO(lead): run the LinuxONE live security test and capture its PASS table.**
-- Existing process snapshots cover live ward load (`deploy/evidence/ps-top-11beds-T0430.txt`, `deploy/evidence/ps-top-10beds-T1000.txt`). **TODO(lead): capture `docker stats` and the scale-test result for the final scalability screenshot.**
+- The hardened six-container design uses non-root users, read-only filesystems, dropped capabilities and resource limits (`deploy/containers/README.md`, `deploy/containers/compose.yaml`). Live: all six containers up, api/hub/db healthy, hardening and two full in-container ward runs: `docs/evidence/CONTAINERS.md`, `docs/evidence/raw/resources-now.txt`.
+- The secured hub design uses TLS, deny-by-default ACLs and per-device identities (`security_v2/SECURITY.md`). Live security test on LinuxONE: **15/15 PASS** (`docs/evidence/SECURITY.md`, raw `docs/evidence/raw/security-live-20261017T140649Z.json`).
+- Existing process snapshots cover live ward load (`deploy/evidence/ps-top-11beds-T0430.txt`, `deploy/evidence/ps-top-10beds-T1000.txt`). Scale: one brain container keeps up with **96 beds** using 22% of its 5 s tick on 1 CPU, memory flat (`docs/evidence/SCALE.md`, `docs/evidence/RESOURCES.md`).
 
 ## Criterion 4 — clarity and live demonstration
 
 - The exact **2:50** sequence, words and captions are in `docs/submission/VIDEO-SHOTLIST.md`; it includes the live LinuxONE terminal, ward, phone alert, cut-off and Undo, CERT-In draft, containers and model results.
 - The repeatable event order comes from `docs/spec/12-ward-script.md`; the screen routes are defined in `web/src/App.tsx`.
 - The video states the honest limit: a laboratory prototype replaying recordings, not a clinical device (`docs/README-final-draft.md`).
-- **TODO(lead): record and verify a real emergency alert arriving on the Telegram phone; checked-in evidence currently says NOT RUN (`deploy/evidence/smoke-h6-checkpoint1.md`).**
+- Telegram delivery verified in the full agents-on ward run: 24 messages sent + 27 edited, 0 failed; B03 alert acknowledged by the nurse in 46 s (`docs/evidence/WARD-RUN.md`).
 - **TODO(lead): upload the final video, insert its URL, and verify the submitted repository link and title `[TessNova_IBM Z Datathon 2026 Project]`.**

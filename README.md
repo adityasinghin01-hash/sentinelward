@@ -5,7 +5,9 @@ Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM L
 > An ICU alarm goes off. Is it the patient, a failing sensor, or someone faking the monitor?
 > SentinelWard answers for every bed, every 5 seconds, on IBM LinuxONE, and never shows a patient blank.
 
-[Architecture](docs/ARCHITECTURE.md) · [Evidence pack](docs/evidence/INDEX.md) · [Video script](docs/VIDEO-SCRIPT.md) · [Open source used](docs/OPEN-SOURCE.md)
+**For judges:** [Judge guide (criterion → proof)](docs/submission/JUDGE-GUIDE.md) · [Flowchart](docs/flowchart/flowchart.png) · [Evidence pack](docs/evidence/INDEX.md) · [Full ward run](docs/evidence/WARD-RUN.md)
+
+[Architecture](docs/ARCHITECTURE.md) · [Video script](docs/VIDEO-SCRIPT.md) · [Open source used](docs/OPEN-SOURCE.md)
 
 ## The problem
 - ICU monitors raise so many false alarms that nurses learn to tune them out (alarm fatigue).

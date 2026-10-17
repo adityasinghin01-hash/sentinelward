@@ -1,5 +1,7 @@
 # Submission assets
 
+By Antara Gupta (17 Oct 2026). Primary versions used for the submission: judge guide = `JUDGE-GUIDE.md` (this folder); architecture = `docs/flowchart/` (larger, more readable render) with this folder's flowchart kept as an alternative; video narration and timings = `docs/VIDEO-SCRIPT.md` (real ward-run times), with this folder's shot list as an alternative caption set.
+
 - `flowchart.mmd` — editable architecture source; rendered as `flowchart.svg` and `flowchart.png`.
 - `JUDGE-GUIDE.md` — one-page map from each judging criterion to repository or screen evidence.
 - `VIDEO-SHOTLIST.md` — exact 2:50 recording plan and spoken script.
