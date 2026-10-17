@@ -160,3 +160,46 @@ sent at most once per bed per second. `connection.changed` reports hub (MQTT) he
 `disconnected`. A client more than 500 messages behind loses telemetry first; past 2,000 it is closed
 (code 1013). An expired session closes the socket with 1008; an unauthenticated handshake gets HTTP
 403. After a reconnect, reload `GET /api/ward`.
+
+## FHIR R4 interoperability (read-only)
+
+`GET /api/fhir/Bundle?since=1792252800000&bed=B03` exports a FHIR R4 `Bundle`
+with `type: collection`. `since` is optional (default 0), an inclusive nonnegative integer UTC
+**epoch milliseconds**; `bed` optionally selects `B01`–`B12`. The upper bound is the read time.
+`GET /api/fhir/metadata` describes this limited export in a `CapabilityStatement` (`fhirVersion: 4.0.1`).
+Both use the same session cookie, bearer token, query token, and all authenticated read roles as
+`/api/ward`. Success responses use `application/fhir+json` and `Cache-Control: no-store`.
+
+- One `Observation` for each bed's verdict transition in the window; consecutive identical
+  verdict codes are collapsed using the predecessor before `since`. A linked alert can also
+  include its supporting Observation from before the window or an unchanged verdict snapshot.
+- Latest alert states whose source `ts` is in the window become `DetectedIssue` resources for
+  `EMERGENCY`, `TAMPERING`, `BOTH`, and `DEVICE_ATTACK`. Closed/acknowledged updates are included,
+  so consumers can reconcile alerts. Old open alerts whose last update precedes `since` are excluded.
+- Each selected configured monitor gets one `Device` (12 without `bed`), even in an empty ward.
+  Status is current `inactive` when isolated/cut off; otherwise `active`, independent of connectivity.
+- Scores come from that verdict's own `scores`, never newer model scores. Each M1–M6 component
+  contains a dimensionless 0–1 `valueQuantity` or `dataAbsentReason: unknown`; missing is never zero.
+- Observation `subject.identifier` contains only the bed ID; no Patient resources, demographics,
+  staff recipients, or medical-record payloads are exported. The Bundle carries a local
+  `meta.security` pseudonymous label. Configured patient identifiers are redacted from reason text.
+- Local terminology uses `https://sentinelward.local/fhir/CodeSystem/{verdict,check,observation}`.
+  These URLs identify local codes; they are not published terminology services.
+- R4 `DetectedIssue.status` cannot contain `open`/`acknowledged`/`resolved`. The local extension
+  `https://sentinelward.local/fhir/StructureDefinition/alert-state` preserves those values:
+  backend `open`/`escalated` → `open`, `acked` → `acknowledged`, `closed` → `resolved`.
+  Standard status is `preliminary` for open/acknowledged, `final` for resolved.
+  Alert priority `high` → severity `high`; other priorities → `moderate`.
+- References are deterministic Bundle-local UUID URNs. They do not imply individual resource URLs.
+  An alert without a matching retained verdict gets an explicitly alert-derived Observation with
+  unknown scores and the alert timestamp/reason.
+
+The exporter reads the real memory store or PostgreSQL history plus live verdict/alert state and uncommitted verdicts in the existing writer queue.
+It does not publish MQTT messages, acknowledge alerts, or flush the write queue. A database read
+failure returns 503 rather than a partial export; a concurrent demo reset returns 409 (retry).
+Existing API error bodies remain `{"detail":"..."}`. No new dependencies are required.
+This is a pull adapter, not a general FHIR REST server: no writes, resource reads, searchset,
+pagination, subscriptions, HL7 v2 feed, or certified EHR integration. Use bounded `since` windows;
+latest alert state and current device status are exported, not a full lifecycle/device history.
+See [mapping, validation, and limits](../docs/evidence/INTEROP.md) and the
+[fixture sample](../docs/evidence/raw/fhir-sample-bundle.json).

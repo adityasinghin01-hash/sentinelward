@@ -1,0 +1,688 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "timestamp": "2026-10-17T16:00:00.000Z",
+  "meta": {
+    "security": [
+      {
+        "system": "https://sentinelward.local/fhir/CodeSystem/security",
+        "code": "pseudonymous",
+        "display": "Bed identifiers only; patient names and demographics excluded"
+      }
+    ]
+  },
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:64018f27-bad9-50c2-a56e-1ffce249fff7",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-01"
+          }
+        ],
+        "id": "64018f27-bad9-50c2-a56e-1ffce249fff7"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:7f473930-9aaf-579c-9972-f664d88b2078",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-02"
+          }
+        ],
+        "id": "7f473930-9aaf-579c-9972-f664d88b2078"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:29c797a1-c63f-5897-93e0-eb6eb069ad05",
+      "resource": {
+        "resourceType": "Device",
+        "status": "inactive",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-03"
+          }
+        ],
+        "id": "29c797a1-c63f-5897-93e0-eb6eb069ad05"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b8bf59d6-8ea3-5877-a667-58488965875c",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-04"
+          }
+        ],
+        "id": "b8bf59d6-8ea3-5877-a667-58488965875c"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b4c32325-8178-51c5-9a8e-029caa04839e",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-05"
+          }
+        ],
+        "id": "b4c32325-8178-51c5-9a8e-029caa04839e"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:af41c9e9-2fb8-5ee4-b67c-79ba9315f72d",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-06"
+          }
+        ],
+        "id": "af41c9e9-2fb8-5ee4-b67c-79ba9315f72d"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:93f03efc-7e93-5296-97c8-e1d4b0cb926e",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-07"
+          }
+        ],
+        "id": "93f03efc-7e93-5296-97c8-e1d4b0cb926e"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:fdf8eb50-4b42-5776-8344-6afe7e0f695a",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-08"
+          }
+        ],
+        "id": "fdf8eb50-4b42-5776-8344-6afe7e0f695a"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:1de992c5-c43c-51f8-9811-bef5559ca474",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-09"
+          }
+        ],
+        "id": "1de992c5-c43c-51f8-9811-bef5559ca474"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:966a0e0a-42ff-52c4-80c7-cfd8a95fd262",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-10"
+          }
+        ],
+        "id": "966a0e0a-42ff-52c4-80c7-cfd8a95fd262"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:632d806a-037d-5cda-9250-b8477f208282",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-11"
+          }
+        ],
+        "id": "632d806a-037d-5cda-9250-b8477f208282"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:bba08b3d-716d-559d-8361-e6108b053198",
+      "resource": {
+        "resourceType": "Device",
+        "status": "active",
+        "identifier": [
+          {
+            "system": "https://sentinelward.local/fhir/NamingSystem/monitor",
+            "value": "MON-12"
+          }
+        ],
+        "id": "bba08b3d-716d-559d-8361-e6108b053198"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:54dbb7ab-f819-571b-8328-3a73f6b02af2",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/observation",
+              "code": "verdict"
+            }
+          ],
+          "text": "SentinelWard verdict"
+        },
+        "subject": {
+          "identifier": {
+            "system": "https://sentinelward.local/fhir/NamingSystem/bed",
+            "value": "B01"
+          }
+        },
+        "effectiveDateTime": "2026-10-17T16:00:00.000Z",
+        "device": {
+          "reference": "urn:uuid:64018f27-bad9-50c2-a56e-1ffce249fff7"
+        },
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "EMERGENCY"
+            }
+          ]
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M1"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.02,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M2"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.98,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M3"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.05,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M4"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.02,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M5"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.01,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M6"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.01,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Physiological deterioration matches ECG and pulse evidence; check patient now."
+          }
+        ],
+        "id": "54dbb7ab-f819-571b-8328-3a73f6b02af2"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f41eb1c5-6425-5bdb-870d-6d30e5fc3fab",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/observation",
+              "code": "verdict"
+            }
+          ],
+          "text": "SentinelWard verdict"
+        },
+        "subject": {
+          "identifier": {
+            "system": "https://sentinelward.local/fhir/NamingSystem/bed",
+            "value": "B03"
+          }
+        },
+        "effectiveDateTime": "2026-10-17T16:00:00.000Z",
+        "device": {
+          "reference": "urn:uuid:29c797a1-c63f-5897-93e0-eb6eb069ad05"
+        },
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "TAMPERING"
+            }
+          ]
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M1"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.97,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M2"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.02,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M3"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.96,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M4"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.99,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M5"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.1,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M6"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.02,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Repeated waveform and sequence evidence indicate replay; monitor cut off."
+          }
+        ],
+        "id": "f41eb1c5-6425-5bdb-870d-6d30e5fc3fab"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:6bb5df2f-a3a9-5c31-b75e-dc4405c7d1b2",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/observation",
+              "code": "verdict"
+            }
+          ],
+          "text": "SentinelWard verdict"
+        },
+        "subject": {
+          "identifier": {
+            "system": "https://sentinelward.local/fhir/NamingSystem/bed",
+            "value": "B05"
+          }
+        },
+        "effectiveDateTime": "2026-10-17T16:00:00.000Z",
+        "device": {
+          "reference": "urn:uuid:b4c32325-8178-51c5-9a8e-029caa04839e"
+        },
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "BOTH"
+            }
+          ]
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M1"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.02,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M2"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.98,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M3"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.94,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M4"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.99,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M5"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.2,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://sentinelward.local/fhir/CodeSystem/check",
+                  "code": "M6"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.01,
+              "unit": "1",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          }
+        ],
+        "note": [
+          {
+            "text": "Patient deterioration and replay evidence occurred together; bedside review completed."
+          }
+        ],
+        "id": "6bb5df2f-a3a9-5c31-b75e-dc4405c7d1b2"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:aee16e07-3e7b-55ec-98f3-a4a5ad1ac70a",
+      "resource": {
+        "resourceType": "DetectedIssue",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "BOTH"
+            }
+          ]
+        },
+        "severity": "high",
+        "identifiedDateTime": "2026-10-17T16:00:00.000Z",
+        "detail": "Patient deterioration and replay evidence occurred together; bedside review completed.",
+        "implicated": [
+          {
+            "reference": "urn:uuid:6bb5df2f-a3a9-5c31-b75e-dc4405c7d1b2"
+          }
+        ],
+        "extension": [
+          {
+            "url": "https://sentinelward.local/fhir/StructureDefinition/alert-state",
+            "valueCode": "resolved"
+          }
+        ],
+        "id": "aee16e07-3e7b-55ec-98f3-a4a5ad1ac70a"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:0a4ccd3b-eef8-56b4-b755-11f7e893f604",
+      "resource": {
+        "resourceType": "DetectedIssue",
+        "status": "preliminary",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "EMERGENCY"
+            }
+          ]
+        },
+        "severity": "high",
+        "identifiedDateTime": "2026-10-17T16:00:00.000Z",
+        "detail": "Physiological deterioration matches ECG and pulse evidence; check patient now.",
+        "implicated": [
+          {
+            "reference": "urn:uuid:54dbb7ab-f819-571b-8328-3a73f6b02af2"
+          }
+        ],
+        "extension": [
+          {
+            "url": "https://sentinelward.local/fhir/StructureDefinition/alert-state",
+            "valueCode": "open"
+          }
+        ],
+        "id": "0a4ccd3b-eef8-56b4-b755-11f7e893f604"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f4272a34-0627-5dc6-aa77-68e2e890a7b2",
+      "resource": {
+        "resourceType": "DetectedIssue",
+        "status": "preliminary",
+        "code": {
+          "coding": [
+            {
+              "system": "https://sentinelward.local/fhir/CodeSystem/verdict",
+              "code": "TAMPERING"
+            }
+          ]
+        },
+        "severity": "moderate",
+        "identifiedDateTime": "2026-10-17T16:00:00.000Z",
+        "detail": "Repeated waveform and sequence evidence indicate replay; monitor cut off.",
+        "implicated": [
+          {
+            "reference": "urn:uuid:f41eb1c5-6425-5bdb-870d-6d30e5fc3fab"
+          }
+        ],
+        "extension": [
+          {
+            "url": "https://sentinelward.local/fhir/StructureDefinition/alert-state",
+            "valueCode": "acknowledged"
+          }
+        ],
+        "id": "f4272a34-0627-5dc6-aa77-68e2e890a7b2"
+      }
+    }
+  ]
+}
