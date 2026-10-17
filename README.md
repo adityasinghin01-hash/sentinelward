@@ -9,6 +9,14 @@ Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM L
 
 [Architecture](docs/ARCHITECTURE.md) · [Video script](docs/VIDEO-SCRIPT.md) · [Open source used](docs/OPEN-SOURCE.md) · [Read-only FHIR R4 export](docs/evidence/INTEROP.md)
 
+## Submission
+
+**Title:** `[TessNova_IBM Z Datathon 2026 Project]`
+
+Video: VIDEO_URL_TBD
+
+[Submission copy sheet](docs/submission/SUBMISSION.md) · [Judge guide](docs/submission/JUDGE-GUIDE.md)
+
 ## Explore everything yourself
 
 Start here to inspect the screens, replay the ward and trace the results to their source. [Full setup and walkthrough](docs/EXPLORE.md).
