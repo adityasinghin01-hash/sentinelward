@@ -661,3 +661,61 @@ def test_validate_vitals_under_1ms(example):
         samples.append(time.perf_counter() - start)
     median_ms = statistics.median(samples) * 1000
     assert median_ms < 1.0, f"validate(vitals) median {median_ms:.3f} ms"
+
+
+# ---- v1.3: optional second ECG lead (ecg2 + ecg_leads); addition only
+
+def test_vitals_without_ecg2_is_still_valid_strict(example):
+    m = example("vitals")
+    assert "ecg2" not in m and validate(m, strict=True) == []
+
+
+def test_ecg2_and_leads_are_valid_and_known_in_strict(example):
+    m = example("vitals")
+    m["ecg2"] = list(ECG)
+    m["ecg_leads"] = ["II", "V"]
+    assert validate(m) == []
+    assert validate(m, strict=True) == []
+
+
+def test_ecg2_null_and_null_entries_are_valid(example):
+    m = example("vitals")
+    m["ecg2"] = None
+    m["ecg_leads"] = ["II"]
+    assert validate(m, strict=True) == []
+    m["ecg2"] = [None] * 60 + list(ECG[60:])
+    assert validate(m) == []
+
+
+def test_ecg2_wrong_length_nan_and_type_fail(example):
+    m = example("vitals")
+    m["ecg2"] = ECG[:124]
+    assert validate(m) == ["vitals.ecg2: expected 125 entries, got 124"]
+    m["ecg2"] = list(ECG)
+    m["ecg2"][7] = NAN
+    errs = validate(m)
+    assert len(errs) == 1 and errs[0].startswith("vitals.ecg2[7]")
+    m["ecg2"] = "II"
+    assert validate(m) and validate(m)[0].startswith("vitals.ecg2:")
+
+
+def test_ecg_leads_rules(example):
+    m = example("vitals")
+    m["ecg_leads"] = None
+    assert validate(m) == []
+    for bad in ("II", ["II", ""], ["II", 5], {"0": "II"}):
+        m["ecg_leads"] = bad
+        assert validate(m), bad
+
+
+def test_ecg2_round_trips_encode_decode(example):
+    m = example("vitals")
+    m["ecg2"] = [NAN] + list(ECG[1:])
+    m["ecg_leads"] = ["II", "V"]
+    obj, errs = decode(encode(m, strict=True), strict=True)
+    assert errs == [] and obj["ecg2"][0] is None and obj["ecg_leads"] == ["II", "V"]
+
+
+def test_make_vitals_passes_ecg2_through():
+    m = make_vitals(bed_id="B03", seq=1, ts=1, ecg=list(ECG), ecg2=list(ECG), ecg_leads=["II", "V"])
+    assert m["ecg2"] == list(ECG) and validate(m, strict=True) == []

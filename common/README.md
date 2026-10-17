@@ -2,7 +2,7 @@
 
 `sw_common` is the one package every SentinelWard part imports (team TessNova, IBM Z Datathon 2026).
 It holds the topic names, a builder per message type, a checker, JSON encode/decode, clock helpers
-and a validated MQTT `Bus`. The message formats are in [CONTRACT.md](CONTRACT.md) (v1 + v1.1).
+and a validated MQTT `Bus`. The message formats are in [CONTRACT.md](CONTRACT.md) (v1 + v1.1 + v1.3 optional ecg2).
 
 - Python 3.10+. Tested on 3.12; written to run unchanged on IBM LinuxONE (s390x, big-endian),
   macOS and Google Colab. Everything is JSON text, so byte order never matters.
