@@ -11,7 +11,7 @@ New code, written on build day; it does not use or copy `ml/`.
 - `m2gbt/train2.py` (doc 00 v1.3): exports the 2-ECG-lead model `M2-gbt2-2026-10-17` with the same held-out set (asserted equal), the CV-chosen configuration of the 1-lead run and its own out-of-fold per-type thresholds; the second lead is picked by `sw_data.dsp.pick_ecg2` (lead V, else the next ECG lead), the same rule as the bed packs. Results in `results/heldout2.json`.
 - `m2gbt/e2e_check2.py`: held-out numbers recomputed through `BrainService` (ward path from the 2015 sources for 87 records; all 670 held-out events from their table windows). `results/e2e_check2.json`.
 - `m2gbt/ward_check2.py`: the v1.3 packs played by `sw_sim.WardRun` into `BrainService` (no hub). `results/ward_check2.json`.
-- `stretch/cnn_nnpa.py`: a 1D-CNN that trains on CPU and runs inference on the z17 NNPA (`torch_nnpa`). It is not deployed because the tree beats it.
+- `stretch/cnn_nnpa.py`: a 1D-CNN that trains on CPU and runs inference on the z17 NNPA (`torch_nnpa`). It is not M2 because the trees beat it; it runs live on the TEST guest's NNPA as a shown-only second opinion (`chip/`, `docs/evidence/ML-RESULTS.md`).
 - `artifacts/m2_gbt_2026-10-17.json`: the 1-lead model. `artifacts/m2_gbt2_2026-10-17.json`: the 2-lead model. Both SHA-256 digests are pinned in `brain/sw_brain/m2gbt.py`.
 - `results/`: `cv.json`, `heldout.json` (all held-out metrics), `e2e_check.json`, `cnn_result.json` and logs.
 
