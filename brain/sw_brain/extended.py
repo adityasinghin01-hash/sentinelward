@@ -4,8 +4,9 @@ from __future__ import annotations
 from collections import deque
 import math
 import numpy as np
+from scipy.signal import find_peaks, sosfiltfilt
 
-from .detectors import confirmed_low_pressure, pulse_metrics, result
+from .detectors import _PPG_SOS, QualityDetector, confirmed_low_pressure, pulse_metrics, result
 
 
 class BodyMismatch:
@@ -15,6 +16,11 @@ class BodyMismatch:
     rather than the first pulse in an arbitrary 80--700 ms search interval.
     """
     PERSIST = 3
+    # Pack controls B01/B02/B06 have 90th-percentile RR CV <= .053;
+    # clinical B04/B07 medians are .436/.336. This is a pairing limit,
+    # not a diagnosis. PPG irregularity alone never controls applicability.
+    MAX_PAIRING_RR_CV = .12
+    MIN_BEAT_COVERAGE = .65
 
     def __init__(self):
         self.baselines = {}
@@ -98,11 +104,32 @@ class BodyMismatch:
         if repeats >= 3:
             self.pulse_hold.setdefault(bed, now_ms)
         replay = bed in self.pulse_hold
-        rates = {'ecg_rate_bpm': ecg['rate'], 'ppg_rate_bpm': ppg['rate']}
-        if (len(ecg['peaks']) < 2) != (len(ppg['peaks']) < 2):
+        rates = {'ecg_rate_bpm': ecg['rate'], 'ppg_rate_bpm': ppg['rate'],
+                 'ecg_rr_cv': ecg['regularity'], 'ppg_rr_cv': ppg['regularity'],
+                 'ecg_beats': len(ecg['peaks'])}
+        expected_beats = ecg['rate']*len(window['ecg'])/7500
+        coverage = len(ecg['peaks'])/max(1., expected_beats)
+        rates['ecg_beat_coverage'] = coverage
+        quality = QualityDetector().evaluate(window, state, now_ms)
+        channels = quality['extra']['channels']
+        pulse_samples = np.asarray(window['ppg'], dtype=float)
+        # A flat substituted pulse against a regular, usable ECG is still direct
+        # disagreement, even though M1 also recognises that the pulse is stuck.
+        frozen_pulse = (channels['ecg']['score'] < .5 and len(ecg['peaks']) >= 3
+                        and ecg['regularity'] <= self.MAX_PAIRING_RR_CV
+                        and coverage >= self.MIN_BEAT_COVERAGE
+                        and len(ppg['peaks']) < 2
+                        and np.all(np.isfinite(pulse_samples)) and np.ptp(pulse_samples) < 1e-4)
+        if quality['score'] >= .5 and not frozen_pulse and not replay:
+            recent.clear()
+            recent.extend([0., 0.])
+            self.observed[bed] = (start, 0.)
+            return result(None, 'Signal unusable: heart-pulse comparison waiting for usable samples',
+                          **rates, path='live_rate_and_pat', unavailable_reason='signal_unusable')
+        if frozen_pulse:
             recent.append(.99)
             self.observed[bed] = (start, .99)
-            return result(.99, 'Heartbeat and pulse disagree: one signal has no usable beats', **rates, path='live_rate_and_pat')
+            return result(.99, 'Heartbeat and pulse disagree: pulse is flat or frozen', **rates, path='live_rate_and_pat')
 
         er, pr = ecg['rate'], ppg['rate']
         peak_rate = float(7500/np.median(np.diff(ppg['peaks']))) if len(ppg['peaks']) >= 2 else 0.
@@ -117,11 +144,55 @@ class BodyMismatch:
             if harmonic or (monitor_ok and agrees(er, monitor)):
                 pr = peak_rate
                 alias = True
+        peak_agreement = None
+        rechecked_rate = None
+        if (not agrees(pr, er) and ecg['regularity'] is not None
+                and ecg['regularity'] <= self.MAX_PAIRING_RR_CV and len(ecg['peaks']) >= 3
+                and ppg['regularity'] is not None and ppg['regularity'] > .25
+                and monitor_ok and agrees(er, monitor) and not replay):
+            # Large pulse artefacts can hide smaller real pulses under the shared
+            # detector's global .35 prominence. Recheck observed local maxima at
+            # .10 prominence, but accept only an ECG-correlated train: >=5 peaks,
+            # >=70% within 64 ms of one arrival phase, AND an agreeing peak rate.
+            # A harmonic or a convenient ECG rate alone cannot satisfy this.
+            band = sosfiltfilt(_PPG_SOS, pulse_samples-np.nanmedian(pulse_samples))
+            spread = float(np.percentile(band, 95)-np.percentile(band, 5))
+            peaks, _ = find_peaks(band, distance=int(.33*125),
+                                  prominence=max(1e-6, .10*spread), width=1)
+            heart = ecg['peaks']
+            delays = np.array([(p-heart[np.argmin(abs(heart-p))])*8 for p in peaks
+                               if heart[0] < p < heart[-1]])
+            if len(delays) >= 5:
+                peak_agreement = float(np.mean(abs(delays-np.median(delays)) <= 64))
+                rechecked_rate = float(7500/np.median(np.diff(peaks)))
+                if peak_agreement >= .7 and agrees(rechecked_rate, er):
+                    pr = rechecked_rate
+                    alias = True
         rates.update(ppg_rate_bpm=pr, ppg_rhythm_rate_bpm=ppg['rate'], ppg_peak_rate_bpm=peak_rate,
-                     monitor_hr_bpm=monitor if monitor_ok else None, rate_alias=alias)
+                     monitor_hr_bpm=monitor if monitor_ok else None, rate_alias=alias,
+                     pulse_peak_agreement=peak_agreement, ppg_rechecked_rate_bpm=rechecked_rate)
+        unpairable = (len(ecg['peaks']) < 3 or coverage < self.MIN_BEAT_COVERAGE or
+                      ecg['regularity'] is None or ecg['regularity'] > self.MAX_PAIRING_RR_CV)
+        # A resolved alias still gives an observed rate comparison. Otherwise
+        # pause only on ECG evidence; an attacker changing PPG cannot opt out.
+        # Known source-time violations survive pauses and cannot train away.
+        if unpairable and not (alias and agrees(er, pr) and len(ecg['peaks']) >= 3
+                               and coverage >= self.MIN_BEAT_COVERAGE) and not replay:
+            recent.clear()
+            recent.extend([0., 0.])
+            self.observed[bed] = (start, 0.)
+            cause = ('insufficient_ecg_beats' if len(ecg['peaks']) < 3 else
+                     'sparse_ecg_beats' if coverage < self.MIN_BEAT_COVERAGE else 'irregular_ecg')
+            return result(None, 'Irregular rhythm: heart-pulse comparison paused', **rates,
+                          path='live_rate_and_pat', not_applicable=True, applicability_reason=cause)
+        if len(ppg['peaks']) < 2 and not replay:
+            recent.append(.99)
+            self.observed[bed] = (start, .99)
+            return result(.99, 'Heartbeat and pulse disagree: pulse has no usable beats',
+                          **rates, path='live_rate_and_pat')
         mismatch = min(1., max(0., abs(er-pr)/max(20., er, pr)-.05)/.1)
-        # Missed or spurious peaks in an aperiodic/noisy waveform are not a measured
-        # physiological rate. Do not let that estimate train PAT or establish tampering.
+        # Missed or spurious pulse peaks cannot teach PAT. A conflicting pulse
+        # rate against pairable ECG still remains an applicable comparison.
         reliable = (ecg['regularity'] is not None and ppg['regularity'] is not None and
                     ecg['regularity'] <= .25 and ppg['regularity'] <= .25 and er >= 20 and pr >= 20)
         rr_ms = 60000/er if er >= 20 else None
@@ -160,15 +231,16 @@ class BodyMismatch:
             recent.append(raw)
         self.observed[bed] = (start, raw)
         score = float(np.median(recent))
+        # Previously these strong one-sided disagreements were applicable-null,
+        # hence inconclusive. They must not become a clean numeric zero while
+        # waiting for persistence: regular ECG plus a clearly conflicting pulse
+        # estimate remains evidence, even if pulse peak timing cannot support PAT.
+        if not reliable and mismatch >= .8:
+            score = max(score, mismatch)
         extra = dict(**rates, path='live_rate_and_pat', pat_ms=pat, baseline_pat_ms=usual,
                      baseline_samples=len(baseline), baseline_warming=usual is None, eligible=True,
                      raw_score=raw, persistence_windows=len(recent), beats_reliable=reliable,
                      pulse_repeat_seconds=repeats, pulse_replay_since_ms=self.pulse_hold.get(bed), pat_jitter_ms=jitter)
-        if not reliable and mismatch >= .5 and not alias and not replay:
-            recent.clear()
-            recent.extend([0., 0.])
-            return result(None, 'Pulse beat timing is unreliable; body match is not established',
-                          **{**extra, 'eligible':False}, unavailable_reason='unreliable_beat_estimates')
         start = window.get('window_start', 0)
         admission = getattr(state, 'baseline_admission_allowed', True)
         if admission and reliable and candidates and mismatch < .2 and timing_score < .2 and not replay and start >= self.seen.get(bed, -10000)+10000:
@@ -182,6 +254,8 @@ class BodyMismatch:
             self.seen[bed] = start
         if replay:
             reason = 'Pulse repeated at a different time from ECG; bedside confirmation required'
+        elif score >= .5 and raw < .5:
+            reason = 'Recent heartbeat-pulse disagreement; waiting for another clear window'
         elif alias:
             reason = 'Pulse rate alias, rechecking heartbeat and pulse timing'
         elif not reliable and score < .5:

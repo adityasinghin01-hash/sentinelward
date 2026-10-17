@@ -38,8 +38,11 @@ def test_m3_flat_ecg_with_present_pulse_and_rate_disagreement():
     model = BodyMismatch()
     window = waves()
     window['ecg'] = [0.] * 1250
-    assert model(window, state(), 10000)['score'] >= .9
-    assert model(waves(ppg_rate=110), state(), 10000)['score'] >= .8
+    missing = model(window, state(), 10000)
+    assert missing['score'] is None  # M1's unusable ECG is unknown, never exempt.
+    assert not missing['extra'].get('not_applicable', False)
+    model(waves(ppg_rate=110, start=10000), state(), 20000)
+    assert model(waves(ppg_rate=110, start=15000), state(), 25000)['score'] >= .8
 
 
 def test_m6_relative_gap_and_only_new_cuffs_update_baseline():
@@ -187,7 +190,7 @@ def test_new_alarm_cannot_reuse_old_prealarm_and_stale_bedside_cannot_clear(fram
     assert service.beds['B01'].patient_not_ok
 
 
-def test_loose_ecg_is_not_an_emergency_and_last_trusted_snapshot_is_kept(frame):
+def test_unusable_ecg_is_unsure_and_last_trusted_snapshot_is_kept(frame):
     import json
     from copy import deepcopy
     from sw_brain.io import MemoryBus
@@ -195,7 +198,7 @@ def test_loose_ecg_is_not_an_emergency_and_last_trusted_snapshot_is_kept(frame):
     service = BrainService(MemoryBus())
     for i in range(10): service.receive('ward/bed/B01/vitals',json.dumps(frame(i,ecg=[0.]*125)),received_ms=i*1000)
     verdict=service.tick(10000)[0]
-    assert verdict['verdict']=='LOOSE_SENSOR'
+    assert verdict['verdict']=='UNSURE'  # unusable ECG keeps M3 unknown under the existing precedence
     service.last_trusted_snapshots['B01'] = frame(0,hr=62)
     assert service.display_snapshot('B01')['hr']==62
 

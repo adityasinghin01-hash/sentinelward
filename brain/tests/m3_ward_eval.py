@@ -37,7 +37,7 @@ def evaluate(packs, prefix, seconds=1200):
             duration = min(seconds - join, len(data['ecg']) // 125)
             bus = Bus()
             service = BrainService(bus)
-            counts, blockers = collections.Counter(), collections.Counter()
+            counts, blockers, usable = collections.Counter(), collections.Counter(), collections.Counter()
             for sec in range(duration):
                 sl = slice(sec * 125, (sec + 1) * 125)
                 msg = dict(v=1, type='vitals', bed_id=bed, device_id='MON-' + bed[1:],
@@ -52,25 +52,34 @@ def evaluate(packs, prefix, seconds=1200):
                 bus.published.clear()
                 verdict = service.tick((sec+join+1)*1000)[0]
                 m3 = next(args[1] for args in bus.published if args[0].endswith('/score/M3'))
+                checks = {args[1]['model']: args[1] for args in bus.published if '/score/' in args[0]}
                 # Independent peak rate distinguishes autocorrelation half-rate from missing peaks.
                 window = service.beds[bed].windows[-1]
                 ppg = pulse_metrics(window, 'ppg')
+                ecg = pulse_metrics(window)
                 peaks = ppg['peaks'] if ppg else []
                 peak_rate = 7500/np.median(np.diff(peaks)) if len(peaks) >= 2 else None
                 row = dict(bed=bed, source_s=sec+1, monitor_hr=val(np.nanmedian(data['hr'][max(0,sec-9):sec+1])),
                            ppg_peak_rate=peak_rate, verdict=verdict['verdict'], scores=verdict['scores'],
-                           m3=m3, reasons=verdict['reasons'])
+                           m3=m3, checks=checks, ecg_regularity=ecg['regularity'] if ecg else None,
+                           ppg_regularity=ppg['regularity'] if ppg else None,
+                           ecg_beats=len(ecg['peaks']) if ecg else None,
+                           reasons=verdict['reasons'])
                 output.write(json.dumps(row) + '\n')
                 if sec >= 30:
                     counts[verdict['verdict']] += 1
+                    if checks['M1']['score'] is not None and checks['M1']['score'] < .5:
+                        usable[verdict['verdict']] += 1
                     if verdict['verdict'] != 'NORMAL':
                         for model, score in verdict['scores'].items():
                             if score is not None and score >= .5:
                                 blockers[model] += 1
-                            elif score is None and model in ('M1','M3','M4','M5'):
+                            elif score is None and not checks[model]['extra'].get('not_applicable', False):
                                 blockers[model+':null'] += 1
             summary[bed] = dict(join_s=join, online_s=duration, counts=dict(counts), blockers=dict(blockers),
-                                normal_pct=round(100*counts['NORMAL']/max(1,sum(counts.values())),2))
+                                normal_pct=round(100*counts['NORMAL']/max(1,sum(counts.values())),2),
+                                usable_counts=dict(usable),
+                                usable_normal_pct=round(100*usable['NORMAL']/max(1,sum(usable.values())),2))
             print(bed, summary[bed], flush=True)
     Path(str(prefix)+'.json').write_text(json.dumps(summary, indent=2)+'\n')
 
