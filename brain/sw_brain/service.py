@@ -9,7 +9,7 @@ from sw_common.topics import BEDSIDE_SUB, DEMO_CONTROL_TOPIC, NET_SUB, VITALS_SU
 from .io import decode,publish_checked
 from .windows import VitalsWindowAssembler,assemble_window
 from .detectors import DetectorSuite,LABELS,confirmed_low_pressure
-from .decision import decide
+from .decision import decide,tamper_evidence
 
 log=logging.getLogger(__name__)
 
@@ -32,7 +32,10 @@ class BedState:
     patient_not_ok: bool=False
     prealarm_window: dict | None=None
     last_trusted_ts: int | None=None
+    # Tampering established on this bed: {'reason','confidence','since','held','clean_since'}.
+    tamper_latch: dict | None=None
 
+TAMPER_RELEASE_MS=30000
 class BrainService:
     def __init__(self,bus,*,suite=None):
         self.bus=bus; self.assembler=VitalsWindowAssembler(); self.suite=suite or DetectorSuite()
@@ -144,7 +147,10 @@ class BrainService:
                 self._publish(score_topic(bed,model),envelope)
             if generation!=self._run_generation: return []
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
-            verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
+            kwargs=dict(alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
+            verdict=decide(bed,start,int(now_ms),results,**kwargs)
+            hold=self._tamper_hold(state,results,verdict,now_ms)
+            if hold: verdict=decide(bed,start,int(now_ms),results,**hold,**kwargs)
             if generation!=self._run_generation: return []
             if verdict['verdict']=='NORMAL':
                 state.last_trusted_ts=int(now_ms)
@@ -155,6 +161,41 @@ class BrainService:
             verdicts.append(verdict)
         self.last_tick_ms=end
         return verdicts
+
+    @staticmethod
+    def _tamper_hold(state,results,verdict,now_ms):
+        """Keep tampering latched once established, so a cut-off or silent attacked monitor never
+        falls back to a plain EMERGENCY, UNSURE or NORMAL. Returns decide() overrides, or {}.
+
+        Release: demo reset/run (bed state cleared), or 30 s of continuously clean live data (an
+        undecorated NORMAL verdict: online, every applicable check eligible and clear). That covers
+        a bedside patient_ok followed by clean data and a monitor back online after a cut-off.
+        If the monitor never went silent or unclean after the evidence and the very next window
+        is clean, the attack visibly ended: release at once (B05's replay stopping, uncut).
+        The hold never cancels or downgrades EMERGENCY/BOTH: an emergency seen while latched is
+        held as BOTH until a bedside patient_ok, a 30 s clean release or a demo control.
+        """
+        evidence=tamper_evidence(results)
+        latch=state.tamper_latch
+        if evidence is not None:
+            latch=state.tamper_latch={**(latch or {'since':int(now_ms),'emergency':None}),
+                                      'reason':evidence[0],'confidence':evidence[1],'held':False,'clean_since':None}
+        if latch is None: return {}
+        if verdict['verdict'] in ('EMERGENCY','BOTH'): latch['emergency']=(verdict['reasons'][0],int(now_ms))
+        elif latch['emergency'] and state.patient_ok_ts>latch['emergency'][1]: latch['emergency']=None
+        hold={}
+        if evidence is None:
+            if verdict['verdict']=='NORMAL':
+                if latch['clean_since'] is None: latch['clean_since']=int(now_ms)
+                if not latch['held'] or now_ms-latch['clean_since']>=TAMPER_RELEASE_MS:
+                    state.tamper_latch=None; return {}
+            else:
+                # Offline, unverifiable or otherwise not clean after tampering: hold, restart the clock.
+                latch['held']=True; latch['clean_since']=None
+            hold['tamper_hold']=(latch['reason'],latch['confidence'])
+        if latch['emergency'] and verdict['verdict'] not in ('EMERGENCY','BOTH'):
+            hold['emergency_hold']=latch['emergency'][0]
+        return hold
 
     def _publish(self,topic,message,retain=False):
         try: return publish_checked(self.bus,topic,message,qos=1,retain=retain)
