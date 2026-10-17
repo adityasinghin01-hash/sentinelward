@@ -229,6 +229,8 @@ def test_briefing_projection_since_and_workload(app, client, clock):
     assert nurses == [{"nurse_id": "staff:priya", "nurse_name": "Priya (Nurse)", "alarms_last_2h": 41},
                       {"nurse_id": "staff:ghost", "nurse_name": "staff:ghost", "alarms_last_2h": 3}]
     clock.advance(3 * 3600)
+    assert client.get("/api/workload?hours=2").status_code == 401
+    login(client, "doctor")  # The workload window outlives the 30-minute idle session.
     assert client.get("/api/workload?hours=2").json() == {"nurses": []}
     # A template (non-Granite) briefing is reported as such, never as IBM Granite.
     record(app, clock, "briefing", "br_2", {"narrative": {"text": "Fallback.", "generator": "template"}})
