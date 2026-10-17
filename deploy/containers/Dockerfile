@@ -18,9 +18,11 @@ RUN apt-get update \
  && useradd --create-home --uid 10001 sw
 
 WORKDIR /app
-COPY deploy/requirements-server.txt /tmp/requirements-server.txt
+# requirements-container.txt = requirements-server.txt minus wfdb (pack building only; its deps need
+# a compiler on s390x). Keeps the final image compiler-free.
+COPY deploy/containers/requirements-container.txt /tmp/requirements-container.txt
 RUN python3 -m venv --system-site-packages /venv \
- && /venv/bin/pip install --no-cache-dir -r /tmp/requirements-server.txt websockets
+ && /venv/bin/pip install --no-cache-dir -r /tmp/requirements-container.txt websockets
 
 COPY common/ common/
 COPY simulator/ simulator/

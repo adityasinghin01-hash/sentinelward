@@ -23,7 +23,8 @@ only the web app is published, on `127.0.0.1:8001`.
   (Docker secrets and an env file with mode 600), no host ports except the web app on localhost.
 - **Native s390x:** numpy, scipy, pandas and scikit-learn come from Ubuntu's s390x packages, the
   same as the bare-metal server; only pure-Python packages come from pip (pinned in
-  `deploy/requirements-server.txt`).
+  `requirements-container.txt`: `deploy/requirements-server.txt` minus `wfdb`, which only the
+  pack builder in `data/` uses and whose deps would need a compiler on s390x). No compiler in the image.
 - **Scalability:** the simulator's scale mode (extra beds B13-B99) measures how many beds one brain
   container keeps up with; `docker stats` shows the cost of each container.
 
