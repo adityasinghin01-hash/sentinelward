@@ -1,5 +1,7 @@
 # Judge guide
 
+[Explore everything yourself: screens, setup, logs and code](../../README.md#explore-everything-yourself).
+
 ## Criterion 1 — value and theme
 
 - SentinelWard separates a patient emergency, a faulty sensor and forged monitor data, while enforcing “never blank” and “tampering never cancels an emergency.” Proof: `docs/ARCHITECTURE.md`; live screens: **Ward** and **Bed** (`web/src/pages/Ward.tsx`, `web/src/pages/Bed.tsx`).

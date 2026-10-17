@@ -9,6 +9,83 @@ Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM L
 
 [Architecture](docs/ARCHITECTURE.md) · [Video script](docs/VIDEO-SCRIPT.md) · [Open source used](docs/OPEN-SOURCE.md) · [Read-only FHIR R4 export](docs/evidence/INTEROP.md)
 
+## Explore everything yourself
+
+Start here to inspect the screens, replay the ward and trace the results to their source. [Full setup and walkthrough](docs/EXPLORE.md).
+
+### See every screen
+
+All files below are in [docs/evidence/screens/](docs/evidence/screens/). As the [evidence index](docs/evidence/INDEX.md) records, **07 and 09–13 predate the redesign** (17 Oct, same data and logic, older styling); the others show the redesigned UI (18 Oct).
+
+| Screenshot file | What it shows | Role that can open the screen |
+|---|---|---|
+| [01-live-ward-12-beds-mid-run.png](docs/evidence/screens/01-live-ward-12-beds-mid-run.png) | Twelve-bed ward with state bands, dark theme | Nurse, doctor, IT, operator |
+| [02-live-bed-B05-tampering-six-checks.png](docs/evidence/screens/02-live-bed-B05-tampering-six-checks.png) | B05 untrusted and cut off, with the six checks | Nurse, doctor, IT, operator |
+| [03-live-security-cutoffs-and-fleet-hunt.png](docs/evidence/screens/03-live-security-cutoffs-and-fleet-hunt.png) | Devices, cut-offs, incidents and fleet hunt | IT, operator |
+| [04-live-action-log-agents-with-undo.png](docs/evidence/screens/04-live-action-log-agents-with-undo.png) | Agent actions and Undo | All signed-in roles; security Undo: IT/operator |
+| [05-live-census-trust-column.png](docs/evidence/screens/05-live-census-trust-column.png) | Doctor's census with bed state and trust | Doctor, operator |
+| [06-live-alerts-escalation-ladder.png](docs/evidence/screens/06-live-alerts-escalation-ladder.png) | Open alerts and escalation steps | Nurse, doctor, operator |
+| [07-replay-bed-B03-VTACH-M2-score.png](docs/evidence/screens/07-replay-bed-B03-VTACH-M2-score.png) | B03 VTACH alarm and M2 score (older UI) | Nurse, doctor, IT, operator |
+| [08-replay-bed-B06-emergency-on-cut-off-monitor.png](docs/evidence/screens/08-replay-bed-B06-emergency-on-cut-off-monitor.png) | B06 emergency on an attacked, cut-off monitor | Nurse, doctor, IT, operator |
+| [09-replay-incident-timeline-sha256-evidence.png](docs/evidence/screens/09-replay-incident-timeline-sha256-evidence.png) | Incident timeline and SHA-256 evidence (older UI) | IT, operator |
+| [10-replay-certin-report-draft.png](docs/evidence/screens/10-replay-certin-report-draft.png) | CERT-In report draft (older UI) | IT, operator |
+| [11-live-bed-B03-VTACH-ai-chip-second-opinion.png](docs/evidence/screens/11-live-bed-B03-VTACH-ai-chip-second-opinion.png) | B03 AI-chip second opinion on nnpa:0 (older UI) | Nurse, doctor, IT, operator |
+| [12-live-ward-tile-ai-chip-icon.png](docs/evidence/screens/12-live-ward-tile-ai-chip-icon.png) | AI-chip indicator on B03's ward tile (older UI) | Nurse, doctor, IT, operator |
+| [13-live-bed-B03-ai-chip-empty-state.png](docs/evidence/screens/13-live-bed-B03-ai-chip-empty-state.png) | Chip panel before a result arrives (older UI) | Nurse, doctor, IT, operator |
+| [14-landing-light.png](docs/evidence/screens/14-landing-light.png) | Full landing page, light theme | Anyone, before sign-in |
+| [15-sign-in-light.png](docs/evidence/screens/15-sign-in-light.png) | One-click role sign-in | Anyone, before sign-in |
+| [16-ward-light.png](docs/evidence/screens/16-ward-light.png) | Ward in the light theme | Nurse, doctor, IT, operator |
+
+### Run it yourself
+
+- **No data download:** keep going to the existing [5-minute check](#check-it-yourself-in-5-minutes), with its recorded results and optional skips.
+- **Full stack:** follow [data → packs → Docker Compose](docs/EXPLORE.md#build-the-packs-and-start-compose). It gives the LinuxONE/s390x steps we used, laptop differences, dataset sources and measured sizes. VitalDB B08–B10 must be built on a little-endian machine. The six-container copy has separate services and security limits from the full agents-on ward.
+- **Open and sign in:** Compose serves `http://127.0.0.1:8001/login`; the systemd ward uses port 8000 through SSH. Click a role card; [roles and every route](docs/EXPLORE.md#open-the-ui-and-sign-in) include repair tickets, briefing and Demo, which have no screenshot here.
+- **Play the ward:** `./docs/demo/sw-demo.sh run 0` starts the full 20 minutes on the systemd ward; use `PORT=8001` for local Compose. [Walkthrough and jump points](docs/EXPLORE.md#play-the-20-minute-ward) reproduce the [demo runbook](docs/DEMO-RUNBOOK.md), including why a late jump cannot reproduce B05's replay.
+
+### Read the logs and evidence
+
+These are checked-in files. Saved runs establish the results shown; starting your own stack is a separate check.
+
+| What it is | Where it lives | What it proves |
+|---|---|---|
+| Ward runs, including night run N | [WARD-RUN.md](docs/evidence/WARD-RUN.md) | N: 12/12 beds; F1/F2/F3: 12/11/11; build differences and limits |
+| N verdicts and metrics | [Timeline](docs/evidence/raw/wardrun-night/timeline_verdictsN.txt), [metrics](docs/evidence/raw/wardrun-night/metricsN.txt), [judge checks](docs/evidence/raw/wardrun-night/judgeN.txt) | Bed transitions, alerts, human steps and time-to-safe for N |
+| F1 verdicts and metrics | [Timeline](docs/evidence/raw/wardrun-final/timeline_verdictsF1.txt), [metrics](docs/evidence/raw/wardrun-final/metricsF1.txt) | F1 timings and observed outcomes |
+| F2 verdicts and metrics | [Timeline](docs/evidence/raw/wardrun-final/timeline_verdictsF2.txt), [metrics](docs/evidence/raw/wardrun-final/metricsF2.txt) | F2 timings, including the missing B12 detection |
+| F3 verdicts and metrics | [Timeline](docs/evidence/raw/wardrun-final/timeline_verdictsF3.txt), [metrics](docs/evidence/raw/wardrun-final/metricsF3.txt) | F3 timings, including the missing B12 detection |
+| Agent actions | [N agent timeline](docs/evidence/raw/wardrun-night/timeline_agentsN.txt), [containment audit](docs/evidence/raw/containment.jsonl) | A1–A8 actions, alerts, records, cut-offs and linked Undo; queued Telegram is not delivery proof |
+| Security live test | [15/15 raw output](docs/evidence/raw/security-live-20261017T140649Z.json), [explanation](docs/evidence/SECURITY.md) | Own-bed ACLs, rejected access, cut-off/Undo and TLS checks |
+| ML held-out results and fatigue | [ML-RESULTS.md](docs/evidence/ML-RESULTS.md), [heldout2.json](ml_v2/results/heldout2.json), [fatigue.txt](docs/evidence/raw/fatigue.txt) | Locked test sets, model comparison and advice-only false/missed alarm counts |
+| Robustness and model integrity | [ROBUSTNESS.md](docs/evidence/ROBUSTNESS.md), [raw results](ml_v2/results/robustness.json), [integrity tests](brain/tests/test_m2_integrity.py) | Damaged/forged inputs, hash checks and fallback, with failure cases |
+| Scale and resources | [SCALE.md](docs/evidence/SCALE.md), [RESOURCES.md](docs/evidence/RESOURCES.md) | 12–96-bed table; 96 was the largest test, for 3 minutes |
+| Containers and platform | [CONTAINERS.md](docs/evidence/CONTAINERS.md), [raw captures](docs/evidence/raw/containers/), [PLATFORM.md](docs/evidence/PLATFORM.md) | s390x build, six services, health, app hardening and container ward runs |
+| FHIR sample | [Bundle JSON](docs/evidence/raw/fhir-sample-bundle.json), [INTEROP.md](docs/evidence/INTEROP.md) | Authenticated read-only R4 subset; synthetic fixture, no tested EHR connection |
+| Incident SHA-256 evidence | [Incident screen](docs/evidence/screens/09-replay-incident-timeline-sha256-evidence.png), [N agent timeline](docs/evidence/raw/wardrun-night/timeline_agentsN.txt) | Saved evidence view and A3 file sizes/digests; incident payload files are not bundled here |
+| CERT-In draft | [Draft screen](docs/evidence/screens/10-replay-certin-report-draft.png), [N agent timeline](docs/evidence/raw/wardrun-night/timeline_agentsN.txt) | A5 draft and clock, missing human fields; no automatic sending |
+| AI-chip second opinion | [Chip live proof](chip/results/live/), [batch benchmark](chip/results/batch_bench.json) | Shown-only NNPA scoring and CPU comparison; no demonstrated speed-up |
+
+### Map of the code
+
+Counts repeat the existing 17 Oct fresh-clone check below, not a new run or current suite totals. A dash means that check states no count.
+
+| Folder | What lives there | Tests / recorded passed count |
+|---|---|---|
+| [brain/](brain/) | Six checks, windows, model fallback and decision rules | [brain/tests/](brain/tests/): 253 + 50 skipped; 303 with packs |
+| [agents_v2/](agents_v2/) | A1–A8, action engine, Telegram and Granite writer | [agents_v2/tests/](agents_v2/tests/): 121 + 1 skipped |
+| [backend/](backend/) | API, WebSocket, PostgreSQL, login and FHIR | [backend/tests/](backend/tests/): 99 + 6 skipped |
+| [web/](web/) | React screens, themes and role navigation | [src/](web/src/) (colocated unit tests), [e2e/](web/e2e/): 39 unit tests in 4 files in that check |
+| [security_v2/](security_v2/) | Hub identities/ACLs, TLS, containment and network witness | [security_v2/tests/](security_v2/tests/): 21 |
+| [simulator/](simulator/) | Bed replay, ward script, drift injection and scale mode | [simulator/tests/](simulator/tests/): 114 |
+| [data/](data/) | Recording loaders, pack builder and verification | [data/tests/](data/tests/): 71, synthetic inputs |
+| [ml_v2/](ml_v2/) | M2 training, artifacts, evaluation and robustness | No tests folder; [evaluation scripts](ml_v2/m2gbt/) and [results](ml_v2/results/); — |
+| [chip/](chip/) | Shown-only CNN service, pinned model and NNPA benchmarks | [chip/tests/](chip/tests/); — |
+| [attacks/](attacks/) | Scripted replay, flatline, drift and flood senders | [attacks/tests/](attacks/tests/): 35 |
+| [common/](common/) | Shared message contract, validation, clocks and MQTT bus | [common/tests/](common/tests/): 243 + 1 skipped |
+| [tests_system/](tests_system/) | Ward/resource checks, analysis and reports | [tests_system/tests/](tests_system/tests/): 32 |
+| [deploy/](deploy/) | Server setup, systemd, Compose, Granite and chip install | No tests folder; [offline dry-run](deploy/README.md) and [evidence capture](deploy/containers/evidence.sh); — |
+| [docs/](docs/) | Specs, architecture, demo, submission and evidence | No tests folder; [evidence index](docs/evidence/INDEX.md); — |
+
 ## Check it yourself in 5 minutes
 Needs Python 3.12 and Node 22. No data download, no broker, no database. Tested from a fresh clone on a Mac (17 Oct 2026).
 
