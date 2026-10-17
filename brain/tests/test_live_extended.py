@@ -3,7 +3,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from sw_brain.extended import BodyMismatch, PressureDrift, NetworkAttack
+from sw_brain.extended import BodyMismatch, PressureDrift
+from sw_brain.detectors import NetworkAttack
 
 
 def waves(delay_ms=200, ecg_rate=75, ppg_rate=75, start=0, bed='B01'):

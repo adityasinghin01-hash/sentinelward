@@ -13,7 +13,12 @@ def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_t
     positive=lambda m: eligible(m) and values[m]>=.8
     trust=1-max([values[m] for m in ('M3','M4','M5') if eligible(m)] or [0.])
     emergency=alarm or patient_not_ok or confirmed_low_pressure or (eligible('M2') and results['M2'].get('extra',{}).get('positive',positive('M2')))
-    tampering=(positive('M4') and results['M4'].get('extra',{}).get('independent_evidence',False)) or (positive('M3') and positive('M5')) or (positive('M6') and positive('M5'))
+    # Only a verified content-preserving transport event gets this exception.
+    # M3 disagreement can predate a flood; it is not proof that dropped copies
+    # changed the waveform. Conflicts, stale replays and combined impersonation
+    # still reach M4's independent-evidence rule above the clinical branches.
+    copies_only=results['M4'].get('extra',{}).get('duplicate_only',False)
+    tampering=(positive('M4') and results['M4'].get('extra',{}).get('independent_evidence',False)) or (not copies_only and positive('M3') and positive('M5')) or (not copies_only and positive('M6') and positive('M5'))
     tamper_model='M4' if positive('M4') and results['M4'].get('extra',{}).get('independent_evidence',False) else ('M3' if positive('M3') else 'M6')
     tamper_confidence=(values[tamper_model] if tamper_model=='M4' else min(values[tamper_model],values['M5'])) if tampering else None
     physiology=all(clean(m) for m in ('M1','M2','M3')) and not offline
@@ -27,7 +32,7 @@ def decide(bed_id,window_start,now_ms,results,*,alarm=False,offline=False,last_t
     elif tampering: verdict='TAMPERING'; confidence=tamper_confidence; reasons=[results[tamper_model]['reason']]
     elif positive('M6'): verdict='DRIFTING'; confidence=values['M6']; reasons=[results['M6']['reason']]
     elif positive('M1') and not positive('M2') and (eligible('M2') or (not applicable('M2') and eligible('M3'))) and all(eligible(m) and values[m]<.5 for m in ('M4','M5')) and (not positive('M3') or results['M1'].get('extra',{}).get('channels',{}).get('ppg',{}).get('score',1)<.5): verdict='LOOSE_SENSOR'; confidence=values['M1']; reasons=[results['M1']['reason']]
-    elif positive('M5') and physiology: verdict='DEVICE_ATTACK'; confidence=values['M5']; reasons=[results['M5']['reason']]
+    elif positive('M5') and (physiology or (copies_only and not offline)): verdict='DEVICE_ATTACK'; confidence=values['M5']; reasons=[results['M5']['reason']]
     elif offline: verdict='UNSURE'; confidence=1.; reasons=['Monitor offline for at least 3 seconds; last values retained']
     elif not all_clean:
         # Inconclusive checks (a score) first, then checks still waiting for data.
