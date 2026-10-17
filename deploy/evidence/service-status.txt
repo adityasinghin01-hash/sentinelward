@@ -1,0 +1,54 @@
+● mosquitto.service - Mosquitto MQTT Broker
+     Loaded: loaded (/usr/lib/systemd/system/mosquitto.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 07:35:30 UTC; 13s ago
+       Docs: man:mosquitto.conf(5)
+             man:mosquitto(8)
+    Process: 279727 ExecStartPre=/bin/mkdir -m 740 -p /var/log/mosquitto (code=exited, status=0/SUCCESS)
+    Process: 279729 ExecStartPre=/bin/chown mosquitto:mosquitto /var/log/mosquitto (code=exited, status=0/SUCCESS)
+    Process: 279731 ExecStartPre=/bin/mkdir -m 740 -p /run/mosquitto (code=exited, status=0/SUCCESS)
+    Process: 279733 ExecStartPre=/bin/chown mosquitto:mosquitto /run/mosquitto (code=exited, status=0/SUCCESS)
+   Main PID: 279735 (mosquitto)
+      Tasks: 1 (limit: 9567)
+     Memory: 1.2M (peak: 2.2M)
+        CPU: 16ms
+     CGroup: /system.slice/mosquitto.service
+             └─279735 /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
+
+Oct 17 07:35:30 tessnovabuild systemd[1]: Starting mosquitto.service - Mosquitto MQTT Broker...
+Oct 17 07:35:30 tessnovabuild mosquitto[279735]: 1792222530: Loading config file /etc/mosquitto/conf.d/sentinelward.conf
+Oct 17 07:35:30 tessnovabuild systemd[1]: Started mosquitto.service - Mosquitto MQTT Broker.
+
+● postgresql.service - PostgreSQL RDBMS
+     Loaded: loaded (/usr/lib/systemd/system/postgresql.service; enabled; preset: enabled)
+     Active: active (exited) since Sat 2026-10-17 07:32:55 UTC; 2min 48s ago
+   Main PID: 277049 (code=exited, status=0/SUCCESS)
+        CPU: 510us
+
+Oct 17 07:32:55 tessnovabuild systemd[1]: Starting postgresql.service - PostgreSQL RDBMS...
+Oct 17 07:32:55 tessnovabuild systemd[1]: Finished postgresql.service - PostgreSQL RDBMS.
+
+● postgresql@16-main.service - PostgreSQL Cluster 16-main
+     Loaded: loaded (/usr/lib/systemd/system/postgresql@.service; enabled-runtime; preset: enabled)
+     Active: active (running) since Sat 2026-10-17 07:33:05 UTC; 2min 38s ago
+   Main PID: 278100 (postgres)
+      Tasks: 6 (limit: 9567)
+     Memory: 35.8M (peak: 38.8M)
+        CPU: 190ms
+     CGroup: /system.slice/system-postgresql.slice/postgresql@16-main.service
+             ├─278100 /usr/lib/postgresql/16/bin/postgres -D /var/lib/postgresql/16/main -c config_file=/etc/postgresql/16/main/postgresql.conf
+             ├─278101 "postgres: 16/main: checkpointer "
+             ├─278102 "postgres: 16/main: background writer "
+             ├─278104 "postgres: 16/main: walwriter "
+             ├─278105 "postgres: 16/main: autovacuum launcher "
+             └─278106 "postgres: 16/main: logical replication launcher "
+
+Oct 17 07:33:03 tessnovabuild systemd[1]: Starting postgresql@16-main.service - PostgreSQL Cluster 16-main...
+Oct 17 07:33:05 tessnovabuild systemd[1]: Started postgresql@16-main.service - PostgreSQL Cluster 16-main.
+
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      100        127.0.0.1:1883      0.0.0.0:*          
+LISTEN 0      200        127.0.0.1:5432      0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:22        0.0.0.0:*          
+LISTEN 0      4096      127.0.0.54:53        0.0.0.0:*          
+LISTEN 0      4096   127.0.0.53%lo:53        0.0.0.0:*          
+LISTEN 0      4096            [::]:22           [::]:*          

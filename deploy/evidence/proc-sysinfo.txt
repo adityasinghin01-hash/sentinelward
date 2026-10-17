@@ -1,0 +1,261 @@
+Manufacturer:         IBM             
+Type:                 9175
+LIC Identifier:       207327ff6a7208c8
+Model:                702              ME1             
+Sequence Code:        00000000000CDFD8
+Plant:                02  
+Model Capacity:       702              00000582
+Model Perm. Capacity: 702              00000582
+Model Temp. Capacity: 702              00000582
+Model Var. Capacity:  702              00000582
+Nominal Cap. Rating:  00000582
+Nominal Perm. Rating: 00000582
+Nominal Temp. Rating: 00000582
+Nominal Var. Rating:  00000582
+Capacity Adj. Ind.:   100
+Capacity Ch. Reason:  0
+Capacity Transient:   0
+Type 1 Percentage:    0
+Type 2 Percentage:    0
+Type 3 Percentage:    0
+Type 4 Percentage:    0
+Type 5 Percentage:    0
+
+CPUs Total:           208
+CPUs Configured:      2
+CPUs Standby:         0
+CPUs Reserved:        206
+CPUs G-MTID:          0
+CPUs S-MTID:          1
+Capability:           346
+Nominal Capability:   346
+Secondary Capability: 346
+Adjustment 02-way:    62593
+Adjustment 03-way:    61246
+Adjustment 04-way:    60305
+Adjustment 05-way:    59342
+Adjustment 06-way:    58435
+Adjustment 07-way:    57566
+Adjustment 08-way:    56727
+Adjustment 09-way:    55920
+Adjustment 10-way:    55135
+Adjustment 11-way:    54369
+Adjustment 12-way:    53620
+Adjustment 13-way:    52888
+Adjustment 14-way:    52172
+Adjustment 15-way:    51470
+Adjustment 16-way:    50782
+Adjustment 17-way:    50116
+Adjustment 18-way:    49521
+Adjustment 19-way:    48985
+Adjustment 20-way:    48500
+Adjustment 21-way:    48058
+Adjustment 22-way:    47654
+Adjustment 23-way:    47282
+Adjustment 24-way:    46939
+Adjustment 25-way:    46621
+Adjustment 26-way:    46325
+Adjustment 27-way:    46049
+Adjustment 28-way:    45790
+Adjustment 29-way:    45548
+Adjustment 30-way:    45319
+Adjustment 31-way:    45104
+Adjustment 32-way:    44900
+Adjustment 33-way:    44707
+Adjustment 34-way:    44523
+Adjustment 35-way:    44348
+Adjustment 36-way:    44182
+Adjustment 37-way:    44022
+Adjustment 38-way:    43870
+Adjustment 39-way:    43724
+Adjustment 40-way:    43586
+Adjustment 41-way:    43450
+Adjustment 42-way:    43315
+Adjustment 43-way:    43181
+Adjustment 44-way:    43047
+Adjustment 45-way:    42915
+Adjustment 46-way:    42783
+Adjustment 47-way:    42652
+Adjustment 48-way:    42522
+Adjustment 49-way:    42390
+Adjustment 50-way:    42258
+Adjustment 51-way:    42127
+Adjustment 52-way:    41997
+Adjustment 53-way:    41867
+Adjustment 54-way:    41739
+Adjustment 55-way:    41611
+Adjustment 56-way:    41483
+Adjustment 57-way:    41357
+Adjustment 58-way:    41231
+Adjustment 59-way:    41105
+Adjustment 60-way:    40981
+Adjustment 61-way:    40857
+Adjustment 62-way:    40733
+Adjustment 63-way:    40610
+Adjustment 64-way:    40488
+Adjustment 65-way:    40365
+Adjustment 66-way:    40243
+Adjustment 67-way:    40121
+Adjustment 68-way:    40000
+Adjustment 69-way:    39879
+Adjustment 70-way:    39759
+Adjustment 71-way:    39640
+Adjustment 72-way:    39521
+Adjustment 73-way:    39403
+Adjustment 74-way:    39285
+Adjustment 75-way:    39167
+Adjustment 76-way:    39051
+Adjustment 77-way:    38935
+Adjustment 78-way:    38819
+Adjustment 79-way:    38704
+Adjustment 80-way:    38589
+Adjustment 81-way:    38475
+Adjustment 82-way:    38361
+Adjustment 83-way:    38250
+Adjustment 84-way:    38142
+Adjustment 85-way:    38035
+Adjustment 86-way:    37931
+Adjustment 87-way:    37829
+Adjustment 88-way:    37729
+Adjustment 89-way:    37631
+Adjustment 90-way:    37535
+Adjustment 91-way:    37441
+Adjustment 92-way:    37348
+Adjustment 93-way:    37257
+Adjustment 94-way:    37168
+Adjustment 95-way:    37080
+Adjustment 96-way:    36994
+Adjustment 97-way:    36909
+Adjustment 98-way:    36826
+Adjustment 99-way:    36744
+Adjustment 100-way:    36664
+Adjustment 101-way:    36585
+Adjustment 102-way:    36508
+Adjustment 103-way:    36431
+Adjustment 104-way:    36356
+Adjustment 105-way:    36283
+Adjustment 106-way:    36210
+Adjustment 107-way:    36138
+Adjustment 108-way:    36068
+Adjustment 109-way:    35999
+Adjustment 110-way:    35931
+Adjustment 111-way:    35863
+Adjustment 112-way:    35797
+Adjustment 113-way:    35732
+Adjustment 114-way:    35668
+Adjustment 115-way:    35604
+Adjustment 116-way:    35542
+Adjustment 117-way:    35480
+Adjustment 118-way:    35420
+Adjustment 119-way:    35360
+Adjustment 120-way:    35301
+Adjustment 121-way:    35242
+Adjustment 122-way:    35185
+Adjustment 123-way:    35128
+Adjustment 124-way:    35072
+Adjustment 125-way:    35017
+Adjustment 126-way:    34962
+Adjustment 127-way:    34908
+Adjustment 128-way:    34854
+Adjustment 129-way:    34801
+Adjustment 130-way:    34748
+Adjustment 131-way:    34696
+Adjustment 132-way:    34644
+Adjustment 133-way:    34593
+Adjustment 134-way:    34542
+Adjustment 135-way:    34492
+Adjustment 136-way:    34442
+Adjustment 137-way:    34393
+Adjustment 138-way:    34344
+Adjustment 139-way:    34295
+Adjustment 140-way:    34247
+Adjustment 141-way:    34200
+Adjustment 142-way:    34152
+Adjustment 143-way:    34106
+Adjustment 144-way:    34059
+Adjustment 145-way:    34013
+Adjustment 146-way:    33967
+Adjustment 147-way:    33922
+Adjustment 148-way:    33877
+Adjustment 149-way:    33832
+Adjustment 150-way:    33788
+Adjustment 151-way:    33744
+Adjustment 152-way:    33700
+Adjustment 153-way:    33657
+Adjustment 154-way:    33614
+Adjustment 155-way:    33571
+Adjustment 156-way:    33529
+Adjustment 157-way:    33486
+Adjustment 158-way:    33445
+Adjustment 159-way:    33403
+Adjustment 160-way:    33362
+Adjustment 161-way:    33321
+Adjustment 162-way:    33280
+Adjustment 163-way:    33240
+Adjustment 164-way:    33200
+Adjustment 165-way:    33160
+Adjustment 166-way:    33120
+Adjustment 167-way:    33081
+Adjustment 168-way:    33042
+Adjustment 169-way:    33003
+Adjustment 170-way:    32964
+Adjustment 171-way:    32925
+Adjustment 172-way:    32887
+Adjustment 173-way:    32849
+Adjustment 174-way:    32810
+Adjustment 175-way:    32772
+Adjustment 176-way:    32734
+Adjustment 177-way:    32697
+Adjustment 178-way:    32659
+Adjustment 179-way:    32622
+Adjustment 180-way:    32585
+Adjustment 181-way:    32547
+Adjustment 182-way:    32510
+Adjustment 183-way:    32474
+Adjustment 184-way:    32437
+Adjustment 185-way:    32400
+Adjustment 186-way:    32364
+Adjustment 187-way:    32328
+Adjustment 188-way:    32291
+Adjustment 189-way:    32255
+Adjustment 190-way:    32219
+Adjustment 191-way:    32184
+Adjustment 192-way:    32148
+Adjustment 193-way:    32112
+Adjustment 194-way:    32077
+Adjustment 195-way:    32042
+Adjustment 196-way:    32006
+Adjustment 197-way:    31971
+Adjustment 198-way:    31936
+Adjustment 199-way:    31901
+Adjustment 200-way:    31867
+Adjustment 201-way:    31832
+Adjustment 202-way:    31797
+Adjustment 203-way:    31763
+Adjustment 204-way:    31729
+Adjustment 205-way:    31695
+Adjustment 206-way:    31660
+Adjustment 207-way:    31626
+Adjustment 208-way:    31593
+
+LPAR Number:          7
+LPAR Characteristics: Shared 
+LPAR Name:            IBM20   
+LPAR Adjustment:      97
+LPAR CPUs Total:      40
+LPAR CPUs Configured: 20
+LPAR CPUs Standby:    20
+LPAR CPUs Reserved:   0
+LPAR CPUs Dedicated:  0
+LPAR CPUs Shared:     20
+LPAR CPUs G-MTID:     0
+LPAR CPUs S-MTID:     1
+LPAR CPUs PS-MTID:    0
+
+VM00 Name:            L5014B99
+VM00 Control Program: z/VM    7.3.0   
+VM00 Adjustment:      150
+VM00 CPUs Total:      3
+VM00 CPUs Configured: 3
+VM00 CPUs Standby:    0
+VM00 CPUs Reserved:   0
