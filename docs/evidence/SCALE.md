@@ -8,6 +8,7 @@ Source: raw/evidence/scale-<N>-{ticks,stats,sim}.txt (tick_stats from the brain 
 | 24 | 37 | 24 | 160.5 | 229.3 / 229.3 | yes (4.6% of 5 s) | 0 / 0 | 10.23 | 161MiB |
 | 48 | 38 | 48 | 311.1 | 376.5 / 376.5 | yes (7.5% of 5 s) | 0 / 0 | 26.96 | 271.6MiB |
 | 96 | 37 | 96 | 640.4 | 1121.7 / 1121.7 | yes (22.4% of 5 s) | 0 / 0 | 8.11 | 490.3MiB |
+| 96, AI-chip CNN only (TEST guest, 2 vCPU, all 96 windows in one batch per tick, 2 threads; `chip/results/batch_bench.json`) | 12 | 96 CNN scores (shown only) | nnpa:0 89.1 · cpu 89.6 | nnpa:0 124.6 · cpu 151.0 (max of 12) | yes (≤3.1% of 5 s) | n/a (bench, no hub) | nnpa:0 1.29 · cpu 1.21 (% of guest) | not measured |
 
 Notes (honest limits):
 - The brain container is limited to 1.0 CPU (deploy/containers/compose.yaml); the LinuxONE guest has 3 vCPUs. At 96 beds the slowest tick took 1.12 s of its 5 s budget, so one brain keeps up with 96 beds with about 4x headroom; 96 was the largest bed count tested (B01-B96), the breaking point was not reached.

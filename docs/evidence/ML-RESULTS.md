@@ -46,3 +46,34 @@ The 1D-CNN now runs live on the z17's on-chip AI accelerator (NNPA, `torch_nnpa 
 | nnpa:0, live over TLS (3 alarms) | 3 | 8.13 | 29.96 (max) |
 
 Honest: at batch 1 this small CNN is not faster on the NNPA than on one CPU core (about 0.25 ms slower); both are about 0.05% of the 5 s tick. Where it runs: the TEST LinuxONE z17 guest, inside IBM's lab container (`notebook`, torch 2.11 + torch_nnpa 1.5.0) as `sw-chip.service` (Restart=always), connected to the hub on the BUILD guest over TLS 8883 as hub user `chip`. One message per alarm episode. Sources: `chip/README.md`, `chip/results/` (bench, parity, `live/chip-live-proof.txt`, `live/acceptance.md`), `ml_v2/results/cnn_result.json`.
+
+### Batched, at ward scale (does the NNPA help with many beds?)
+Measured 18 Oct 2026 on the TEST z17 guest (2 vCPUs) inside the `notebook` container (torch 2.11, torch_nnpa 1.5.0), with `sw-chip.service` left running, by `python -m sw_chip.batch_bench` (bench only; the live service still scores one alarm at a time). Same pinned CNN; each call = input scaling (numpy, on the CPU for both) + host→device + forward + sigmoid + device→host. Real held-out windows (670), 30 warm-up + 200 timed calls per row. The model's parameters and conv outputs are on `nnpa:0` (checked); we did not profile which individual ops the NNPA runs.
+
+| Batch | Threads | cpu median / p95 ms | nnpa:0 median / p95 ms | cpu windows/s | nnpa:0 windows/s | nnpa ÷ cpu (median) |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 1.71 / 2.04 | 1.98 / 2.43 | 586 | 506 | 1.16 |
+| 4 | 1 | 4.81 / 6.02 | 5.40 / 6.23 | 832 | 741 | 1.12 |
+| 12 | 1 | 12.9 / 13.9 | 14.5 / 17.1 | 930 | 829 | 1.12 |
+| 32 | 1 | 33.5 / 36.1 | 37.4 / 47.4 | 955 | 855 | 1.12 |
+| 96 | 1 | 99.4 / 108.5 | 118.3 / 135.8 | 966 | 812 | 1.19 |
+| 256 | 1 | 287.3 / 297.4 | 335.9 / 380.1 | 891 | 762 | 1.17 |
+| 1 | 2 | 1.58 / 2.36 | 1.89 / 2.91 | 634 | 530 | 1.20 |
+| 4 | 2 | 3.80 / 6.04 | 4.34 / 6.37 | 1,052 | 922 | 1.14 |
+| 12 | 2 | 9.18 / 11.5 | 10.7 / 18.7 | 1,307 | 1,117 | 1.17 |
+| 32 | 2 | 22.9 / 27.0 | 25.6 / 36.4 | 1,398 | 1,250 | 1.12 |
+| 96 | 2 | 70.5 / 93.3 | 74.0 / 97.2 | 1,362 | 1,297 | 1.05 |
+| 256 | 2 | 231.2 / 285.3 | 245.8 / 302.7 | 1,107 | 1,042 | 1.06 |
+
+Whole-ward pattern: 96 beds' current 10 s windows (cut from the 12 real ward packs, 8 offsets each, moving 5 s per tick) scored in one batch every 5 s, 12 ticks (60 s) per row:
+
+| 96 beds, one batch / 5 s | median ms | max ms (12 ticks) | CPU s per tick (median) | process CPU, % of the 2-vCPU guest |
+|---|---|---|---|---|
+| cpu, 1 thread | 102.7 | 108.4 | 0.103 | 1.03 |
+| nnpa:0, 1 thread | 116.0 | 124.4 | 0.116 | 1.17 |
+| cpu, 2 threads | 89.6 | 151.0 | 0.111 | 1.21 |
+| nnpa:0, 2 threads | 89.1 | 124.6 | 0.127 | 1.29 |
+
+Parity on all 670 held-out windows at every batch size: max |nnpa − cpu| 0.0018 (mean 0.00023), the same as at batch 1.
+
+Honest: on this guest the NNPA is not faster than the CPU at any batch size tested (1 to 256), with 1 or 2 threads: its median is 5–20% slower, and there is no crossover batch size in this range. At 96 beds in one batch with 2 threads the two medians are within 0.5 ms (89.1 vs 89.6 ms), a tie. The NNPA run also does not leave more CPU for the brain: the calling process is busy for the whole call (0.127 vs 0.111 CPU s per tick). Either way, scoring every bed every 5 s costs about 1.2% of the 2-vCPU guest and at most 3.1% of the tick. For this small CNN the on-chip AI is a working, numerically matched second device, not a speed-up. Source: `chip/results/batch_bench.json` (+ `batch_bench.log`), `chip/sw_chip/batch_bench.py`.

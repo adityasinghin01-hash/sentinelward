@@ -1,0 +1,48 @@
+ 18:46:31 up 7 days, 11:08,  2 users,  load average: 0.10, 0.03, 0.01
+# nnpa:0 threads=1
+{"batch": 1, "median_ms": 1.976, "p95_ms": 2.432, "windows_per_s": 506.0}
+{"batch": 4, "median_ms": 5.398, "p95_ms": 6.226, "windows_per_s": 741.1}
+{"batch": 12, "median_ms": 14.468, "p95_ms": 17.066, "windows_per_s": 829.4}
+{"batch": 32, "median_ms": 37.444, "p95_ms": 47.355, "windows_per_s": 854.6}
+{"batch": 96, "median_ms": 118.255, "p95_ms": 135.826, "windows_per_s": 811.8}
+{"batch": 256, "median_ms": 335.884, "p95_ms": 380.141, "windows_per_s": 762.2}
+{"ward_threads": 1, "latency_ms": {"median": 115.96104002092034, "p95": 124.38128795474768, "max": 124.38128795474768}, "process_cpu_pct_of_guest": 1.1725893515966315}
+# nnpa:0 threads=2
+{"batch": 1, "median_ms": 1.888, "p95_ms": 2.906, "windows_per_s": 529.6}
+{"batch": 4, "median_ms": 4.338, "p95_ms": 6.369, "windows_per_s": 922.0}
+{"batch": 12, "median_ms": 10.739, "p95_ms": 18.674, "windows_per_s": 1117.4}
+{"batch": 32, "median_ms": 25.607, "p95_ms": 36.448, "windows_per_s": 1249.7}
+{"batch": 96, "median_ms": 74.035, "p95_ms": 97.233, "windows_per_s": 1296.7}
+{"batch": 256, "median_ms": 245.769, "p95_ms": 302.692, "windows_per_s": 1041.6}
+{"ward_threads": 2, "latency_ms": {"median": 89.0596394892782, "p95": 124.59186592604965, "max": 124.59186592604965}, "process_cpu_pct_of_guest": 1.2915749748305736}
+# cpu threads=1
+{"batch": 1, "median_ms": 1.707, "p95_ms": 2.043, "windows_per_s": 586.0}
+{"batch": 4, "median_ms": 4.807, "p95_ms": 6.02, "windows_per_s": 832.1}
+{"batch": 12, "median_ms": 12.907, "p95_ms": 13.875, "windows_per_s": 929.7}
+{"batch": 32, "median_ms": 33.521, "p95_ms": 36.119, "windows_per_s": 954.6}
+{"batch": 96, "median_ms": 99.38, "p95_ms": 108.541, "windows_per_s": 966.0}
+{"batch": 256, "median_ms": 287.315, "p95_ms": 297.383, "windows_per_s": 891.0}
+{"ward_threads": 1, "latency_ms": {"median": 102.66001953277737, "p95": 108.42622304335237, "max": 108.42622304335237}, "process_cpu_pct_of_guest": 1.0322274599743027}
+# cpu threads=2
+{"batch": 1, "median_ms": 1.577, "p95_ms": 2.361, "windows_per_s": 634.2}
+{"batch": 4, "median_ms": 3.801, "p95_ms": 6.04, "windows_per_s": 1052.5}
+{"batch": 12, "median_ms": 9.182, "p95_ms": 11.475, "windows_per_s": 1306.9}
+{"batch": 32, "median_ms": 22.884, "p95_ms": 26.986, "windows_per_s": 1398.4}
+{"batch": 96, "median_ms": 70.479, "p95_ms": 93.322, "windows_per_s": 1362.1}
+{"batch": 256, "median_ms": 231.237, "p95_ms": 285.285, "windows_per_s": 1107.1}
+{"ward_threads": 2, "latency_ms": {"median": 89.63740203762427, "p95": 150.9681020397693, "max": 150.9681020397693}, "process_cpu_pct_of_guest": 1.2099091256144068}
+{"threads": 1, "batch": 1, "cpu_median_ms": 1.707, "cpu_p95_ms": 2.043, "nnpa_median_ms": 1.976, "nnpa_p95_ms": 2.432, "cpu_windows_per_s": 585.954, "nnpa_windows_per_s": 506.008, "nnpa_over_cpu_median": 1.158, "cpu_device_ms": 0.864, "nnpa_device_ms": 1.127, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 1, "batch": 4, "cpu_median_ms": 4.807, "cpu_p95_ms": 6.02, "nnpa_median_ms": 5.398, "nnpa_p95_ms": 6.226, "cpu_windows_per_s": 832.06, "nnpa_windows_per_s": 741.076, "nnpa_over_cpu_median": 1.123, "cpu_device_ms": 2.837, "nnpa_device_ms": 3.431, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 1, "batch": 12, "cpu_median_ms": 12.907, "cpu_p95_ms": 13.875, "nnpa_median_ms": 14.468, "nnpa_p95_ms": 17.066, "cpu_windows_per_s": 929.695, "nnpa_windows_per_s": 829.414, "nnpa_over_cpu_median": 1.121, "cpu_device_ms": 8.183, "nnpa_device_ms": 9.708, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 1, "batch": 32, "cpu_median_ms": 33.521, "cpu_p95_ms": 36.119, "nnpa_median_ms": 37.444, "nnpa_p95_ms": 47.355, "cpu_windows_per_s": 954.628, "nnpa_windows_per_s": 854.604, "nnpa_over_cpu_median": 1.117, "cpu_device_ms": 21.621, "nnpa_device_ms": 25.514, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 1, "batch": 96, "cpu_median_ms": 99.38, "cpu_p95_ms": 108.541, "nnpa_median_ms": 118.255, "nnpa_p95_ms": 135.826, "cpu_windows_per_s": 965.986, "nnpa_windows_per_s": 811.805, "nnpa_over_cpu_median": 1.19, "cpu_device_ms": 65.214, "nnpa_device_ms": 81.768, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 1, "batch": 256, "cpu_median_ms": 287.315, "cpu_p95_ms": 297.383, "nnpa_median_ms": 335.884, "nnpa_p95_ms": 380.141, "cpu_windows_per_s": 891.008, "nnpa_windows_per_s": 762.168, "nnpa_over_cpu_median": 1.169, "cpu_device_ms": 197.089, "nnpa_device_ms": 242.191, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 1, "cpu_median_ms": 1.577, "cpu_p95_ms": 2.361, "nnpa_median_ms": 1.888, "nnpa_p95_ms": 2.906, "cpu_windows_per_s": 634.185, "nnpa_windows_per_s": 529.635, "nnpa_over_cpu_median": 1.197, "cpu_device_ms": 0.736, "nnpa_device_ms": 1.02, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 4, "cpu_median_ms": 3.801, "cpu_p95_ms": 6.04, "nnpa_median_ms": 4.338, "nnpa_p95_ms": 6.369, "cpu_windows_per_s": 1052.463, "nnpa_windows_per_s": 922.032, "nnpa_over_cpu_median": 1.141, "cpu_device_ms": 1.814, "nnpa_device_ms": 2.304, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 12, "cpu_median_ms": 9.182, "cpu_p95_ms": 11.475, "nnpa_median_ms": 10.739, "nnpa_p95_ms": 18.674, "cpu_windows_per_s": 1306.92, "nnpa_windows_per_s": 1117.394, "nnpa_over_cpu_median": 1.17, "cpu_device_ms": 4.506, "nnpa_device_ms": 5.937, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 32, "cpu_median_ms": 22.884, "cpu_p95_ms": 26.986, "nnpa_median_ms": 25.607, "nnpa_p95_ms": 36.448, "cpu_windows_per_s": 1398.369, "nnpa_windows_per_s": 1249.651, "nnpa_over_cpu_median": 1.119, "cpu_device_ms": 11.132, "nnpa_device_ms": 13.723, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 96, "cpu_median_ms": 70.479, "cpu_p95_ms": 93.322, "nnpa_median_ms": 74.035, "nnpa_p95_ms": 97.233, "cpu_windows_per_s": 1362.1, "nnpa_windows_per_s": 1296.684, "nnpa_over_cpu_median": 1.05, "cpu_device_ms": 36.184, "nnpa_device_ms": 40.256, "max_abs_nnpa_minus_cpu": 0.002}
+{"threads": 2, "batch": 256, "cpu_median_ms": 231.237, "cpu_p95_ms": 285.285, "nnpa_median_ms": 245.769, "nnpa_p95_ms": 302.692, "cpu_windows_per_s": 1107.091, "nnpa_windows_per_s": 1041.63, "nnpa_over_cpu_median": 1.063, "cpu_device_ms": 136.769, "nnpa_device_ms": 152.96, "max_abs_nnpa_minus_cpu": 0.002}
+ 18:57:14 up 7 days, 11:19,  2 users,  load average: 0.49, 0.73, 0.44
+active
+DONE

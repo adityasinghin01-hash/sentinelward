@@ -48,6 +48,10 @@ agree 670/670.
 - TEST LinuxONE: `deploy/chip/install_test.sh` installs `sw-chip.service`. The unit runs
   `docker exec` into IBM's `notebook` container, with `Restart=always`, and is enabled at boot.
 - Bench: `python -m sw_chip.bench <packs> simulator/ward_script.yaml out.json [--device cpu] --brain`
+- Batched bench (optional, bench only; the live service is unchanged):
+  `python -m sw_chip.batch_bench run --device nnpa|cpu --windows W.npz --mask M.npy --packs P --out X.json`,
+  then `python -m sw_chip.batch_bench merge cpu.json nnpa.json results/batch_bench.json`.
+  Result (18 Oct, TEST): NNPA not faster at any batch size 1–256; see `docs/evidence/ML-RESULTS.md`.
 
 Results: `results/` (bench, parity, MQTT end-to-end on TEST).
 
