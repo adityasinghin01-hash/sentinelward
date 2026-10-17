@@ -279,3 +279,49 @@ def test_m3_timing_one_beat_apart_is_the_same_timing():
     later = model(waves(delay_ms=648, start=40000, ecg_rate=100, ppg_rate=100), state(), 50000)
     later = model(waves(delay_ms=648, start=50000, ecg_rate=100, ppg_rate=100), state(), 60000)
     assert later['score'] < .5
+
+
+def test_m3_new_bed_requires_distinct_windows_for_rate_mismatch():
+    model = BodyMismatch()
+    first = model(waves(ppg_rate=110), state(), 10000)
+    assert first['score'] < .8
+    for _ in range(4):
+        repeated = model(waves(ppg_rate=110), state(), 10000)
+        assert repeated['score'] < .8
+    assert model(waves(ppg_rate=110, start=5000), state(), 15000)['score'] >= .8
+
+
+def test_m3_real_half_rate_pulse_is_not_automatically_an_alias():
+    model = BodyMismatch()
+    bed = state()
+    bed.last_message = {'hr':100}
+    for start in (0,5000,10000):
+        observation = model(waves(ecg_rate=100,ppg_rate=50,start=start),bed,start+10000)
+    assert observation['score'] >= .8
+
+
+def test_m3_rate_mismatch_persistence_expires_across_a_gap():
+    model = BodyMismatch()
+    for start in (0,5000):
+        model(waves(ppg_rate=110,start=start),state(),start+10000)
+    assert model(waves(ppg_rate=110,start=60000),state(),70000)['score'] < .8
+
+
+@pytest.mark.parametrize('before,after,delay', [(75,120,300),(60,100,350)])
+def test_m3_changing_rr_preserves_the_same_physical_arrival(before, after, delay):
+    model = BodyMismatch()
+    for start in range(0,40000,10000):
+        model(waves(ecg_rate=before,ppg_rate=before,delay_ms=delay,start=start),state(),start+10000)
+    for start in range(40000,140000,10000):
+        observation = model(waves(ecg_rate=after,ppg_rate=after,delay_ms=delay,start=start),state(),start+10000)
+        assert observation['score'] < .5
+
+
+@pytest.mark.parametrize('before,after', [(60,75),(75,100)])
+def test_m3_real_arrival_shift_is_not_hidden_by_changing_rr(before, after):
+    model = BodyMismatch()
+    for start in range(0,40000,10000):
+        model(waves(ecg_rate=before,ppg_rate=before,delay_ms=350,start=start),state(),start+10000)
+    for start in (40000,50000,60000):
+        observation = model(waves(ecg_rate=after,ppg_rate=after,delay_ms=150,start=start),state(),start+10000)
+    assert observation['score'] >= .8
