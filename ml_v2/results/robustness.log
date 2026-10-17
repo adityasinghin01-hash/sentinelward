@@ -1,0 +1,33 @@
+clean                            cinc sc 0.862 tpr 0.973 tnr 0.851 auc 0.968 flipT 0  vtac sc 0.832 tpr 0.956 tnr 0.841 auc 0.964 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+noise_snr30                      cinc sc 0.891 tpr 0.987 tnr 0.860 auc 0.969 flipT 0  vtac sc 0.838 tpr 0.956 tnr 0.849 auc 0.959 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+noise_snr20                      cinc sc 0.768 tpr 0.905 tnr 0.868 auc 0.966 flipT 5  vtac sc 0.786 tpr 0.898 tnr 0.870 auc 0.952 flipT 9  {'trees_1lead': 2, 'trees_2lead': 668}
+noise_snr10                      cinc sc 0.639 tpr 0.784 tnr 0.903 auc 0.954 flipT 14  vtac sc 0.701 tpr 0.781 tnr 0.913 auc 0.942 flipT 25  {'trees_1lead': 2, 'trees_2lead': 668}
+wander_0.25                      cinc sc 0.797 tpr 0.919 tnr 0.886 auc 0.968 flipT 5  vtac sc 0.754 tpr 0.876 tnr 0.855 auc 0.948 flipT 11  {'trees_1lead': 2, 'trees_2lead': 668}
+wander_0.5                       cinc sc 0.773 tpr 0.905 tnr 0.877 auc 0.965 flipT 6  vtac sc 0.779 tpr 0.890 tnr 0.870 auc 0.947 flipT 10  {'trees_1lead': 2, 'trees_2lead': 668}
+wander_1                         cinc sc 0.802 tpr 0.919 tnr 0.895 auc 0.963 flipT 5  vtac sc 0.737 tpr 0.832 tnr 0.896 auc 0.940 flipT 18  {'trees_1lead': 2, 'trees_2lead': 668}
+powerline_0.1                    cinc sc 0.872 tpr 0.973 tnr 0.868 auc 0.966 flipT 1  vtac sc 0.809 tpr 0.934 tnr 0.844 auc 0.961 flipT 3  {'trees_1lead': 2, 'trees_2lead': 668}
+powerline_0.25                   cinc sc 0.878 tpr 0.973 tnr 0.877 auc 0.969 flipT 1  vtac sc 0.819 tpr 0.934 tnr 0.858 auc 0.956 flipT 3  {'trees_1lead': 2, 'trees_2lead': 668}
+powerline_0.5                    cinc sc 0.833 tpr 0.946 tnr 0.877 auc 0.970 flipT 3  vtac sc 0.792 tpr 0.898 tnr 0.878 auc 0.953 flipT 9  {'trees_1lead': 2, 'trees_2lead': 668}
+gain_0.25                        cinc sc 0.837 tpr 0.973 tnr 0.807 auc 0.971 flipT 1  vtac sc 0.803 tpr 0.934 tnr 0.835 auc 0.955 flipT 4  {'trees_1lead': 2, 'trees_2lead': 668}
+gain_0.5                         cinc sc 0.865 tpr 0.987 tnr 0.816 auc 0.972 flipT 0  vtac sc 0.813 tpr 0.942 tnr 0.838 auc 0.961 flipT 2  {'trees_1lead': 2, 'trees_2lead': 668}
+gain_2                           cinc sc 0.855 tpr 0.960 tnr 0.877 auc 0.968 flipT 1  vtac sc 0.825 tpr 0.942 tnr 0.855 auc 0.957 flipT 2  {'trees_1lead': 2, 'trees_2lead': 668}
+ecg2_drop_30                     cinc sc 0.759 tpr 0.919 tnr 0.816 auc 0.959 flipT 4  vtac sc 0.790 tpr 0.942 tnr 0.803 auc 0.946 flipT 5  {'trees_1lead': 2, 'trees_2lead': 668}
+ecg2_drop_60                     cinc sc 0.784 tpr 0.932 tnr 0.825 auc 0.965 flipT 3  vtac sc 0.759 tpr 0.971 tnr 0.710 auc 0.942 flipT 3  {'trees_1lead': 670}
+ecg2_drop_100                    cinc sc 0.784 tpr 0.932 tnr 0.825 auc 0.965 flipT 3  vtac sc 0.759 tpr 0.971 tnr 0.710 auc 0.942 flipT 3  {'trees_1lead': 670}
+ppg_drop_30                      cinc sc 0.820 tpr 0.960 tnr 0.816 auc 0.966 flipT 1  vtac sc 0.826 tpr 0.949 tnr 0.844 auc 0.958 flipT 1  {'trees_1lead': 2, 'trees_2lead': 668}
+ppg_drop_60                      cinc sc 0.794 tpr 0.946 tnr 0.807 auc 0.955 flipT 2  vtac sc 0.744 tpr 0.876 tnr 0.838 auc 0.936 flipT 11  {'trees_1lead': 2, 'trees_2lead': 668}
+ppg_drop_100                     cinc sc 0.816 tpr 0.973 tnr 0.772 auc 0.959 flipT 0  vtac sc 0.783 tpr 0.964 tnr 0.756 auc 0.955 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+abp_drop_30                      cinc sc 0.850 tpr 0.960 tnr 0.868 auc 0.960 flipT 1  vtac sc 0.829 tpr 0.964 tnr 0.823 auc 0.961 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+abp_drop_60                      cinc sc 0.809 tpr 0.946 tnr 0.833 auc 0.958 flipT 2  vtac sc 0.808 tpr 0.949 tnr 0.817 auc 0.950 flipT 1  {'trees_1lead': 2, 'trees_2lead': 668}
+abp_drop_100                     cinc sc 0.872 tpr 0.973 tnr 0.868 auc 0.966 flipT 0  vtac sc 0.812 tpr 0.949 tnr 0.823 auc 0.955 flipT 1  {'trees_1lead': 2, 'trees_2lead': 668}
+shift_0.5s                       cinc sc 0.885 tpr 0.987 tnr 0.851 auc 0.964 flipT 0  vtac sc 0.841 tpr 0.964 tnr 0.841 auc 0.965 flipT 1  {'none': 1, 'trees_1lead': 2, 'trees_2lead': 667}
+shift_1s                         cinc sc 0.857 tpr 0.973 tnr 0.842 auc 0.964 flipT 1  vtac sc 0.834 tpr 0.956 tnr 0.844 auc 0.963 flipT 4  {'none': 1, 'trees_1lead': 2, 'trees_2lead': 667}
+shift_2s                         cinc sc 0.693 tpr 0.865 tnr 0.825 auc 0.939 flipT 9  vtac sc 0.773 tpr 0.898 tnr 0.849 auc 0.952 flipT 11  {'none': 1, 'trees_1lead': 2, 'trees_2lead': 667}
+flatline_1s                      cinc sc 0.708 tpr 0.987 tnr 0.553 auc 0.930 flipT 0  vtac sc 0.614 tpr 0.949 tnr 0.530 auc 0.910 flipT 5  {'trees_1lead': 2, 'trees_2lead': 668}
+flatline_2s                      cinc sc 0.625 tpr 0.987 tnr 0.412 auc 0.914 flipT 1  vtac sc 0.567 tpr 0.985 tnr 0.414 auc 0.894 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+flatline_4s                      cinc sc 0.543 tpr 1.000 tnr 0.246 auc 0.856 flipT 0  vtac sc 0.463 tpr 0.993 tnr 0.258 auc 0.816 flipT 0  {'none': 1, 'trees_1lead': 2, 'trees_2lead': 667}
+forge_pulse_other_patient        cinc sc 0.625 tpr 0.797 tnr 0.842 auc 0.900 flipT 13  vtac sc 0.612 tpr 0.723 tnr 0.838 auc 0.865 flipT 32  {'trees_1lead': 2, 'trees_2lead': 668}
+forge_pulse_from_false_alarm     cinc sc 0.575 tpr 0.730 tnr 0.877 auc 0.904 flipT 18  vtac sc 0.528 tpr 0.591 tnr 0.846 auc 0.826 flipT 50  {'trees_1lead': 2, 'trees_2lead': 668}
+forge_pulse_shift_2s             cinc sc 0.852 tpr 0.973 tnr 0.833 auc 0.967 flipT 0  vtac sc 0.826 tpr 0.956 tnr 0.832 auc 0.963 flipT 0  {'trees_1lead': 2, 'trees_2lead': 668}
+forge_pulse_shift_5s             cinc sc 0.857 tpr 0.973 tnr 0.842 auc 0.969 flipT 0  vtac sc 0.812 tpr 0.949 tnr 0.823 auc 0.959 flipT 1  {'trees_1lead': 2, 'trees_2lead': 668}
+EXIT 0
