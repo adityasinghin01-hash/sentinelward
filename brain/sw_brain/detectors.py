@@ -69,7 +69,11 @@ class QualityDetector:
         return result(value,reason,channel=bad if value else None,channels=checks,path='live_signal_quality')
 
 class EmergencyDetector:
-    def __init__(self,research=None): self.research=research
+    def __init__(self,research=None,gbt=None):
+        from .m2gbt import GbtM2
+        self.research=research; self.gbt=GbtM2() if gbt is None else gbt
+    def reset(self):
+        if self.gbt: self.gbt.reset()
     def evaluate(self,window,state,now_ms):
         code=state.last_alarm_code if state.alarm_until_ms>0 and state.alarm_until_ms>=now_ms else None
         alarms=(window or {}).get('monitor_alarms',[])
@@ -77,14 +81,28 @@ class EmergencyDetector:
             code=alarms[-1]['code']
         if code is None:
             return result(None,'No monitor alarm in or just before this window',not_applicable=True)
-        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable')
+        # Primary: trees on the exact 10 s pre-alarm window they were trained on. Explains only.
+        gbt={'status':'unavailable','extra':{'unavailable_reason':'no_full_prealarm_window'}}
+        prealarm=getattr(state,'prealarm_window',None)
+        if prealarm is not None and self.gbt:
+            gbt=self.gbt.evaluate(prealarm,code)
+            if gbt.get('status')=='active':
+                positive=gbt['positive']; p=gbt['score']; x=gbt['extra']
+                evidence=f"{p:.0%} likely real {code} (threshold {gbt['threshold']:.2f})"
+                if x.get('ecg_hr_bpm') is not None: evidence+=f"; ECG {x['ecg_hr_bpm']:.0f} bpm"
+                if x.get('pulse_hr_bpm') is not None: evidence+=f", pulse {x['pulse_hr_bpm']:.0f} bpm"
+                if confirmed_low_pressure(state,now_ms):
+                    positive=True; evidence='Low arterial pressure confirmed by cuff; '+evidence
+                from .m2gbt import MODEL_VERSION
+                return result(p,evidence,path='gbt_prealarm',model_version=MODEL_VERSION,alarm_code=code,positive=positive,threshold=gbt['threshold'],features=x,alarm_preserved=True)
+        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable',gbt=gbt)
         metrics=pulse_metrics(window)
         research={'status':'unavailable','extra':{'unavailable_reason':'not_a_full_prealarm_VTACH_window'}}
         if code=='VTACH' and state.prealarm_window is not None and self.research:
             research=self.research.m2(state.prealarm_window)
             if research.get('status')=='active':
                 return result(research['score'],'Verified VTACH research model evaluated full pre-alarm window',path='research_primary_seed_20261015',research=research,positive=research['positive'],threshold=research['threshold'])
-        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',research=research)
+        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',research=research,gbt=gbt)
         rate=metrics['rate']; width=metrics['qrs_ms']; regularity=metrics['regularity']
         if code=='ASYSTOLE': positive=rate<20; evidence='ECG has very few beats'
         elif code=='BRADY': positive=rate<40; evidence=f'ECG rate is {rate:.0f} bpm'
@@ -97,7 +115,7 @@ class EmergencyDetector:
             evidence=f'ECG rate is {rate:.0f} bpm'
         if confirmed_low_pressure(state,now_ms):
             positive=True; evidence='Low arterial pressure confirmed by cuff'
-        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,research=research)
+        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,research=research,gbt=gbt)
 
 
 def confirmed_low_pressure(state,now_ms):

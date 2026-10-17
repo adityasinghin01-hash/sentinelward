@@ -114,6 +114,8 @@ class BrainService:
         for channel in ('ecg','ppg'):
             data[channel]=[v for c in chunks for v in (c[channel] or [None]*125)]
             data[channel+'_valid']=[v is not None for v in data[channel]]
+        # Arterial line only when present in some second; absent seconds stay missing.
+        data['abp']=[v for c in chunks for v in (c.get('abp') or [None]*125)] if any(c.get('abp') for c in chunks) else None
         return data
     def tick(self,now_ms):
         if not self.running: return []
@@ -125,7 +127,7 @@ class BrainService:
             window=next((w for w in reversed(state.windows) if w['window_start']==start),None)
             results=self.suite.evaluate(window,state,now_ms)
             for model,value in results.items():
-                envelope=make_score(bed_id=bed,model=model,model_version=model+'-live-2026-10-17',window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
+                envelope=make_score(bed_id=bed,model=model,model_version=value['extra'].get('model_version',model+'-live-2026-10-17'),window_start=start,window_s=10,score=value['score'],label=LABELS[model],reason=value['reason'][:120],extra={**value['extra'],'offline':offline})
                 self._publish(score_topic(bed,model),envelope)
             alarm=now_ms<=state.alarm_until_ms and state.alarm_until_ms>0
             verdict=decide(bed,start,int(now_ms),results,alarm=alarm,offline=offline,last_trusted_ts=state.last_trusted_ts,patient_not_ok=state.patient_not_ok,confirmed_low_pressure=confirmed_low_pressure(state,now_ms))
