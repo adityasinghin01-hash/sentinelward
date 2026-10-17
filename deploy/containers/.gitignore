@@ -1,4 +1,7 @@
 db_password.txt
 .env.containers
+.env.containers.tmp
+db_password.txt.tmp
+.mqtt/
 web-dist/
 evidence-out/

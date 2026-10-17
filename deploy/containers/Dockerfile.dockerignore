@@ -1,0 +1,5 @@
+# Paths are relative to the repository build context. Never send generated secrets.
+.git
+deploy/containers/.mqtt/
+deploy/containers/.env.containers*
+deploy/containers/db_password.txt*

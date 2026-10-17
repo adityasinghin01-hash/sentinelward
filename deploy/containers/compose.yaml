@@ -29,16 +29,28 @@ x-app: &app
 services:
   hub:
     image: eclipse-mosquitto:2.0.22  # 2.0.18 has no s390x build
+    # Startup/health probes need root to read 0600 mounts; broker drops to mosquitto.
+    user: "0:0"
+    # Bypass image entrypoint's recursive chown of /mosquitto (includes host mounts).
+    entrypoint: ["/bin/sh", "/etc/hub-start.sh"]
+    environment:
+      XDG_CONFIG_HOME: /run/mqtt-clients/brain
+    secrets: [mqtt_passwords]
+    tmpfs: ["/run/mosquitto:mode=0755"]
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto.acl:/mosquitto/config/acl:ro
+      - ./hub-start.sh:/etc/hub-start.sh:ro
+      # Root-only CLI configs for health/auth probes; the broker reads only hashes.
+      - ./.mqtt/clients:/run/mqtt-clients:ro
       - hubdata:/mosquitto/data
     networks: [ward]
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
     mem_limit: 128m
-    # Healthy = the broker answers a real subscribe (its own uptime topic) within 3 s.
+    # Authenticated subscribe acknowledgement; does not depend on retained app data.
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-h", "127.0.0.1", "-p", "1883", "-t", "$$SYS/broker/uptime", "-C", "1", "-W", "3"]
+      test: ["CMD", "mosquitto_sub", "-h", "127.0.0.1", "-p", "1883", "-V", "mqttv5", "-t", "ward/demo/control", "-E", "-W", "3"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -63,6 +75,7 @@ services:
 
   api:
     <<: *app
+    env_file: [.env.containers, .mqtt/api.env]
     build: {context: ../.., dockerfile: deploy/containers/Dockerfile}
     command: ["python", "-m", "sw_api"]
     environment:
@@ -91,6 +104,7 @@ services:
   # them as plain "Up" (with restart counts) rather than a health state that would prove nothing.
   brain:
     <<: *app
+    env_file: [.mqtt/brain.env]
     command: ["python", "-m", "sw_brain"]
     environment:
       <<: *mqtt-env
@@ -103,6 +117,7 @@ services:
 
   sim:
     <<: *app
+    env_file: [.mqtt/sim.env]
     command: ["python", "-m", "sw_sim", "listen", "--packs", "/packs", "--runs", "/runs/simulator",
               "--script", "/app/simulator/ward_script.yaml"]
     volumes:
@@ -113,6 +128,7 @@ services:
 
   attacks:
     <<: *app
+    env_file: [.mqtt/attacks.env]
     command: ["python", "-m", "sw_attacks", "--runs-dir", "/runs/attacks",
               "--schedule", "/app/attacks/schedule.yaml"]
     volumes: [runs:/runs]
@@ -121,7 +137,7 @@ services:
     cpus: 0.25
 
 networks:
-  ward: {internal: false}
+  ward: {internal: true}
 
 volumes:
   hubdata: {}
@@ -130,3 +146,4 @@ volumes:
 
 secrets:
   db_password: {file: ./db_password.txt}
+  mqtt_passwords: {file: ./.mqtt/passwords}
