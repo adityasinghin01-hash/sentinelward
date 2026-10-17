@@ -1,0 +1,8 @@
+cc: absent
+gcc: absent
+g++: absent
+clang: absent
+make: absent
+uid=10001(sw) gid=10001(sw) groups=10001(sw)
+3.12.3
+1.26.4 /usr/lib/python3/dist-packages/numpy/__init__.py

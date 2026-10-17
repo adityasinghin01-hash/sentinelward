@@ -1,0 +1,83 @@
+# Brain and attacks memory, container stack (127.0.0.1:8001), branch scale @ 7b699fa image
+# 30-min soak: sim scale --first-bed 1 --beds 12 --seconds 1800 --loop (12 quiet MIMIC beds B01-B12),
+# brain SW_BRAIN_MAX_BED=12, attacks container idle but capturing vitals. VmRSS of PID 1 every 30 s.
+# Raw: raw/evidence/soak-memory.txt (also docker stats per sample), soak-sim.txt, soak-ticks.txt
+
+t_s   brain_VmRSS_MiB attacks_VmRSS_MiB
+0         84.1         25.3
+30        93.0         25.9
+60       102.8         26.3
+90       112.1         26.7
+120      121.5         27.1
+150      129.8         27.5
+180      139.0         27.9
+210      148.0         28.4
+240      157.3         28.9
+270      166.5         29.3
+300      175.4         29.8
+330      183.5         29.9
+360      189.1         29.9
+390      195.7         29.9
+420      202.6         29.9
+450      209.7         29.9
+480      217.6         29.9
+510      225.1         29.9
+540      231.9         29.9
+570      238.9         29.9
+600      245.9         29.9
+630      252.2         29.9
+660      256.7         29.9
+690      259.0         29.9
+720      261.7         29.9
+750      263.4         29.9
+780      265.3         29.9
+810      268.1         29.9
+840      270.0         29.9
+870      273.0         29.9
+900      275.2         29.9
+930      277.9         29.9
+960      280.4         29.9
+990      282.2         29.9
+1020     284.1         29.9
+1050     285.7         29.9
+1080     287.2         29.9
+1110     287.8         30.0
+1140     288.9         30.0
+1170     290.4         30.0
+1200     291.1         30.0
+1230     291.4         30.0
+1260     291.6         30.0
+1290     292.0         30.0
+1320     292.1         30.0
+1350     292.1         30.0
+1380     292.1         30.0
+1410     292.1         30.0
+1440     292.2         30.0
+1470     292.3         30.0
+1500     292.4         30.0
+1530     292.5         30.0
+1560     292.5         30.0
+1590     292.5         30.0
+1620     292.5         30.0
+1650     293.3         30.0
+1680     293.4         30.0
+1710     293.4         30.0
+1740     293.5         30.0
+1770     293.7         30.0
+1800     293.7         30.0
+1830     293.8         30.0
+
+brain:   291.6 MiB at 21 min (1260 s) -> 293.7 MiB at 30 min (1800 s): +2.0 MiB in 9 min (0.23 MiB/min)
+brain:   warm-up growth 0-5 min 18.2 MiB/min, 10-20 min 4.5 MiB/min
+attacks: 29.9 MiB at 6 min (360 s) -> 30.0 MiB at 30 min: +0.1 MiB in 24 min
+
+Before (old image, from .work/evidence-containers/run2-memory.txt, 20-min 12-bed WARD run with attacks; docker stats MiB):
+  brain 51.05 -> 379.4 MiB at 21 min, still rising ~16 MB/min until the ward stopped sending; 4096-record deque per bed would fill only after ~68 min at 1 msg/s (estimate, not run)
+  attacks 15.75 -> 175.5 MiB at 21 min (~8 MB/min; 1200-frame history for all 12 beds)
+After (this soak; docker stats MiB at 30 min, same metric as before): brain 260.9 MiB, attacks 20.17 MiB
+Note: before = ward run with attacks/alarms, after = quiet looping beds; the loads differ.
+
+Where the brain plateau sits (local measurement, 1 bed, 1300 s of frames, recursive object sizes; /tmp/sw_memsplit.py):
+  state.messages 331 records = 3.2 MB/bed (bounded by this branch: 300 s look-back + 30 s margin)
+  state.windows 6 = 0.4 MB/bed (was up to 120)
+  M4 ReplayDetector history 120 (fingerprint, window) entries = 11.9 MB/bed, fills over ~20 min (detectors.py, not edited here)

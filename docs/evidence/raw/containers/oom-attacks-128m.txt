@@ -1,0 +1,3 @@
+Oct 17 12:25:22 tessnovabuild kernel: python invoked oom-killer: gfp_mask=0x100cca(GFP_HIGHUSER_MOVABLE), order=0, oom_score_adj=0
+Oct 17 12:25:22 tessnovabuild kernel: oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),mems_allowed=0,task=python,pid=441774,uid=10001
+Oct 17 12:25:22 tessnovabuild kernel: Memory cgroup out of memory: Killed process 441774 (python) total-vm:220452kB, anon-rss:129808kB, file-rss:9984kB, shmem-rss:0kB, UID:10001 pgtables:356kB oom_score_adj:0

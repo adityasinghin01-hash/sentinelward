@@ -1,0 +1,109 @@
+### date -u
+2026-10-17T14:05:56Z
+### uname -a
+Linux tessnovabuild 6.8.0-124-generic #124-Ubuntu SMP Tue May 26 12:01:41 UTC 2026 s390x s390x s390x GNU/Linux
+### lscpu
+Architecture:                            s390x
+CPU op-mode(s):                          32-bit, 64-bit
+Byte Order:                              Big Endian
+CPU(s):                                  3
+On-line CPU(s) list:                     0-2
+Vendor ID:                               IBM/S390
+Model name:                              -
+Machine type:                            9175
+Thread(s) per core:                      1
+Core(s) per socket:                      1
+Socket(s) per book:                      1
+Book(s) per drawer:                      1
+Drawer(s):                               3
+CPU dynamic MHz:                         5508
+CPU static MHz:                          5508
+BogoMIPS:                                28901.00
+Dispatching mode:                        horizontal
+Flags:                                   esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe gs vxe2 vxp sort dflt vxp2 nnpa sie
+Hypervisor:                              z/VM 7.3.0
+Hypervisor vendor:                       IBM
+Virtualization type:                     full
+L1d cache:                               384 KiB (3 instances)
+L1i cache:                               384 KiB (3 instances)
+L2 cache:                                108 MiB (3 instances)
+L3 cache:                                360 MiB
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-2
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Not affected
+Vulnerability Spectre v1:                Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; etokens
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+### /proc/sysinfo (machine part)
+Manufacturer:         IBM             
+Type:                 9175
+LIC Identifier:       207327ff6a7208c8
+Model:                702              ME1             
+Sequence Code:        00000000000CDFD8
+Plant:                02  
+Model Capacity:       702              00000582
+Model Perm. Capacity: 702              00000582
+Model Temp. Capacity: 702              00000582
+Model Var. Capacity:  702              00000582
+Nominal Cap. Rating:  00000582
+Nominal Perm. Rating: 00000582
+Nominal Temp. Rating: 00000582
+Nominal Var. Rating:  00000582
+Capacity Adj. Ind.:   100
+Capacity Ch. Reason:  0
+Capacity Transient:   0
+Type 1 Percentage:    0
+Type 2 Percentage:    0
+Type 3 Percentage:    0
+Type 4 Percentage:    0
+Type 5 Percentage:    0
+
+CPUs Total:           208
+CPUs Configured:      2
+CPUs Standby:         0
+CPUs Reserved:        206
+CPUs G-MTID:          0
+CPUs S-MTID:          1
+Capability:           346
+Nominal Capability:   346
+Secondary Capability: 346
+Adjustment 02-way:    62593
+Adjustment 03-way:    61246
+Adjustment 04-way:    60305
+Adjustment 05-way:    59342
+Adjustment 06-way:    58435
+Adjustment 07-way:    57566
+Adjustment 08-way:    56727
+Adjustment 09-way:    55920
+### grep features /proc/cpuinfo
+features	: esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe gs vxe2 vxp sort dflt vxp2 nnpa sie 
+### nnpa flag
+      1 nnpa
+### grep facilities
+facilities      : 0 1 2 3 4 6 7 8 9 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 30 31 32 33 34 35 36 37 38 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 57 58 59 60 61 69 70 71 72 73 74 75 76 77
+### nproc
+3
+### free -m
+               total        used        free      shared  buff/cache   available
+Mem:            8009        4597         471         297        3461        3411
+Swap:              0           0           0
+### os-release
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+### df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/dasda1      50G   20G   28G  42% /
+### python/sklearn
+3.12.3 s390x big sklearn 1.4.1.post1 numpy 1.26.4

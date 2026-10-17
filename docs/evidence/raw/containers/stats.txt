@@ -1,0 +1,8 @@
+NAME                     CPU %     MEM USAGE / LIMIT   MEM %     PIDS
+sentinelward-attacks-1   0.14%     175.5MiB / 384MiB   45.69%    2
+sentinelward-brain-1     0.12%     379.4MiB / 768MiB   49.40%    2
+sentinelward-api-1       0.32%     60.91MiB / 384MiB   15.86%    4
+sentinelward-sim-1       0.03%     61.79MiB / 256MiB   24.14%    2
+sentinelward-db-1        0.19%     96.96MiB / 512MiB   18.94%    8
+sentinelward-hub-1       0.02%     7.246MiB / 128MiB   5.66%     1
+granite                  102.47%   1.563GiB / 2GiB     78.13%    4

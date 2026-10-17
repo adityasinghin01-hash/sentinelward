@@ -1,0 +1,20 @@
+2026-10-17T14:27:26Z
+sw-api 2.1% 79MiB 09:18
+sw-brain 2.2% 268MiB 09:19
+sw-sim 0.4% 84MiB 09:18
+sw-attacks 1.0% 115MiB 09:19
+sw-net 0.1% 24MiB 02:41:37
+sw-agents2 0.2% 50MiB 09:10
+mosquitto 0.1% 17MiB 02:41:37
+Mem:            8009        4908         112         309        3521        3100
+ 14:27:26 up 7 days,  3:55,  3 users,  load average: 0.12, 0.23, 0.37
+sentinelward-api-1 Up About an hour (healthy)
+sentinelward-brain-1 Up 8 minutes
+sentinelward-db-1 Up 2 hours (healthy)
+sentinelward-hub-1 Up About an hour (healthy)
+sentinelward-brain-1 0.12% 489.6MiB / 768MiB
+sentinelward-api-1 0.31% 77.11MiB / 384MiB
+sentinelward-hub-1 0.03% 2.441MiB / 128MiB
+sentinelward-db-1 0.01% 150.3MiB / 512MiB
+granite 0.02% 1.897GiB / 2GiB
+sentinelward:latest 657MB

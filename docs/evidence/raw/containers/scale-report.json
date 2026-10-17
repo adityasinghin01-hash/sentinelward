@@ -1,0 +1,20 @@
+{
+  "run_id": "scale_20261017_121343",
+  "run_dir": "/runs/simulator/scale_20261017_121343",
+  "beds": 87,
+  "seconds": 60,
+  "status": "complete",
+  "messages_expected": 5220,
+  "messages_sent": 5220,
+  "messages_on_time": 5171,
+  "on_time_fraction": 0.9906130268199234,
+  "on_time_per_s_mean": 86.18333333333334,
+  "on_time_per_s_min": 47,
+  "lag_budget_ms": 50.0,
+  "lag_p50_ms": 14.83,
+  "lag_p99_ms": 49.65,
+  "lag_max_ms": 60.29,
+  "cpu_s": 0.988,
+  "cpu_percent_of_one_core": 1.6,
+  "max_rss_mb": 58.1
+}
