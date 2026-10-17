@@ -144,7 +144,12 @@ def main():
             c.subscribe(VITALS_SUB, qos=0)
 
     def on_message(c, userdata, msg):
-        svc.on_vitals(msg.topic, msg.payload)
+        # Any error here would kill paho's network thread while systemd still shows "active".
+        try:
+            svc.on_vitals(msg.topic, msg.payload)
+        except Exception:
+            svc.stats['errors'] += 1
+            log.exception('dropped a message on %s', msg.topic)
 
     client.on_connect = on_connect
     client.on_message = on_message
