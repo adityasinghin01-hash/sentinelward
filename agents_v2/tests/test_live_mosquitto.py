@@ -61,7 +61,7 @@ def wait_for(pred, timeout=8.0):
 
 def test_live_end_to_end(broker, tmp_path):
     port = broker
-    settings = Settings(state_dir=tmp_path / "state", ladder_step_s=1.5, mqtt_port=port)
+    settings = Settings(state_dir=tmp_path / "state", ladder_step_s=1.5, mqtt_port=port, a2_confirm_s=1.0)
     seen: list[dict] = []
     lock = threading.Lock()
 
@@ -108,7 +108,11 @@ def test_live_end_to_end(broker, tmp_path):
         acked = wait_for(lambda: got(lambda m: m["type"] == "alert" and m["alert_id"] == aid and m["status"] == "acked"))
         assert acked and acked[0]["acked_by"] == "staff:tom"
 
-        # TAMPERING -> A2 dry-run cut-off + A3 incident (evidence) + A5 report
+        # TAMPERING -> untrusted at once; held 1 s (a2_confirm_s) -> A2 dry-run cut-off + A3 incident + A5 report
+        verdict("B05", "TAMPERING", 0.9)
+        assert wait_for(lambda: got(lambda m: m["type"] == "action" and m["action"] == "set_bed_untrusted"))
+        assert not got(lambda m: m["type"] == "action" and m["action"] == "disable_client")
+        time.sleep(1.1)
         verdict("B05", "TAMPERING", 0.9)
         cut = wait_for(lambda: got(lambda m: m["type"] == "action" and m["action"] == "disable_client"))
         assert cut and cut[0]["result"] == "dry_run" and cut[0]["device_id"] == "MON-05"
