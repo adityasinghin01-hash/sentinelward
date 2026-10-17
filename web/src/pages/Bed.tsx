@@ -1,4 +1,5 @@
 import {useMemo, useState} from 'react';
+import {ActionFeed} from '../components/pages/ActionRecord';
 import type {FormEvent} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, X} from 'lucide-react';
@@ -13,7 +14,6 @@ import {Chip, Fact} from '../components/extra';
 import {Waveform} from '../components/Waveform';
 import {TrendChart} from '../components/Chart';
 import {WhyPanel} from '../components/bed/WhyPanel';
-import {BedActions} from '../components/bed/BedActions';
 import {plainEvidence} from '../components/bed/copy';
 
 const CHECK_EVERY_MS = 5 * 60_000; // suggested hand-check interval for an untrusted bed (R8 S3)
@@ -263,7 +263,7 @@ export function BedPage() {
             )}
           </Panel>
           <Panel title="Actions for this bed" caption="Who acted, and why. IT security can undo automatic actions." className="bed-action-panel">
-            <BedActions actions={bedActions} />
+            <ActionFeed actions={bedActions} emptyTitle="No actions for this bed yet" />
           </Panel>
           {detail.assignment && (
             <Panel title="Assignment">
