@@ -1,0 +1,41 @@
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 18, "rankSpacing": 50, "padding": 12, "subGraphTitleMargin": {"top": 6, "bottom": 14}}, "themeVariables": {"fontFamily": "Arial", "fontSize": "18px", "primaryColor": "#eef4fb", "primaryBorderColor": "#4a6f96", "primaryTextColor": "#1d2b3a", "lineColor": "#5b6f84", "clusterBkg": "#f7f9fc", "clusterBorder": "#9fb3c8", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TB
+  VIT["<b>Vitals for one bed</b><br/>1 message / second<br/>ECG · pulse (PPG) · ABP · cuff<br/>+ monitor alarms, bedside checks,<br/>network features"]
+  WIN["<b>Window assembler</b><br/>10 s window every 5 s<br/>125 Hz, nulls + validity masks kept"]
+
+  subgraph SC["M1-M6 scores (0..1, or null = not eligible)"]
+    direction TB
+    S1["M1 sensor"]
+    S2["M2 real alarm"]
+    S3["M3 body match"]
+    S4["M4 replay"]
+    S5["M5 network"]
+    S6["M6 drift"]
+  end
+
+  subgraph PR["Decision layer: first match wins, left to right"]
+    direction LR
+    P1["1 · BOTH<br/>nurse now +<br/>cut off at once"]
+    P2["2 · EMERGENCY<br/>nurse now,<br/>escalation ladder"]
+    P3["3 · TAMPERING<br/>bed untrusted,<br/>hand-check, IT"]
+    P4["4 · DRIFTING<br/>bedside nurse +<br/>biomed ticket"]
+    P5["5 · LOOSE_SENSOR<br/>refit the sensor"]
+    P6["6 · DEVICE_ATTACK<br/>IT only"]
+    P7["7 · UNSURE<br/>bedside<br/>hand-check"]
+    P8["8 · NORMAL<br/>nobody"]
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+  end
+
+  OUT["<b>One verdict</b><br/>trust + up to 3 reasons<br/>ward/bed/BNN/verdict (retained)"]
+  AGT["<b>Agents A1-A8</b><br/>alert · cut-off/Undo · evidence<br/>fleet · CERT-In · tickets<br/>workload · briefing"]
+
+  VIT --> WIN --> SC
+  SC --> PR
+  PR --> OUT --> AGT
+
+  classDef box fill:#eef4fb,stroke:#4a6f96,stroke-width:1.5px,color:#1d2b3a
+  classDef emerg fill:#fdecea,stroke:#c0392b,stroke-width:2.5px,color:#7b1d14
+  class VIT,WIN,S1,S3,S4,S5,S6,P3,P4,P5,P6,P7,P8,OUT,AGT box
+  class S2,P1,P2 emerg
+  style SC fill:#ffffff,stroke:#9fb3c8
+  style PR fill:#ffffff,stroke:#9fb3c8
