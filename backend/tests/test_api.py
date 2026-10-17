@@ -197,6 +197,18 @@ def test_demo_control_reset_barrier_outbox_and_health(bus, clock):
         assert client.post("/api/demo/run", json={"speed": 3}).status_code == 422
 
 
+def test_demo_run_starts_a_fresh_ward_without_old_verdicts(bus, clock):
+    app = app_for(bus, clock)
+    with TestClient(app) as client:
+        login(client, "operator")
+        ingest(app, make_verdict(bed_id="B07", window_start=clock.ms() // 5000 * 5000, verdict="UNSURE",
+                                 confidence=.5, trust=.5, scores={}, ts=clock.ms()))
+        assert client.get("/api/beds/B07").json()["verdict"] == "UNSURE"
+        assert client.post("/api/demo/run", json={"scenario": "full_ward_script", "speed": 1}).status_code == 202
+        bed = client.get("/api/beds/B07").json()
+        assert bed["verdict"] is None and bed["display"] == "empty" and bed["reason"] == "No monitor connected yet"
+
+
 def test_static_frontend_and_spa_fallback_without_api_fallback(bus, clock, tmp_path):
     (tmp_path / "index.html").write_text("<html>ward screens</html>")
     (tmp_path / "assets").mkdir()

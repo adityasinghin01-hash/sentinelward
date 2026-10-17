@@ -62,7 +62,8 @@ def run_identifier(ms: int) -> str:
 def demo(runtime, cmd: str, scenario: str = "full_ward_script", speed: int = 1, start_at_s: int = 0) -> dict:
     run_id = run_identifier(runtime.clock.ms())
     message = make_demo_control(cmd=cmd, run_id=run_id, ts=runtime.clock.ms(), scenario=scenario, speed=speed, start_at_s=start_at_s)
-    if cmd == "reset":
+    # A run starts a fresh ward, as the brain does: old verdicts, alerts and scores must not carry over.
+    if cmd in ("reset", "run"):
         runtime.reset()
     publish(runtime, [message])
     return receipt(runtime, accepted=True, run_id=run_id)
