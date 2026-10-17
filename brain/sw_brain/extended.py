@@ -5,7 +5,7 @@ from collections import deque
 import math
 import numpy as np
 
-from .detectors import pulse_metrics, result
+from .detectors import confirmed_low_pressure, pulse_metrics, result
 
 
 class BodyMismatch:
@@ -82,20 +82,19 @@ class BodyMismatch:
 class PressureDrift:
     """Arterial line vs cuff: is the line moving away from this patient's usual gap?
 
-    The usual gap is learned only from the early cuff pairs (cuffs within EARLY_MS of the bed's
-    first frame, at most EARLY_PAIRS, each plausible and consistent). A drifting line must not
+    The usual gap is the median of the early cuff pairs (cuffs within EARLY_MS of the bed's
+    first frame, at most EARLY_PAIRS, each plausible). A drifting line must not
     teach itself a new normal, so the baseline never updates after that. With no early pair the
     clinical prior applies: a zeroed line and a cuff agree on mean pressure (gap 0 mmHg).
     """
     EARLY_MS = 300000       # cuffs in the first 5 minutes on this bed may define its usual gap
     EARLY_PAIRS = 3
     PLAUSIBLE_MMHG = 25.    # a larger early gap is not a usable "normal" (damped/unzeroed line)
-    CONSISTENT_MMHG = 5.    # early pairs must agree with each other
     PRIOR_GAP_MMHG = 0.
     SCALE_MMHG = 15.        # plain score = deviation / 15
     MARGIN_MMHG = 6.        # a growing deviation past this margin is drift (score >= .8)
     GROWTH_MMHG = 2.        # "growing": at least this much further from usual than the last cuff
-    CUFF_STABLE_MMHG = 10.  # the cuff itself must stay roughly level (both falling is not drift)
+    CUFF_STABLE_MMHG = 5.   # the cuff itself must stay roughly level (both falling is not drift)
     CLEAR_MMHG = 3.         # back within this of 0 or of the usual gap = re-zeroed
 
     def __init__(self):
@@ -109,6 +108,21 @@ class PressureDrift:
     def reset(self):
         for memory in (self.baselines, self.seen, self.current, self.first_ts, self.last_pair, self.drifting):
             memory.clear()
+
+    @staticmethod
+    def _pressure_admission(state, now_ms):
+        """May this cuff pair teach the usual gap? ECG/pulse quality (M1/M3) does not matter for a
+        line-vs-cuff pair; transport evidence, alarms and confirmed low pressure do."""
+        if getattr(state, 'baseline_admission_allowed', True): return True
+        recent = [r for r in state.messages if now_ms-10000 <= r['received_ms'] <= now_ms]
+        senders = {r.get('sender_id') for r in recent if r.get('sender_id') is not None}
+        network = getattr(state, 'network', None) or {}
+        return (bool(recent) and len(recent) <= 15 and len(senders) <= 1
+                and not any(r.get('sequence_issue') for r in recent)
+                and (network.get('msgs_per_s') or 0) <= 5 and (network.get('seq_repeats') or 0) < 2
+                and (network.get('senders') or 0) <= 1
+                and getattr(state, 'alarm_until_ms', 0) < now_ms and not getattr(state, 'patient_not_ok', False)
+                and not confirmed_low_pressure(state, now_ms))
 
     def _usual(self, bed, cuff_ts):
         baseline = self.baselines.get(bed, ())
@@ -175,9 +189,8 @@ class PressureDrift:
                                      drift_growing=bed in self.drifting)
             # Only early, plausible, mutually consistent pairs define this patient's usual gap.
             early = (cuff['ts'] <= self.first_ts[bed]+self.EARLY_MS and len(baseline) < self.EARLY_PAIRS
-                     and abs(gap) <= self.PLAUSIBLE_MMHG and
-                     (not baseline or abs(gap-float(np.median(baseline))) <= self.CONSISTENT_MMHG))
-            if getattr(state,'baseline_admission_allowed',True) and early:
+                     and abs(gap) <= self.PLAUSIBLE_MMHG)
+            if early and self._pressure_admission(state, now_ms):
                 baseline.append(gap)
             self.seen[bed] = cuff['ts']
         current = self.current.get(bed)
