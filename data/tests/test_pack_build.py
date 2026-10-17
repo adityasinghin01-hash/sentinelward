@@ -158,11 +158,14 @@ def test_project_beds_yaml_is_valid() -> None:
     assert [s.bed_id for s in specs] == [f"B{i:02d}" for i in range(1, 13)]
     assert [s.device_id for s in specs] == [f"MON-{i:02d}" for i in range(1, 13)]
     by = {s.bed_id: s for s in specs}
-    assert (by["B01"].piece, by["B02"].piece, by["B05"].piece) == ("3346682_0014", "3533390_0011", "3860035_0044")
+    # B01: doc 12 named 3346682_0014; only p000109's 3407610 piece is on the server (deploy/SETUP.md)
+    assert (by["B01"].piece, by["B02"].piece, by["B05"].piece) == ("3407610_0006", "3533390_0011", "3860035_0044")
     assert by["B01"].start_s == 7200 and by["B08"].start_min == 231 and by["B09"].start_min == 38
-    assert by["B10"].start_min is None and by["B10"].backup_case == 5659
-    for b in ("B06", "B11", "B12"):
-        assert by[b].patient is None and by[b].piece is None and by[b].start_s is None
+    # H1 values filled 17 Oct
+    assert by["B10"].case == 4277 and by["B10"].start_min == 12 and by["B10"].backup_case == 5659
+    picks = {b: (by[b].patient, by[b].piece, by[b].start_s) for b in ("B06", "B11", "B12")}
+    assert picks == {"B06": ("p000154", "3783784_0006", 0), "B11": ("p000160", "3531764_0003", 0),
+                     "B12": ("p000298", "3129212_0016", 0)}
 
 
 def test_full_build_then_verify_via_cli(tmp_path: Path, cinc_dir: Path, mimic_root: Path, fake_vital: Path,

@@ -30,6 +30,7 @@ WAVE_FS_DEFAULT = 500.0
 NUMBER_MAX_AGE_S = 2.0
 CUFF_LOOKBACK_S = 3600
 LINE_CUFF_LOOKBACK_S = 30
+ART_LINE_MIN_MMHG = 20.0      # check's suggested window: ART under this = line not connected / zeroing
 
 
 def require_little_endian() -> None:
@@ -277,11 +278,23 @@ def line_minus_cuff(art: np.ndarray, fs: float, readings: np.ndarray, t_base_s: 
 def suggest_window(waves: dict[str, tuple[np.ndarray, float]], hr: Optional[np.ndarray],
                    cuff_t: np.ndarray, minutes: int) -> Optional[int]:
     """First start minute where ECG/PLETH/ART are <5 % missing and <5 % flat, HR <=50 % missing,
-    and at least one new cuff reading falls inside the window."""
+    and at least one new cuff reading falls inside the window.
+
+    ART minutes with more than 5 % of samples under ``ART_LINE_MIN_MMHG`` make a window invalid
+    (no such minute allowed anywhere in it): before the line is connected VitalDB records a noisy
+    -10 to -20 mmHg baseline that is neither missing nor flat (case 4277 minutes 0-9).
+    """
     limits = []
-    for x, fs in waves.values():
+    for name, (x, fs) in waves.items():
         miss, flat = per_minute_fractions(x, fs)
         limits += [(miss, 0.05), (flat, 0.05)]
+        if name in TRACKS["abp"]:
+            per = int(round(60 * fs))
+            n_min = x.size // per if per else 0
+            if n_min:
+                with np.errstate(invalid="ignore"):
+                    low = np.nan_to_num(x[:n_min * per], nan=np.inf) < ART_LINE_MIN_MMHG
+                limits.append(((low.reshape(n_min, per).mean(axis=1) > 0.05).astype(float), 1e-9))
     if hr is not None:
         n_min = hr.size // 60
         limits.append((np.isnan(hr[:n_min * 60]).reshape(n_min, 60).mean(axis=1), 0.5 + 1e-9))
@@ -339,7 +352,7 @@ def check_lines(path: Path, start_min: Optional[float] = None, minutes: int = 22
     lines.append(f"  cuff readings in file: {readings.shape[0]}")
     sugg = suggest_window(waves, hr_grid, readings[:, 0], minutes)
     lines.append(f"  suggested start: {'none (no window with all signals valid)' if sugg is None else f'minute {sugg}'}"
-                 f"  (rule: ECG/PLETH/ART <5 % missing and <5 % flat, HR <=50 % missing, >=1 cuff reading)")
+                 f"  (rule: ECG/PLETH/ART <5 % missing and <5 % flat, no ART minute >5 % under 20 mmHg, HR <=50 % missing, >=1 cuff reading)")
     use = start_min if start_min is not None else sugg
     if use is None:
         return lines

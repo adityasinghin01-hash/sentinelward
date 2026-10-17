@@ -85,6 +85,25 @@ def test_numerics_start_delta_is_applied() -> None:
     assert mimic.start_delta_s(m, m) == (0.0, None)
 
 
+def test_numerics_with_other_name_found_by_dat_file(mimic_root: Path) -> None:
+    """MIMIC p000107: master ...-21-01 but numerics ...-21-02n (file 3860035n.dat), 11 s later."""
+    pdir = mimic_root / "p00" / "p000001"
+    old_hea = pdir / f"{MASTER}n.hea"
+    new_name = MASTER[:-2] + "01n"                     # one minute later in the name
+    text = old_hea.read_text().replace(f"{MASTER}n.dat", "3000001n.dat")
+    text = text.replace(f"{MASTER}n ", f"{new_name} ", 1).replace("12:00:00", "12:01:00", 1)
+    (pdir / f"{MASTER}n.dat").rename(pdir / "3000001n.dat")
+    old_hea.unlink()
+    (pdir / f"{new_name}.hea").write_text(text)
+    assert mimic.numerics_stem(pdir / MASTER).name == new_name
+    spec = BedSpec(bed_id="B05", device_id="MON-05", dataset="mimic", signals=["ecg", "ppg", "numerics"],
+                   patient="p000001", piece=PIECE2, start_s=60, duration_s=300)
+    sd = mimic.build_source(spec, Paths(mimic=mimic_root))
+    assert sd.source["numerics_record"] == new_name and sd.source["numerics_start_delta_s"] == 60.0
+    # numerics sample k now sits at master second k + 60
+    np.testing.assert_allclose(sd.hr, 15 + 60 + np.arange(300) - 60, atol=0.01)
+
+
 def test_mimic_window_too_long_fails(mimic_root: Path) -> None:
     spec = BedSpec(bed_id="B05", device_id="MON-05", dataset="mimic", signals=["ecg", "ppg"],
                    patient="p000001", piece=PIECE2, start_s=200, duration_s=300)
@@ -162,3 +181,15 @@ def test_vital_check_suggests_window(fake_vital: Path) -> None:
     assert "cuff readings in window: 2" in text
     # ART peaks at 125 mmHg; cuff 118 and 124 -> gaps +7 and +1 -> median +4
     assert "median line-minus-cuff systolic gap: +4.0 mmHg" in text
+
+
+def test_vital_check_skips_unconnected_line(fake_vital: Path) -> None:
+    """Case 4277: before the line is connected ART reads a noisy -12 mmHg (not missing, not flat)."""
+    from conftest import VITAL_FS, FakeVitalFile
+    fs, art, unit = FakeVitalFile.tracks["SNUADC/ART"]
+    art = art.copy()
+    rng = np.random.default_rng(1)
+    art[:90 * VITAL_FS] = -12 + rng.normal(0, 1.0, 90 * VITAL_FS)   # 1.5 min: minutes 0 and 1 are >5 % low
+    FakeVitalFile.tracks["SNUADC/ART"] = (fs, art, unit)
+    text = "\n".join(vital.check_lines(fake_vital / "5552.vital", minutes=10, clinical=fake_vital / "clinical_data.csv"))
+    assert "suggested start: minute 2" in text

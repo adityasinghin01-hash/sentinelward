@@ -73,9 +73,40 @@ def master_stems(pdir: Path) -> list[Path]:
     return sorted(p.with_suffix("") for p in pdir.glob("*.hea") if MASTER_RE.match(p.stem))
 
 
+def _header_lines(path: Path) -> list[str]:
+    with open(path) as f:
+        return [ln.strip() for ln in f if ln.strip() and not ln.startswith("#")]
+
+
 def numerics_stem(master: Path) -> Path:
-    """Numerics record stem for a master record (``<master>n``)."""
-    return master.with_name(master.name + "n")
+    """Numerics record stem for a master record (``<master>n``).
+
+    Some MIMIC numerics headers carry a start time a few seconds later than their master, so
+    their name differs (e.g. master ``p000107-2122-05-14-21-01`` and numerics
+    ``p000107-2122-05-14-21-02n``). When ``<master>n`` is absent, the one numerics header in the
+    folder whose signal file is ``<record id>n.dat`` (the record id of the master's segments) is
+    used instead; the start-time difference is then applied by ``start_delta_s``.
+    """
+    default = master.with_name(master.name + "n")
+    if hea(default).is_file() or not hea(master).is_file():
+        return default
+    try:
+        lines = _header_lines(hea(master))
+        seg = next((ln.split()[0] for ln in lines[1:] if ln.split()[0] != "~"), None)
+    except OSError:
+        return default
+    if not seg or "_" not in seg:
+        return default
+    want = seg.split("_")[0] + "n.dat"
+    hits = []
+    for h in sorted(master.parent.glob("p*n.hea")):
+        try:
+            sig = _header_lines(h)[1:2]
+        except OSError:
+            continue
+        if sig and sig[0].split()[0] == want:
+            hits.append(h.with_suffix(""))
+    return hits[0] if len(hits) == 1 else default
 
 
 @dataclass

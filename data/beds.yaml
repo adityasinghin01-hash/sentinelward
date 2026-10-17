@@ -30,7 +30,8 @@ beds:
     device_id: MON-01
     dataset: mimic
     patient: p000109
-    piece: "3346682_0014"
+    piece: "3407610_0006"    # doc 12 named 3346682_0014, but only p000109's piece 3407610_0006..0020 is on the
+                             # server (deploy/SETUP.md). Same patient, same signals (II, V, AVR, PLETH, RESP).
     start_s: 7200            # 2 h into the piece
     duration_s: 1320         # 22 min
     signals: [ecg, ppg, resp, numerics]
@@ -53,8 +54,8 @@ beds:
   - bed_id: B04
     device_id: MON-04
     dataset: cinc2015
-    record: a123l            # H1 CONFIRM: false asystole; replace with backup_record if check fails
-    backup_record: null      # H1 CONFIRM: backup 2015 record (none named in doc 12)
+    record: a123l            # H1 CONFIRMED 17 Oct: false ASYSTOLE, II/PLETH/ABP 0 % missing, ECG flat before alarm
+    backup_record: null      # not needed (none named in doc 12)
     signals: [ecg, ppg, abp]
 
   - bed_id: B05
@@ -69,17 +70,17 @@ beds:
   - bed_id: B06
     device_id: MON-06
     dataset: mimic
-    patient: null            # H1 PICK: MIMIC patient #4 (pick-mimic row 1)
-    piece: null              # H1 PICK: piece name from pick-mimic, in quotes ("4000000_0001")
-    start_s: null            # H1 PICK: suggested start offset (s) from pick-mimic
+    patient: p000154           # H1 PICK 17 Oct: pick-mimic row 1
+    piece: "3783784_0006"
+    start_s: 0               # pick-mimic suggested start
     duration_s: 1320
     signals: [ecg, ppg, numerics]
 
   - bed_id: B07
     device_id: MON-07
     dataset: cinc2015
-    record: f543l            # H1 CONFIRM: true VF; replace with backup_record if check fails
-    backup_record: null      # H1 CONFIRM: backup 2015 record (none named in doc 12)
+    record: f543l            # H1 CONFIRMED 17 Oct: true VFIB, II/PLETH/ABP 0 % missing
+    backup_record: null      # not needed (none named in doc 12)
     signals: [ecg, ppg, abp]
 
   - bed_id: B08
@@ -103,27 +104,28 @@ beds:
   - bed_id: B10
     device_id: MON-10
     dataset: vitaldb
-    case: 4277               # H1 CONFIRM: switch to backup_case (5659) if check fails
+    case: 4277               # H1 CONFIRMED 17 Oct: aline1 'Left radial', all tracks found; backup not needed
     backup_case: 5659
     window_ref: file
-    start_min: null          # H1 WINDOW: "suggested start" minute from `check <case>.vital`
+    start_min: 12            # H1 WINDOW 17 Oct: `check 4277.vital` suggests minute 12 (ART reads -12 mmHg, line not
+                             # connected, in file minutes 0-9; flushed in minute 11). Cuffs at window min 0,1,2,4,5 only.
     duration_s: 1320
     signals: [ecg, ppg, abp, cuff, numbers]
 
   - bed_id: B11
     device_id: MON-11
     dataset: mimic
-    patient: null            # H1 PICK: MIMIC patient #5 (pick-mimic row 2)
-    piece: null              # H1 PICK
-    start_s: null            # H1 PICK
+    patient: p000160           # H1 PICK 17 Oct: pick-mimic row 2
+    piece: "3531764_0003"
+    start_s: 0               # pick-mimic suggested start
     duration_s: 1320
     signals: [ecg, ppg, numerics]
 
   - bed_id: B12
     device_id: MON-12
     dataset: mimic
-    patient: null            # H1 PICK: MIMIC patient #6 (pick-mimic row 3)
-    piece: null              # H1 PICK
-    start_s: null            # H1 PICK
+    patient: p000298           # H1 PICK 17 Oct: pick-mimic row 3
+    piece: "3129212_0016"
+    start_s: 0               # pick-mimic suggested start
     duration_s: 1320
     signals: [ecg, ppg, numerics]
