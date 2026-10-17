@@ -1,31 +1,36 @@
-# SentinelWard: 3-minute video script (v2, 17 Oct, build day)
+# SentinelWard: video narration (final, 2:55)
 
-Built from doc 15 v1.1, updated to what we actually built today. **[brackets] = fill in only with numbers measured in Phase 4.** Honesty rules: lab ward replaying real recordings (say so); IBM z17 / Telum II is verified on our server (machine type 9175, `nnpa` in /proc/cpuinfo), but say "our model runs on the AI chip" **only** if Phase 2's NNPA test succeeded; no IBM marketing numbers.
+Every number is from the evidence pack (`docs/evidence/`); ward times are from ward run 3 (`run_20261017_141851`, `docs/evidence/WARD-RUN.md`). Ward T+ = time into the 20-minute ward script (`docs/spec/12-ward-script.md`): record the demo clips from one full ward run on the LinuxONE server and cut each clip at the T+ shown.
 
-Rubric: 1 value + theme · 2 originality (all code written during the event) · 3 LinuxONE design + open-source AI, with screenshots of containers, security, scalability, compute · 4 clear video with a demo, under 3:00.
+Spoken words: **408** (counted per line), at 150 words per minute = 2:43 of speech in a 2:55 cut, leaving about 12 s for pauses on the demo. Numbers are spelled as spoken; the exact values (0.862, 0.391, 0.832) are on screen.
 
-| Time | Scene (what is on screen) | Voice-over |
-|---|---|---|
-| 0:00-0:12 | Ward screen: 12 bed tiles, one turns red | "An ICU alarm goes off. Is it the patient, a loose sensor, or someone faking the monitor? Today, nobody can tell in time." |
-| 0:12-0:30 | Simple graphic: three causes, one alarm | "Most ICU heart alarms are false: 88.8% in one large study (Drew 2014). And monitors send their data over the hospital network. Faking it has been shown in labs; no real hospital case is known yet. We built for it before it happens." |
-| 0:30-0:52 | **LinuxONE terminal**, large font: `lscpu` (s390x, IBM z17 9175), `docker compose ps` (6 hardened containers), `systemctl status` of the services, `docker stats` | "Everything that decides runs here, on IBM LinuxONE: the message hub, six AI checks, the decision layer, the agents and the evidence store, in hardened containers. Patient data never leaves this machine. [If NNPA test passed: The alarm model even runs on the z17's built-in AI chip.]" |
-| 0:52-1:15 | B03 real VT (ward script T+05:00): red tile, Telegram alert on a phone, no answer, step 2, acknowledged | "A real heart emergency. The verdict arrives [3.0] seconds after the monitor's alarm. If nobody answers in 30 seconds, the alert climbs the ladder: next nurse, then everyone." |
-| 1:15-1:32 | B04 false asystole: "monitor says asystole" next to a live pulse, task "refit the ECG lead" | "Here the monitor says the heart stopped, but the pulse never did. A loose lead, not a cardiac arrest: one calm task instead of a crash call." |
-| 1:32-1:58 | Fake flatline + cut-off: flat ECG beside a live pulse, network check flags a second sender, tile turns grey "UNTRUSTED, last good hh:mm" with the last trusted values, then **Undo** | "Now an attacker fakes a flatline. Heart and pulse disagree, and the network shows a stranger. The device is cut off at our own hub, but the patient is never blank: the last trusted values stay on screen, and a nurse checks by hand. Every automatic action can be undone with one click." |
-| 1:58-2:15 | B07 BOTH: real VF during an attack, alert **and** cut-off | "The hardest case: a real emergency during an attack. Suspected tampering never hides a possible emergency." |
-| 2:15-2:30 | B08 vs B09 pressure lines side by side | "One arterial line drifts; one patient's pressure really falls. Comparing each line with that patient's own cuff tells the AI which: re-zero the first, rush to the second." |
-| 2:30-2:50 | Results table (Phase 4): M2 held-out scores per alarm type, attacks caught + delay, missed emergencies, time-to-safe, Blind Time, CPU/RAM for 12 beds; security test table all PASS | "Built in 24 hours on real ICU data: [M2 held-out score], [attacks caught], [0] missed emergencies, all on [x]% of one LinuxONE server." |
-| 2:50-3:00 | End card: Team TessNova, repo link, "IBM Z Datathon 2026" | "SentinelWard. Patient, sensor, or hacker: answered in seconds." |
+| Time | Spoken words | On screen | Ward T+ | Words |
+|---|---|---|---|---|
+| 0:00-0:10 | "An ICU alarm goes off. Is it the patient, a failing sensor, or someone faking the monitor? Today, the nurse cannot tell in time." | Ward screen, 12 bed tiles, one turns red | 05:02 (B03 turns red) | 24 |
+| 0:10-0:21 | "Monitors raise so many false alarms that nurses tune them out. And the same monitors send their data over the hospital network, where it can be replayed or forged." | Title card: "Alarm fatigue + hackable monitors" | none | 29 |
+| 0:21-0:34 | "SentinelWard replays real, open ICU recordings: PhysioNet 2015 and VTaC alarms, MIMIC background beds, and VitalDB pressure lines. Twelve beds, one reading per bed every second, a scripted twenty-minute ward." | Dataset names; the 12-bed table from the ward script | 00:00 (run start) | 30 |
+| 0:34-0:47 | "Everything that decides runs here, on IBM LinuxONE: an IBM z17 with the Telum II AI accelerator. Six checks score every bed every five seconds and give one of eight verdicts." | Terminal, large font, host `tessnovabuild`: `lscpu` (s390x, machine type 9175), `grep -o nnpa /proc/cpuinfo` | none | 31 |
+| 0:47-1:01 | "Bed three: a real ventricular tachycardia. Emergency, two seconds after the alarm. The alert reaches the nurse's phone on Telegram. Nobody answers in thirty seconds, so it climbs to the next nurse, who acknowledges." | B03 tile red with the M2 score; phone with the Telegram alert; ladder step 2; acked | 05:00 → 05:02 → step 2 30 s later → ack 05:48 | 34 |
+| 1:01-1:22 | "Bed five: an attacker replays the patient's own earlier signal. Tampering, two seconds later. The bed is marked untrusted, but never blank: the last trusted values stay. After twenty seconds of evidence the device is cut off at our own hub. IT clicks Undo, and the bed comes back." | B05 grey "UNTRUSTED" with last trusted values; six check scores; IT screen cut-off; action log with Undo | 10:00 → 10:02 → untrusted 10:07 → cut off 10:23; Undo 15:29 | 49 |
+| 1:22-1:38 | "Bed seven: a flood, then a forged loop of its own signal. Then a real ventricular fibrillation. Tampering never cancels an emergency: the verdict is BOTH. The nurse is alerted at once, and the device is cut off." | B07: DEVICE_ATTACK → TAMPERING → BOTH; high alert open; cut-off in the action log | 13:45 → 13:47 → 13:52 → BOTH 14:02 → cut off 14:03 | 38 |
+| 1:38-1:53 | "Bed six: a faked flatline while the real pulse keeps beating. Alarms are never suppressed, so the nurse is told; but the forged data conflicts, so it is BOTH, cut off in four point three seconds." | B06 flat ECG beside a live pulse; BOTH; cut off | 16:00 → BOTH 16:02 → cut off 16:03 | 36 |
+| 1:53-2:03 | "At the end of the shift, IBM Granite, running on LinuxONE, writes the briefing. Every number in it is checked against the facts." | Briefing screen, "generated by IBM Granite" | 19:00 | 23 |
+| 2:03-2:24 | "All measured on LinuxONE: our alarm model scores zero point eight six on held-out PhysioNet 2015 records, against zero point three nine for the old rule, and zero point eight three on VTaC. In the full ward run, every event got its verdict within three seconds, with zero errors." | Results table: M2 0.862 / 0.832 vs rule 0.391 / 0.336; ward run event → verdict +2 to +3 s, 0 API / 0 agent errors | none | 49 |
+| 2:24-2:44 | "One s390x image runs six hardened containers: non-root, read-only, no capabilities. Each monitor may write only its own bed, over TLS 1.3: fifteen of fifteen live security tests pass. One brain container keeps up with ninety-six beds, and a neural network already runs on the z17 AI chip." | `docker compose ps`; security live-test table 15/15 PASS; scale table (96 beds, 22.4% of the tick); NNPA CNN result | none | 48 |
+| 2:44-2:55 | "SentinelWard. Patient, sensor, or hacker: answered every five seconds, and the patient is never blank. Team TessNova." | End card: Team TessNova, repo link, "IBM Z Datathon 2026" | none | 17 |
+
+## Sources for each spoken number
+- z17 / Telum II / `nnpa`, machine type 9175: `docs/evidence/PLATFORM.md`.
+- B03 +2 s, step 2 at 30 s, ack 05:48; B05 10:02 / 10:07 / 10:23 / Undo 15:29; B07 13:47 / 13:52 / 14:02 / 14:03; B06 16:02 / 16:03 and 4.3 s time-to-safe; Granite briefing at 19:00; every event → verdict +2 to +3 s; 0 API / 0 agent errors: `docs/evidence/WARD-RUN.md`. 20 s confirm before cut-off: `agents_v2/REPORT.md`, `docs/evidence/SECURITY.md`.
+- 0.862, 0.391, 0.832; the CNN on the NNPA (scored below the trees and is not deployed, so say "runs", never "decides"): `docs/evidence/ML-RESULTS.md`.
+- Six containers, non-root, read-only, capabilities dropped: `docs/evidence/CONTAINERS.md`. 15/15, TLS 1.3, own-bed accounts: `docs/evidence/SECURITY.md`. 96 beds: `docs/evidence/SCALE.md`.
+
+## Honesty notes for recording
+- It is a lab ward replaying real recordings; do not claim a hospital deployment.
+- B06 shows BOTH (not TAMPERING) because the forged asystole alarm is held as an alarm; narrate it that way.
+- B12's weak attack did not surface in ward run 3 (cause fixed afterwards): do not show it unless a re-run passes.
 
 ## Recording checklist
-- Record each scene separately from the same full ward-script run; screen at 1440x900.
-- Terminal font 20 pt+, dark theme; show the server hostname `tessnovabuild`.
-- Phone: Telegram chat with @sentinelward_tessnova_bot visible for B03.
-- Keep total under 2:58; voice calm and slow.
-
-## Judge screenshots to capture (criterion 3)
-1. `lscpu` + `/proc/sysinfo` + `grep nnpa /proc/cpuinfo` (compute, platform).
-2. `docker compose ps` + `deploy/evidence/containers/hardening.txt` (containers, security).
-3. `security_v2` live test table, all PASS (security).
-4. `docker stats` / `top` during the 12-bed run + the scale test (scalability, compute).
-5. M2 training log on LinuxONE + held-out results (AI/ML open source on LinuxONE).
+- Screen 1440x900; terminal font 20 pt+, hostname `tessnovabuild` visible.
+- Phone: the Telegram chat with the SentinelWard bot visible for B03.
+- Judge screenshots already captured: `docs/evidence/screens/` (01-10, listed in `docs/evidence/INDEX.md`).
