@@ -30,6 +30,11 @@ class BodyMismatch:
     ALIAS_USUAL_MS = 120          # once learned: median phase within 120 ms of this patient's usual
     ALIAS_MIN_CLIPPED = .02       # clipped PPG samples that make a sub-rate pulse count unreliable
     ALIAS_SMALL_LOCKED = .5       # small beats at the ECG rate: locked share needed (cap; 1.5x chance below)
+    # Non-pulsatile pleth (B11: low perfusion, wander, sample-hold plateaus, dropouts to 0): the
+    # per-second pulse-band swing (0.5-8 Hz) is under 20% of the raw swing, so the shared detector's
+    # 0.35-prominence "beats" are wander bumps and artefact edges. Every scored window of the other
+    # 11 ward packs is >= 0.204 (B11: 53% of its high-M3 windows are below 0.2).
+    ALIAS_MIN_PULSATILE = .2
 
     def __init__(self):
         self.baselines = {}
@@ -106,8 +111,18 @@ class BodyMismatch:
         peaks, _ = find_peaks(band, distance=int(.33*125), prominence=max(1e-6, .10*spread), width=1)
         return peaks
 
+    @staticmethod
+    def _pulsatile_share(pulse_samples):
+        """Median per-second pulse-band (0.5-8 Hz) swing over the raw window swing (unit-free)."""
+        span = float(np.ptp(pulse_samples))
+        if span <= 0:
+            return None
+        band = sosfiltfilt(_PPG_SOS, pulse_samples-np.median(pulse_samples))
+        swings = [float(np.ptp(band[i:i+125])) for i in range(0, len(band)-124, 125)]
+        return float(np.median(swings))/span if swings else None
+
     def _detection_alias(self, ecg, ppg, er, pr, peak_rate, pulse_samples, clipped,
-                         monitor, usual, coverage, replay):
+                         monitor, usual, coverage, replay, rate_alias=False):
         """Alias evidence when a pulse-rate disagreement is a detection artefact, else None.
 
         Requires: no known pulse replay; regular, well-covered ECG whose rate agrees with the
@@ -129,9 +144,26 @@ class BodyMismatch:
                 or not np.all(np.isfinite(pulse_samples))):
             return None
         near = lambda a, b: a is not None and a >= 10 and abs(a-b) <= self.ALIAS_RATE_TOL*b
-        if near(pr, er):
-            return None  # rates already agree: the ordinary comparison applies
         rr_ms = 60000/er
+        pulsatile = self._pulsatile_share(pulse_samples)
+
+        def low_pulsatility():
+            # No real pulse beats to compare (wander/holds/dropouts dominate): neither the
+            # detected rate nor its timing is evidence of a second body. Detected peaks clearly
+            # locked at another arrival than this patient's usual are still a shifted pulse.
+            if pulsatile is None or pulsatile >= self.ALIAS_MIN_PULSATILE:
+                return None
+            lock = self._phase_lock(ppg['peaks'], ecg['peaks'], rr_ms, usual)
+            if (lock is not None and lock[0] >= self.ALIAS_MIN_LOCKED and lock[1] is not None
+                    and abs(lock[1]) > self.ALIAS_USUAL_MS):
+                return None
+            return dict(kind='low_pulsatility', divisor=None, agreement=lock and lock[0],
+                        offset_ms=lock and lock[1], clipped_fraction=clipped,
+                        small_peak_rate_bpm=None, pulsatile_share=pulsatile)
+        if near(pr, er):
+            # Rates agree: the ordinary comparison applies (a resolved rate alias keeps its own
+            # path), unless there are no real beats to time.
+            return None if rate_alias else low_pulsatility()
         small = self._small_pulse_peaks(pulse_samples)
         small_rate = float(7500/np.median(np.diff(small))) if len(small) >= 5 else None
         # Small observed beats at the ECG rate, locked to this patient's ECG at the usual arrival.
@@ -152,8 +184,9 @@ class BodyMismatch:
         reliable = ppg['regularity'] is not None and ppg['regularity'] <= .25
         if found is None and not reliable and small_locked:
             found = dict(kind='recheck', divisor=None, agreement=small_lock[0], offset_ms=small_lock[1])
-        if found is not None:
-            found.update(clipped_fraction=clipped, small_peak_rate_bpm=small_rate)
+        if found is None:
+            return low_pulsatility()
+        found.update(clipped_fraction=clipped, small_peak_rate_bpm=small_rate)
         return found
 
     def __call__(self, window, state, now_ms):
@@ -271,7 +304,8 @@ class BodyMismatch:
                           **rates, path='live_rate_and_pat')
         detection_alias = self._detection_alias(ecg, ppg, er, pr, peak_rate, pulse_samples,
                                                 float(channels['ppg'].get('clipped_fraction') or 0.),
-                                                monitor if monitor_ok else None, usual, coverage, replay)
+                                                monitor if monitor_ok else None, usual, coverage, replay,
+                                                rate_alias=alias)
         if detection_alias is not None:
             # Clipped or low-amplitude pulses: the shared detector counts every 2nd/3rd beat (or
             # finds irregular peaks whose recheck matches the ECG). The pulse is phase-locked to
@@ -285,7 +319,12 @@ class BodyMismatch:
                          alias_phase_offset_ms=detection_alias['offset_ms'],
                          ppg_clipped_fraction=detection_alias['clipped_fraction'],
                          ppg_small_peak_rate_bpm=detection_alias['small_peak_rate_bpm'])
-            return result(self.ALIAS_SCORE, 'pulse detection unreliable (clipped/half-rate); rechecking',
+            if detection_alias.get('pulsatile_share') is not None:
+                rates['ppg_pulsatile_share'] = detection_alias['pulsatile_share']
+            reason = ('pulse waveform unreliable (no clear beats, low pulsatile signal); rechecking'
+                      if detection_alias['kind'] == 'low_pulsatility'
+                      else 'pulse detection unreliable (clipped/half-rate); rechecking')
+            return result(self.ALIAS_SCORE, reason,
                           **rates, path='live_rate_and_pat', eligible=True, beats_reliable=False,
                           raw_score=self.ALIAS_SCORE, persistence_windows=len(recent),
                           baseline_pat_ms=usual, baseline_samples=len(baseline),

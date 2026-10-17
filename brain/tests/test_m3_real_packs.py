@@ -111,11 +111,51 @@ def test_irregular_donor_pulse_does_not_establish_normal(packs):
     assert all(not r['extra'].get('not_applicable', False) for r in values)
 
 
-def test_real_b11_nonharmonic_rate_disagreement_is_preserved(packs):
-    # This region is not an alias: pulse 88 bpm vs ECG/monitor about 67 bpm.
+def test_real_b11_dropout_window_is_low_pulsatility_not_a_second_body(packs):
+    # Formerly asserted >= .8 as "pulse 88 bpm vs ECG 67". The 88 bpm came from 3 detector peaks
+    # on artefact: in 145-160 s the pleth drops to exactly 0.0 for 118 samples and holds one value
+    # for up to 189 samples; its pulse-band swing is 7% of the raw swing. No beats, no second body.
     model = BodyMismatch()
     values = [observe(model,packs,'B11',sec) for sec in (145,150)]
-    assert values[-1]['score'] >= .8
+    assert all(v['score'] == BodyMismatch.ALIAS_SCORE for v in values), values
+    assert all(v['extra']['pulse_detection_alias'] == 'low_pulsatility' for v in values)
+    assert all(v['extra']['ppg_pulsatile_share'] < BodyMismatch.ALIAS_MIN_PULSATILE for v in values)
+    # Another patient's real pulse in the same seconds is still a second body.
+    model = BodyMismatch()
+    for s in range(30, 145, 5):
+        observe(model, packs, 'B11', s)
+    donor = [observe(model, packs, 'B11', s, pulse_bed='B06')['score'] for s in range(145, 185, 5)]
+    assert sum(x is not None and x >= .8 for x in donor) >= 3, donor
+
+
+@pytest.mark.parametrize('sec', [365, 375, 410, 635, 795])
+def test_b11_low_pulsatility_windows_are_not_body_mismatch(packs, sec):
+    # Live run 4 B11 M3 pages (06:09, 10:44): ECG = monitor HR, "pulse" 85-97 bpm or PAT ~980 ms
+    # read from wander bumps, holds and dropouts on a pleth with almost no pulsatile signal.
+    model = BodyMismatch()
+    for s in range(30, sec, 5):
+        observe(model, packs, 'B11', s)
+    r = observe(model, packs, 'B11', sec)
+    assert r['score'] is not None and r['score'] < .5, r
+    assert r['extra'].get('pulse_detection_alias') in ('low_pulsatility', 'recheck', 'sub_rate'), r['extra']
+    assert 'rechecking' in r['reason']
+
+
+@pytest.mark.parametrize('bed', ['B01', 'B02', 'B05', 'B06', 'B08', 'B09', 'B10', 'B12'])
+def test_other_beds_real_pulses_are_never_low_pulsatility(packs, bed):
+    model = BodyMismatch()
+    values = [observe(model, packs, bed, s) for s in range(0, 1191, 5)]
+    assert not any(v['extra'].get('pulse_detection_alias') == 'low_pulsatility' for v in values)
+
+
+@pytest.mark.parametrize('donor', ['B01', 'B02', 'B05', 'B06', 'B08', 'B10', 'B12'])
+def test_b11_ecg_with_any_other_real_pulse_still_scores_high(packs, donor):
+    model = BodyMismatch()
+    for s in range(30, 300, 5):
+        observe(model, packs, 'B11', s)
+    values = [observe(model, packs, 'B11', s, pulse_bed=donor) for s in range(300, 360, 5)]
+    assert not any(v['extra'].get('pulse_detection_alias') == 'low_pulsatility' for v in values)
+    assert sum((v['score'] or 0.) >= .8 for v in values) >= 3, [v['score'] for v in values]
 
 
 def test_frozen_pulse_cannot_outwait_replay_hold(packs):
