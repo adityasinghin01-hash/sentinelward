@@ -99,6 +99,16 @@ def test_medium_needs_two_verdicts_and_single_blip_is_ignored(world):
     assert a["text"].startswith("Bed 5 — monitor can't be trusted.")
 
 
+def test_unsure_waits_six_verdicts_but_tampering_still_two(make_world):
+    w = make_world(unsure_confirm_verdicts=6)
+    w.verdict("B02", "UNSURE", 0.5, scores={"M3": 0.9}, n=5)
+    assert w.bus.alerts() == []
+    w.verdict("B02", "UNSURE", 0.5, scores={"M3": 0.9})
+    assert w.bus.alerts()[-1]["verdict"] == "UNSURE"
+    w.verdict("B05", "TAMPERING", 0.5, n=2)
+    assert w.bus.alerts()[-1]["bed_id"] == "B05"
+
+
 def test_table_priorities(world):
     beds = {"B01": "EMERGENCY", "B02": "BOTH", "B03": "TAMPERING", "B04": "DRIFTING", "B05": "LOOSE_SENSOR",
             "B06": "UNSURE", "B07": "NORMAL", "B08": "DEVICE_ATTACK"}

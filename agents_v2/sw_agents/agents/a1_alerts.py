@@ -337,7 +337,8 @@ class A1Alerts(Agent):
         if verdict not in ALERTING:
             return
         self.streak[bed] = self.streak.get(bed, 0) + 1
-        if VERDICT_PRIORITY[verdict] != "high" and self.current.get(bed) is None and self.streak[bed] < self.e.s.confirm_verdicts:
+        need = self.e.s.unsure_confirm_verdicts if verdict == "UNSURE" else self.e.s.confirm_verdicts
+        if VERDICT_PRIORITY[verdict] != "high" and self.current.get(bed) is None and self.streak[bed] < need:
             return
         self._raise(bed, verdict, list(v.get("reasons") or []), "verdict")
 

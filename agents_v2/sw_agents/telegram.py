@@ -85,9 +85,9 @@ class Telegram:
             self.on_result(key, chat_id, ok)
         return True
 
-    def _call(self, method: str, body: dict) -> tuple[bool, Any]:
+    def _call(self, method: str, body: dict, timeout_s: float | None = None) -> tuple[bool, Any]:
         try:
-            response = self._http.post(method, json=body)
+            response = self._http.post(method, json=body, **({"timeout": timeout_s} if timeout_s else {}))
             data = response.json()
         except Exception as exc:
             log.warning("telegram %s failed: %s", method, type(exc).__name__)
@@ -106,8 +106,9 @@ class Telegram:
         """Long-poll getUpdates; return parsed button presses [{chat_id, kind, bed_id, alert_id}]."""
         if not self.enabled:
             return []
+        # The HTTP read must outlast Telegram's long poll, or every quiet poll ends in ReadTimeout.
         ok, result = self._call("getUpdates", {"offset": self.offset, "timeout": timeout_s,
-                                               "allowed_updates": ["callback_query"]})
+                                               "allowed_updates": ["callback_query"]}, timeout_s=timeout_s + 10)
         presses = []
         updates = result if ok and isinstance(result, list) else []
         for update in updates:

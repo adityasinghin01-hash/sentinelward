@@ -94,6 +94,7 @@ class Settings:
     ladder_priorities: tuple[str, ...] = ("high", "medium")
     confirm_verdicts: int = 2
     clear_verdicts: int = 2
+    unsure_confirm_verdicts: int = 6  # UNSURE is a doubt, not a finding: ~30 s before a nurse is paged
     telegram_token: str | None = field(default=None, repr=False)
     telegram_chats: Mapping[str, int] = field(default_factory=dict)
     telegram_it_chat: int | None = None
@@ -191,6 +192,7 @@ class Settings:
             ladder_priorities=prios,
             confirm_verdicts=int(_num(env, "SW_A1_CONFIRM_VERDICTS", 2, 1, 10)),
             clear_verdicts=int(_num(env, "SW_A1_CLEAR_VERDICTS", 2, 1, 10)),
+            unsure_confirm_verdicts=int(_num(env, "SW_A1_UNSURE_CONFIRM_VERDICTS", 6, 1, 24)),
             telegram_token=_first(env, "SW_TELEGRAM_BOT_TOKEN"),
             telegram_chats=chats,
             telegram_it_chat=_chat_id(it_chat, "SW_TELEGRAM_IT_CHAT") if it_chat else None,
