@@ -117,9 +117,6 @@ class PressureDrift:
 
 
 class NetworkAttack:
-    def __init__(self, research=None):
-        self.research = research
-
     @staticmethod
     def features(records):
         arrivals = np.array([r.get('received_mono_ms',r['received_ms']) for r in records],dtype=float)/1000
@@ -146,34 +143,27 @@ class NetworkAttack:
         source = None
         if network and now_ms-10000 <= network['window_start'] and network['window_start']+network['window_s']*1000 <= now_ms:
             source = network
+        device = (state.last_message or window or {}).get('device_id')
+        if source is not None and device is not None and source['device_id'] != device:
+            source = None
         sender_count = max(len(senders), int((source or {}).get('senders') or 0))
-        score = .95 if features['msg_rate'] > 5 else 0.
-        if features['seq_dup_count'] >= 2: score=max(score,.9)
+        rate = max(features['msg_rate'], (source or {}).get('msgs_per_s') or 0.)
+        repeats = max(features['seq_dup_count'], (source or {}).get('seq_repeats') or 0.)
+        score = .95 if rate > 5 else 0.
+        if repeats >= 2: score=max(score,.9)
         if sender_count > 1: score=max(score,.6)
         extra = dict(path='received_rules', features=features, senders=sender_count,
-                     sender_identity_available=bool(senders) or source is not None,
+                     sender_identity_available=bool(senders) or (source is not None and source.get('senders') is not None),
                      source_window_s=10, observed_messages=len(recent))
-        # Topic 7 provides the model's measured feature subset; complete only genuinely measured fields.
-        if source is not None and self.research and len(recent)>=2:
-            aliases = {'msgs_per_s':'msg_rate','iat_mean_ms':'inter_arrival_mean','iat_std_ms':'inter_arrival_std',
-                       'payload_mean':'payload_bytes_mean','payload_std':'payload_bytes_std',
-                       'seq_gaps':'seq_gap_count','seq_repeats':'seq_dup_count'}
-            model_features = dict(features)
-            complete = all(source.get(k) is not None for k in aliases)
-            if complete:
-                for key,dest in aliases.items(): model_features[dest]=source[key]/1000 if key.startswith('iat_') else source[key]
-                output = self.research.m5(model_features, (window or {}).get('device_id',source['device_id']))
-                extra['research'] = output
-                extra['topic7_window_start'] = source['window_start']
-                extra['topic7_window_s'] = source['window_s']
-                extra['feature_spans'] = 'topic7 measured subset over 5s; IAT extrema and timestamp drift from own 10s receipts'
-                if output.get('status')=='active':
-                    score=max(score,output['score'])
-                    extra.update(path='topic7_artifact',artifact_score=output['score'],features=model_features)
-        if not recent:
+        if source is not None:
+            extra.update(path='received_and_topic7_rules' if recent else 'topic7_rules',
+                         topic7_window_start=source['window_start'], topic7_window_s=source['window_s'],
+                         topic7_features={k:v for k,v in source.items() if k not in
+                                          {'v','type','device_id','window_start','window_s','received_ms'}})
+        if not recent and not (source is not None and (rate > 0 or repeats > 0 or sender_count > 1)):
             return result(None, 'No recent packets; silence alone is not a network attack', eligible=False, **extra)
-        reason = ('Message flood at '+str(round(features['msg_rate'],1))+' messages/s' if features['msg_rate']>5 else
-                  'Repeated or regressed packet sequences' if features['seq_dup_count']>=2 else
+        reason = ('Message flood at '+str(round(rate,1))+' messages/s' if rate>5 else
+                  'Repeated or regressed packet sequences' if repeats>=2 else
                   'Second sender observed; bedside confirmation needed' if sender_count>1 else
                   'No network attack evidence in received traffic')
         return result(score,reason,**extra)

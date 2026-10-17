@@ -87,23 +87,37 @@ def test_m5_receipt_rules_normal_flood_repeats_and_sender_evidence():
     assert detector({'bed_id':'B01'},state(flood),10000)['score'] >= .9
 
 
-def test_m5_topic7_model_path_and_load_failure_fallback():
-    class Research:
-        def m5(self, features, device):
-            assert features['inter_arrival_min'] == 1
-            assert device == 'MON-01'
-            return {'status':'active','score':.87,'threshold':.7,'positive':True,'extra':{}}
+@pytest.mark.parametrize('field,value,want', [('msgs_per_s', 20, .95),
+                                               ('seq_repeats', 3, .9), ('senders', 2, .6),
+                                               ('seq_gaps', 10, 0.), ('stale_ms', 9000, 0.)])
+def test_m5_fresh_topic7_features_augment_receipt_rules(field, value, want):
     network = {'device_id':'MON-01','window_start':5000,'window_s':5,
                'msgs_per_s':1,'iat_mean_ms':1000,'iat_std_ms':0,'payload_mean':100,
-               'payload_std':0,'seq_gaps':0,'seq_repeats':0,'senders':1}
-    result = NetworkAttack(Research())({'bed_id':'B01','device_id':'MON-01'},state(records(),network),10000)
-    assert result['score'] == .87
-    assert result['extra']['path'] == 'topic7_artifact'
-    class Broken:
-        def m5(self,*args): return {'status':'unavailable','extra':{'unavailable_reason':'bad hash'}}
-    result = NetworkAttack(Broken())({'bed_id':'B01'},state(records(),network),10000)
+               'payload_std':0,'seq_gaps':0,'seq_repeats':0,'senders':1,'received_ms':10000}
+    network[field] = value
+    result = NetworkAttack()({'bed_id':'B01','device_id':'MON-01'},state(records(),network),10000)
+    assert result['score'] == want
+    assert result['extra']['path'] == 'received_and_topic7_rules'
+    assert result['extra']['topic7_features'][field] == value
+    assert result['extra']['features']['inter_arrival_mean'] == 1
+    assert 'research' not in result['extra']
+
+
+@pytest.mark.parametrize('start', [-5000, 10000])
+def test_m5_stale_or_future_topic7_features_cannot_raise_score(start):
+    network = {'device_id':'MON-01','window_start':start,'window_s':5,
+               'msgs_per_s':100,'seq_repeats':5,'senders':2}
+    result = NetworkAttack()({'device_id':'MON-01'},state(records(),network),10000)
+    assert result['score'] == 0.
     assert result['extra']['path'] == 'received_rules'
-    assert 'bad hash' in str(result['extra'])
+
+
+def test_m5_fresh_extractor_evidence_works_without_local_receipts():
+    network = {'device_id':'MON-01','window_start':5000,'window_s':5,
+               'msgs_per_s':100,'seq_repeats':0,'senders':1}
+    result = NetworkAttack()({'device_id':'MON-01'},state([],network),10000)
+    assert result['score'] == .95
+    assert result['extra']['path'] == 'topic7_rules'
 
 
 def test_integrated_six_live_scores_include_null_warmup_and_no_line(frame):

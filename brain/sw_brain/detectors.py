@@ -1,6 +1,7 @@
 """Live heuristics: suspiciousness in [0,1]; advisory and uncalibrated."""
 from __future__ import annotations
 from collections import deque
+from copy import deepcopy
 import numpy as np
 from scipy.signal import find_peaks
 
@@ -69,22 +70,39 @@ class QualityDetector:
         return result(value,reason,channel=bad if value else None,channels=checks,path='live_signal_quality')
 
 class EmergencyDetector:
-    def __init__(self,research=None): self.research=research
+    def __init__(self,model=None):
+        from .m2_model import M2Model
+        self.model=model if model is not None else M2Model()
+        self._sources={}
+    def reset(self):
+        self._sources.clear()
+        self.model.reset()
     def evaluate(self,window,state,now_ms):
+        bed=getattr(state,'bed_id',(window or {}).get('bed_id'))
         code=state.last_alarm_code if state.alarm_until_ms>0 and state.alarm_until_ms>=now_ms else None
         alarms=(window or {}).get('monitor_alarms',[])
         if code is None and alarms and getattr(state,'patient_ok_ts',-1)<window.get('window_start',0):
             code=alarms[-1]['code']
         if code is None:
+            self._sources.pop(bed,None)
             return result(None,'No monitor alarm in or just before this window',not_applicable=True)
-        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable')
+        episode=(getattr(state,'alarm_ts',None),code)
+        source=getattr(state,'prealarm_window',None)
+        if source is None:
+            previous=self._sources.get(bed)
+            if previous and previous[0]==episode: source=previous[1]
+            elif window:
+                source=deepcopy(window)
+                self._sources[bed]=(episode,source)
+        if source is not None:
+            output=self.model.score(source,code)
+            if output is not None:
+                return result(output['score'],'Configured M2 model evaluated '+code,path='configured_model',alarm_code=code,
+                              **{k:v for k,v in output.items() if k!='score'})
+        fallback={'model_unavailable_reason':self.model.unavailable_reason,'path':'live_ecg_rule'}
+        if not window: return result(None,'Waiting for ECG window; monitor alarms still take priority',eligible=False,unavailable_reason='window_unavailable',**fallback)
         metrics=pulse_metrics(window)
-        research={'status':'unavailable','extra':{'unavailable_reason':'not_a_full_prealarm_VTACH_window'}}
-        if code=='VTACH' and state.prealarm_window is not None and self.research:
-            research=self.research.m2(state.prealarm_window)
-            if research.get('status')=='active':
-                return result(research['score'],'Verified VTACH research model evaluated full pre-alarm window',path='research_primary_seed_20261015',research=research,positive=research['positive'],threshold=research['threshold'])
-        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',research=research)
+        if metrics is None: return result(None,'Too few valid ECG samples; monitor alarm is preserved',eligible=False,unavailable_reason='ecg_missing',**fallback)
         rate=metrics['rate']; width=metrics['qrs_ms']; regularity=metrics['regularity']
         if code=='ASYSTOLE': positive=rate<20; evidence='ECG has very few beats'
         elif code=='BRADY': positive=rate<40; evidence=f'ECG rate is {rate:.0f} bpm'
@@ -97,7 +115,7 @@ class EmergencyDetector:
             evidence=f'ECG rate is {rate:.0f} bpm'
         if confirmed_low_pressure(state,now_ms):
             positive=True; evidence='Low arterial pressure confirmed by cuff'
-        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),path='live_ecg_rule',alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,research=research)
+        return result(.95 if positive else .05,evidence+(' supports '+code if code else ''),alarm_code=code,rate_bpm=rate,qrs_width_ms=width,regularity=regularity,positive=positive,**fallback)
 
 
 def confirmed_low_pressure(state,now_ms):
@@ -111,7 +129,7 @@ def confirmed_low_pressure(state,now_ms):
     return False
 
 class ReplayDetector:
-    def __init__(self,research=None): self.history={}; self.research=research
+    def __init__(self): self.history={}
     def reset(self): self.history.clear()
     def evaluate(self,window,state,now_ms):
         recent=[r for r in state.messages if now_ms-10000<=r['received_ms']<=now_ms]
@@ -137,19 +155,16 @@ class ReplayDetector:
             if similarity_here>similarity: similarity=similarity_here; best=reference
         replay=best is not None and similarity>=.995
         extra.update(fingerprint_similarity=similarity,reference_window_start=best['window_start'] if best else None,waveform_replay=replay,independent_evidence=extra['independent_evidence'] or replay)
-        if best is not None and self.research: extra['research']=self.research.m4(best,window)
         if getattr(state,'baseline_admission_allowed',True) and not replay and not metadata_score and not any(ref['window_start']==window['window_start'] for _,ref in history): history.append((fingerprint,window))
         value=max(metadata_score,.99 if replay else min(.3,max(0.,similarity*.2)))
         reason='Near-identical waveform seen earlier on this bed' if replay else ('Repeated or regressed sequence' if evidence else ('Second authenticated sender on this bed' if len(senders)>1 else 'No replay evidence in available bed history'))
         return result(value,reason,**extra)
 
 class DetectorSuite:
-    def __init__(self,research=None):
+    def __init__(self,m2_model=None):
         from .extended import BodyMismatch,NetworkAttack,PressureDrift
-        self.detectors={'M1':QualityDetector(),'M2':EmergencyDetector(research),'M3':BodyMismatch(),'M4':ReplayDetector(research),'M5':NetworkAttack(research),'M6':PressureDrift()}
-        self.research=research
+        self.detectors={'M1':QualityDetector(),'M2':EmergencyDetector(m2_model),'M3':BodyMismatch(),'M4':ReplayDetector(),'M5':NetworkAttack(),'M6':PressureDrift()}
     def reset(self):
-        if self.research and hasattr(self.research,'reset'): self.research.reset()
         for detector in self.detectors.values():
             if hasattr(detector,'reset'): detector.reset()
     def evaluate(self,window,state,now_ms):
