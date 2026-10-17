@@ -357,5 +357,8 @@ class Engine:
 
     def snapshot(self) -> dict:
         with self.lock:
-            return {"ts": self.now(), "stats": dict(self.stats), "timers": sorted(self.timers),
+            snap = {"ts": self.now(), "stats": dict(self.stats), "timers": sorted(self.timers),
                     "agents": {aid: a.snapshot() for aid, a in self.agents.items()}}
+            if self.telegram is not None and hasattr(self.telegram, "stats"):
+                snap["telegram"] = self.telegram.stats()
+            return snap
