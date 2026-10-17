@@ -1,0 +1,171 @@
+== B01 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B02 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-04:19 NORMAL        none   All applicable live checks are clear
+  04:24-04:24 UNSURE        medium Body-match check: ECG rate 87 bpm differs from pulse rate 54 bpm
+  04:29-05:04 NORMAL        none   All applicable live checks are clear
+  05:09-05:09 UNSURE        medium Body-match check: ECG rate 86 bpm differs from pulse rate 58 bpm
+  05:14-09:19 NORMAL        none   All applicable live checks are clear
+  09:24-09:34 UNSURE        medium Body-match check: ECG rate 101 bpm differs from pulse rate 35 bpm
+  09:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B03 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-04:59 NORMAL        none   All applicable live checks are clear
+  05:04-05:39 EMERGENCY     high   Monitor alarm remains active
+  05:44-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B04 227 verdicts
+  01:34-01:39 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  01:44-06:24 NORMAL        none   All applicable live checks are clear
+  06:29-06:29 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  06:34-07:09 EMERGENCY     high   Monitor alarm remains active
+  07:14-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B05 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-00:59 NORMAL        none   All applicable live checks are clear
+  01:04-01:09 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:14-01:39 NORMAL        none   All applicable live checks are clear
+  01:44-01:44 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:49-02:49 NORMAL        none   All applicable live checks are clear
+  02:54-02:54 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  02:59-04:49 NORMAL        none   All applicable live checks are clear
+  04:54-04:54 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  04:59-05:14 NORMAL        none   All applicable live checks are clear
+  05:19-05:19 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  05:24-09:54 NORMAL        none   All applicable live checks are clear
+  09:59-16:54 TAMPERING     medium Old or unverified regressed sequence
+  16:59-17:24 NORMAL        none   All applicable live checks are clear
+  17:29-17:34 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  17:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B06 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-07:09 NORMAL        none   All applicable live checks are clear
+  07:14-07:14 UNSURE        medium Body-match check: Pulse timing 864 ms from ECG; this patient's usual is 696 ms
+  07:19-15:24 NORMAL        none   All applicable live checks are clear
+  15:29-15:34 UNSURE        medium Body-match check: ECG rate 80 bpm differs from pulse rate 41 bpm
+  15:39-15:54 NORMAL        none   All applicable live checks are clear
+  15:59-20:24 BOTH          high   Monitor alarm remains active; Conflicting frame content for the same sequence or timestamp
+== B07 137 verdicts
+  09:04-09:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  09:14-12:49 NORMAL        none   All applicable live checks are clear
+  12:54-13:44 UNSURE        medium Sensor check: PPG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  13:49-13:49 DEVICE_ATTACK none   Message flood at 45.4 messages/s
+  13:54-13:59 TAMPERING     medium Replay checked from sequence and sender; waveform unusable
+  14:04-20:24 BOTH          high   Monitor alarm remains active; Replay checked from sequence and sender; waveform unusable
+== B08 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-11:04 NORMAL        none   All applicable live checks are clear
+  11:09-16:09 DRIFTING      medium Line/cuff gap +9 mmHg vs usual +0 and growing; re-level and re-zero the transducer
+  16:14-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B09 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-00:14 NORMAL        none   All applicable live checks are clear
+  00:19-00:34 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  00:39-01:04 NORMAL        none   All applicable live checks are clear
+  01:09-01:14 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  01:19-01:29 NORMAL        none   All applicable live checks are clear
+  01:34-01:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  01:54-02:04 NORMAL        none   All applicable live checks are clear
+  02:09-02:14 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  02:19-02:24 NORMAL        none   All applicable live checks are clear
+  02:29-02:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  02:54-03:24 NORMAL        none   All applicable live checks are clear
+  03:29-03:39 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  03:44-03:49 NORMAL        none   All applicable live checks are clear
+  03:54-05:19 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  05:24-05:39 NORMAL        none   All applicable live checks are clear
+  05:44-05:44 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  05:49-06:09 NORMAL        none   All applicable live checks are clear
+  06:14-06:44 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  06:49-06:54 NORMAL        none   All applicable live checks are clear
+  06:59-07:49 UNSURE        medium Sensor check: ECG: flat or stuck line; Body-match check: Signal unusable: heart-pulse comparison waiting for usable samples
+  07:54-19:14 EMERGENCY     high   Low arterial pressure confirmed by cuff
+  19:19-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B10 245 verdicts
+  00:04-00:09 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:14-05:54 NORMAL        none   All applicable live checks are clear
+  05:59-20:24 TAMPERING     medium Conflicting frame content for the same sequence or timestamp
+== B11 245 verdicts
+  00:04-00:14 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:19-02:14 NORMAL        none   All applicable live checks are clear
+  02:19-02:29 UNSURE        medium Body-match check: Pulse timing 1156 ms from ECG; this patient's usual is 712 ms
+  02:34-03:24 NORMAL        none   All applicable live checks are clear
+  03:29-03:39 UNSURE        medium Body-match check: ECG rate 62 bpm differs from pulse rate 53 bpm
+  03:44-04:24 NORMAL        none   All applicable live checks are clear
+  04:29-04:29 UNSURE        medium Body-match check: Pulse timing 896 ms from ECG; this patient's usual is 702 ms
+  04:34-04:59 NORMAL        none   All applicable live checks are clear
+  05:04-05:09 UNSURE        medium Body-match check: Pulse timing 848 ms from ECG; this patient's usual is 702 ms
+  05:14-05:39 NORMAL        none   All applicable live checks are clear
+  05:44-06:04 UNSURE        medium Body-match check: Pulse timing 856 ms from ECG; this patient's usual is 703 ms
+  06:09-08:29 NORMAL        none   All applicable live checks are clear
+  08:34-08:34 UNSURE        medium Body-match check: Pulse timing 912 ms from ECG; this patient's usual is 702 ms
+  08:39-08:39 NORMAL        none   All applicable live checks are clear
+  08:44-08:54 UNSURE        medium Body-match check: Pulse timing 992 ms from ECG; this patient's usual is 702 ms
+  08:59-09:14 NORMAL        none   All applicable live checks are clear
+  09:19-09:19 UNSURE        medium Body-match check: Pulse timing 1120 ms from ECG; this patient's usual is 702 ms
+  09:24-10:19 NORMAL        none   All applicable live checks are clear
+  10:24-10:24 UNSURE        medium Body-match check: Pulse timing 904 ms from ECG; this patient's usual is 696 ms
+  10:29-10:34 NORMAL        none   All applicable live checks are clear
+  10:39-10:39 UNSURE        medium Body-match check: Pulse timing 924 ms from ECG; this patient's usual is 696 ms
+  10:44-11:59 NORMAL        none   All applicable live checks are clear
+  12:04-12:14 DEVICE_ATTACK none   Message flood at 26.1 messages/s
+  12:19-12:39 NORMAL        none   All applicable live checks are clear
+  12:44-12:44 UNSURE        medium Body-match check: Pulse timing 936 ms from ECG; this patient's usual is 688 ms
+  12:49-12:49 NORMAL        none   All applicable live checks are clear
+  12:54-13:04 UNSURE        medium Body-match check: Pulse timing 932 ms from ECG; this patient's usual is 688 ms
+  13:09-14:44 NORMAL        none   All applicable live checks are clear
+  14:49-14:49 UNSURE        medium Body-match check: Pulse timing 888 ms from ECG; this patient's usual is 684 ms
+  14:54-14:59 NORMAL        none   All applicable live checks are clear
+  15:04-15:09 UNSURE        medium Body-match check: ECG rate 69 bpm differs from pulse rate 50 bpm
+  15:14-15:14 NORMAL        none   All applicable live checks are clear
+  15:19-15:24 UNSURE        medium Body-match check: Pulse timing 932 ms from ECG; this patient's usual is 684 ms
+  15:29-15:29 NORMAL        none   All applicable live checks are clear
+  15:34-15:34 UNSURE        medium Body-match check: ECG rate 78 bpm differs from pulse rate 49 bpm
+  15:39-16:14 NORMAL        none   All applicable live checks are clear
+  16:19-16:24 UNSURE        medium Body-match check: ECG rate 73 bpm differs from pulse rate 57 bpm
+  16:29-17:54 NORMAL        none   All applicable live checks are clear
+  17:59-17:59 UNSURE        medium Body-match check: Pulse timing 936 ms from ECG; this patient's usual is 684 ms
+  18:04-18:29 NORMAL        none   All applicable live checks are clear
+  18:34-18:44 UNSURE        medium Body-match check: ECG rate 71 bpm differs from pulse rate 58 bpm
+  18:49-19:09 NORMAL        none   All applicable live checks are clear
+  19:14-19:14 UNSURE        medium Body-match check: ECG rate 82 bpm differs from pulse rate 68 bpm
+  19:19-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0
+== B12 245 verdicts
+  00:04-00:24 UNSURE        medium Sensor check: Waiting for 10 seconds of ECG and pulse; Body-match check: Waiting for ECG and pulse window
+  00:29-00:34 NORMAL        none   All applicable live checks are clear
+  00:39-00:44 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  00:49-01:29 NORMAL        none   All applicable live checks are clear
+  01:34-01:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  01:44-02:34 NORMAL        none   All applicable live checks are clear
+  02:39-02:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  03:04-05:54 NORMAL        none   All applicable live checks are clear
+  05:59-05:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  06:04-07:04 NORMAL        none   All applicable live checks are clear
+  07:09-07:14 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  07:19-11:09 NORMAL        none   All applicable live checks are clear
+  11:14-11:19 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  11:24-11:44 NORMAL        none   All applicable live checks are clear
+  11:49-11:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  12:04-12:09 NORMAL        none   All applicable live checks are clear
+  12:14-12:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  12:44-12:54 NORMAL        none   All applicable live checks are clear
+  12:59-13:24 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  13:29-15:09 NORMAL        none   All applicable live checks are clear
+  15:14-15:19 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  15:24-15:29 NORMAL        none   All applicable live checks are clear
+  15:34-15:39 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  15:44-15:49 NORMAL        none   All applicable live checks are clear
+  15:54-15:59 UNSURE        medium Sensor check: ECG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  16:04-16:59 NORMAL        none   All applicable live checks are clear
+  17:04-17:54 UNSURE        medium Replay check: Multiple publishers observed; bedside confirmation pending; Network check: Identical live copies; second sender needs bedside confirmation
+  17:59-18:19 NORMAL        none   All applicable live checks are clear
+  18:24-18:34 UNSURE        medium Sensor check: PPG: missing samples; Body-match check: Not enough observed ECG and pulse samples
+  18:39-19:59 NORMAL        none   All applicable live checks are clear
+  20:04-20:24 UNSURE        medium Monitor offline for at least 3 seconds; last values retained; data trust 0

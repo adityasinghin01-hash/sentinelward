@@ -1,5 +1,21 @@
 # Full 20-minute ward script, agents ON
 
+## Night run N on build 4348467 (18 Oct 2026, 00:42 IST) — the latest build
+Same script, agents on, human steps, sampler and judge as F1–F3 (`raw/wardrun-night/`). Build 4348467 adds the network-witness fix (the brain kept dropping the last finished sender window 1 ms early, so sender counts were always "unknown"), the FHIR export and docs; the decision rules are otherwise unchanged.
+
+| Result | Run N | F1 / F2 / F3 |
+|---|---|---|
+| Beds PASS | **12 / 12** | 12 / 11 / 11 |
+| B12 weak second sender | **UNSURE 17:04 from 2 senders**, page 17:29, acked 17:58, NORMAL 17:59 after Patient OK | seen in F1 only |
+| Time-to-safe B05 / B06 / B07 / B10 | 21.2 / 1.2 / 21.3 / 21.2 s | medians 23.2 / 3.1 / 19.2 / 23.2 s |
+| Nurse alerts | 11 | 11 each |
+| Telegram sent / edited / failed | 22 / 26 / 0 | 22 / 25–26 / 0 |
+| Granite end-of-shift briefing | yes (one mid-run draft rejected by the fact-check, as in F1/F3) | yes |
+| AI-chip second opinion | 3 messages (B03 VTACH real, B04 ASYSTOLE false, B07 VFIB real), nnpa:0, 4–5 ms; no verdict changed | — |
+| Security live test / acceptance | 15/15 · 7/7 | 15/15 · 7/7 |
+
+Only difference worth noting: B07 time-to-safe 21.3 s is 0.1 s slower than the slowest F run (cut at 14:05, 1 s after BOTH, same timing as F1).
+
 ## Final runs F1–F3 on build f7fef1c (17 Oct 2026)
 
 Three back-to-back full ward runs on the LinuxONE build server, build `f7fef1c` (services restarted 21:36 IST, includes the B11 fix), agents on, network witness on, speed 1, same sampler and four human steps as runs 3 and 4 (Tom acks B03 05:50, Priya "patient OK" B05 11:30, Sam undoes B05's cut-off 15:30, nurse "patient OK" B12 18:00; every step returned 201/202 in all three runs). Every sampled API call returned 200 (except `/api/briefing` 503 before the first briefing exists). Agents bus: 0 invalid, 0 dropped, 0 handler errors. Raw outputs: `raw/wardrun-final/timeline_verdictsF*.txt`, `raw/wardrun-final/metricsF*.txt`.
@@ -77,4 +93,4 @@ Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–1
 - Nurse alerts: 13 in 20 minutes for 12 beds (B01/B02: 0). Telegram: 24 messages sent + 27 edited, 0 failed (agents status counters).
 - No bed lost its values: attacked beds kept showing their last trusted numbers while cut off.
 
-**Known gaps (honest):** B12's weak attack did not surface live (network witness blind, since fixed; re-run pending); B05 took 92 s to return to NORMAL after IT's Undo (the tampering latch waits for 30 s of clean data after the replay attack ends); B11 had 3 UNSURE hand-check pages from a clipped pulse signal.
+**Known gaps (honest):** B12's weak attack did not surface live (network witness blind; fixed in build 4348467 and confirmed in night run N); B05 took 92 s to return to NORMAL after IT's Undo (the tampering latch waits for 30 s of clean data after the replay attack ends); B11 had 3 UNSURE hand-check pages from a clipped pulse signal.

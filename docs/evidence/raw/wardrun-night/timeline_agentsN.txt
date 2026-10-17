@@ -1,0 +1,251 @@
+-00:12 {"event": "reset", "ts": 1792264329388, "cmd": "reset", "run_id": "run_20261017_191209"}
+-00:12 A2 enable_client B10 MON-10 undoes=act_cic3cy01537 res=ok | Bed B10 trusted again (demo reset); MON-10 had not been cut off at the hub
+-00:02 {"event": "reset", "ts": 1792264339388, "cmd": "run", "run_id": "run_20261017_191219"}
+00:59 RECORD workload wl_cic3cy00001 by A7
+00:59 RECORD briefing br_cic3cy01555 by A8
+00:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01555 (periodic) written by template; template because: Granite still writing
+01:40 RECORD briefing br_cic3cy01555 by A8
+01:40 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01555 (periodic) refreshed by IBM Granite in 41.2 s
+01:59 RECORD workload wl_cic3cy00001 by A7
+02:59 RECORD workload wl_cic3cy00001 by A7
+03:59 RECORD workload wl_cic3cy00001 by A7
+04:19 ALERT al_cic3cy01558 B09 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 9 — readings unclear. Please check by hand.
+04:19 A1 send_message B09  undoes=None res=ok | Alert al_cic3cy01558 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+04:59 RECORD workload wl_cic3cy00001 by A7
+05:04 ALERT al_cic3cy01560 B03 EMERGENCY high step1 open to=['staff:priya'] acked_by=None | Bed 3 — possible heart emergency. Go now.
+05:04 A1 send_message B03  undoes=None res=ok | Alert al_cic3cy01560 (EMERGENCY, high) step 1 -> staff:priya; telegram queued
+05:34 ALERT al_cic3cy01560 B03 EMERGENCY high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 3 — possible heart emergency. Go now.
+05:34 A1 escalate B03  undoes=None res=ok | Alert al_cic3cy01560: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+05:39 ALERT al_cic3cy01558 B09 UNSURE medium step1 closed to=['staff:tom'] acked_by=None | Bed 9 — readings unclear. Please check by hand.
+05:39 A1 edit_message B09  undoes=None res=ok | Alert al_cic3cy01558 closed: bed back to NORMAL; telegram queued
+05:48 {"event": "request", "ts": 1792264689389, "request_id": "req_7b2b644003e24b4bae7df38696d9381c", "action": "ack_alert", "target_id": "al_cic3cy01560", "by": "staff:tom"}
+05:48 ALERT al_cic3cy01560 B03 EMERGENCY high step2 acked to=['staff:priya', 'staff:tom'] acked_by=staff:tom | Bed 3 — possible heart emergency. Go now.
+05:48 A1 record_ack B03  undoes=None res=ok | Alert al_cic3cy01560 acknowledged by staff:tom via screen after 44.3 s (step 2); telegram queued
+05:59 RECORD workload wl_cic3cy00001 by A7
+05:59 A1 send_message B10 MON-10 undoes=None res=ok | IT notified: MON-10 TAMPERING; telegram IT group queued
+05:59 A2 set_bed_untrusted B10 MON-10 undoes=None res=ok | Bed B10 marked UNTRUSTED (TAMPERING (conf 0.98)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once on B
+05:59 A1 edit_message B10 MON-10 undoes=None res=ok | IT message updated: Bed marked untrusted (00:48:20); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+05:59 A3 snapshot_files B10 MON-10 undoes=None res=ok | Incident inc_cic3cy01569: froze 219 messages (last 10 min) of B10 into 3 files
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy01569/messages.jsonl: 171297 bytes, sha256 c678865bf03a16c8c50a914b5557db40cd65cdba1da43f29f8c3372c52fcea43
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy01569/verdicts.jsonl: 27932 bytes, sha256 2a84f3334b66fc0e2bbe54507fd48a10745bb81e7500b66bedaccb91045a2fab
+05:59 A3 hash_file B10 MON-10 undoes=None res=ok | inc_cic3cy01569/timeline.json: 682 bytes, sha256 b3a7587d5f3ee7b790b7c4b072eace0c27d354b00ad569a7c47530c8c42f8daa
+05:59 A3 write_timeline B10 MON-10 undoes=None res=ok | Incident inc_cic3cy01569 timeline started with 5 events
+05:59 RECORD incident inc_cic3cy01569 by A3
+05:59 A5 draft_report B10 MON-10 undoes=None res=ok | CERT-In draft rp_cic3cy01575 for incident inc_cic3cy01569; 7 fields need a person; never sent automatically
+05:59 A5 start_clock B10 MON-10 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy01575: deadline 06:48 (2026-10-18T01:18:20.011Z)
+05:59 RECORD report rp_cic3cy01575 by A5
+05:59 RECORD incident inc_cic3cy01569 by A3
+06:04 ALERT al_cic3cy01578 B10 TAMPERING medium step1 open to=['staff:tom'] acked_by=None | Bed 10 — monitor can't be trusted. Check pulse and breathing by hand. Use a port
+06:04 RECORD incident inc_cic3cy01569 by A3
+06:04 A1 send_message B10  undoes=None res=ok | Alert al_cic3cy01578 (TAMPERING, medium) step 1 -> staff:tom; telegram queued
+06:04 RECORD incident inc_cic3cy01569 by A3
+06:20 A2 disable_client B10 MON-10 undoes=None res=ok | Cut off MON-10 at the hub after TAMPERING (conf 0.98, held 20 s); session wiped
+06:20 RECORD incident inc_cic3cy01569 by A3
+06:20 RECORD report rp_cic3cy01575 by A5
+06:20 A1 edit_message B10 MON-10 undoes=None res=ok | IT message updated: Device cut off 00:48:20; bed marked untrusted.; telegram IT group queued
+06:20 RECORD incident inc_cic3cy01569 by A3
+06:20 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-10 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-07 (no verdict ye
+06:20 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 01:48 (bookkeeping; IT decides any cut-off)
+06:34 ALERT al_cic3cy01584 B04 EMERGENCY high step1 open to=['staff:priya'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+06:34 A1 send_message B04  undoes=None res=ok | Alert al_cic3cy01584 (EMERGENCY, high) step 1 -> staff:priya; telegram queued
+06:59 RECORD workload wl_cic3cy00001 by A7
+07:04 ALERT al_cic3cy01584 B04 EMERGENCY high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+07:04 A1 escalate B04  undoes=None res=ok | Alert al_cic3cy01584: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+07:34 ALERT al_cic3cy01584 B04 EMERGENCY high step3 escalated to=['staff:priya', 'staff:tom', 'staff:dr_mehta'] acked_by=None | Bed 4 — possible heart emergency. Go now.
+07:34 A1 escalate B04  undoes=None res=ok | Alert al_cic3cy01584: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+07:54 ALERT al_cic3cy01588 B09 EMERGENCY high step1 open to=['staff:tom'] acked_by=None | Bed 9 — possible emergency. Go now.
+07:54 A1 send_message B09  undoes=None res=ok | Alert al_cic3cy01588 (EMERGENCY, high) step 1 -> staff:tom; telegram queued
+07:59 RECORD workload wl_cic3cy00001 by A7
+08:24 ALERT al_cic3cy01588 B09 EMERGENCY high step2 escalated to=['staff:tom', 'staff:priya'] acked_by=None | Bed 9 — possible emergency. Go now.
+08:24 A1 escalate B09  undoes=None res=ok | Alert al_cic3cy01588: no acknowledgement for 30 s; step 2 -> staff:priya; telegram queued
+08:54 ALERT al_cic3cy01588 B09 EMERGENCY high step3 escalated to=['staff:tom', 'staff:priya', 'staff:dr_mehta'] acked_by=None | Bed 9 — possible emergency. Go now.
+08:54 A1 escalate B09  undoes=None res=ok | Alert al_cic3cy01588: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+08:59 RECORD workload wl_cic3cy00001 by A7
+09:59 A1 send_message B05 MON-05 undoes=None res=ok | IT notified: MON-05 TAMPERING; telegram IT group queued
+09:59 A2 set_bed_untrusted B05 MON-05 undoes=None res=ok | Bed B05 marked UNTRUSTED (TAMPERING (conf 0.98)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once on B
+09:59 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Bed marked untrusted (00:52:20); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+09:59 A3 snapshot_files B05 MON-05 undoes=None res=ok | Incident inc_cic3cy01596: froze 363 messages (last 10 min) of B05 into 3 files
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy01596/messages.jsonl: 282771 bytes, sha256 a7f0750f4f8b564e24ec9138ff106e35cec3df89fd96e8ddf5d7614539c9d274
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy01596/verdicts.jsonl: 46014 bytes, sha256 fa1515a338e2711fbdab1cb4fe220752bca67b250955883060da99cbf997be98
+09:59 A3 hash_file B05 MON-05 undoes=None res=ok | inc_cic3cy01596/timeline.json: 682 bytes, sha256 fd8f594e3521344153f3283774cd3a5337f24298f3a52d550e394be3ab2cd9ff
+09:59 A3 write_timeline B05 MON-05 undoes=None res=ok | Incident inc_cic3cy01596 timeline started with 5 events
+09:59 RECORD incident inc_cic3cy01596 by A3
+09:59 A5 draft_report B05 MON-05 undoes=None res=ok | CERT-In draft rp_cic3cy01602 for incident inc_cic3cy01596; 7 fields need a person; never sent automatically
+09:59 A5 start_clock B05 MON-05 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy01602: deadline 06:52 (2026-10-18T01:22:20.016Z)
+09:59 RECORD report rp_cic3cy01602 by A5
+09:59 RECORD incident inc_cic3cy01596 by A3
+09:59 RECORD workload wl_cic3cy00001 by A7
+10:04 ALERT al_cic3cy01605 B05 TAMPERING medium step1 open to=['staff:priya'] acked_by=None | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+10:04 RECORD incident inc_cic3cy01596 by A3
+10:04 A1 send_message B05  undoes=None res=ok | Alert al_cic3cy01605 (TAMPERING, medium) step 1 -> staff:priya; telegram queued
+10:04 RECORD incident inc_cic3cy01596 by A3
+10:20 A2 disable_client B05 MON-05 undoes=None res=ok | Cut off MON-05 at the hub after TAMPERING (conf 0.98, held 20 s); session wiped
+10:20 RECORD incident inc_cic3cy01596 by A3
+10:20 RECORD report rp_cic3cy01602 by A5
+10:20 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Device cut off 00:52:20; bed marked untrusted.; telegram IT group queued
+10:20 RECORD incident inc_cic3cy01596 by A3
+10:20 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-05 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+10:20 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 01:52 (bookkeeping; IT decides any cut-off)
+10:59 RECORD briefing br_cic3cy01611 by A8
+10:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01611 (periodic) written by template; template because: Granite still writing
+10:59 RECORD workload wl_cic3cy00001 by A7
+11:09 A6 open_ticket B08 MON-08 undoes=None res=ok | Biomed ticket tk_cic3cy01613 for MON-08: Arterial line reading may be drifting away from the cuff. Fix: Re-level and re-zero the transducer; take a cu
+11:09 RECORD ticket tk_cic3cy01613 by A6
+11:14 ALERT al_cic3cy01615 B08 DRIFTING medium step1 open to=['staff:tom'] acked_by=None | Bed 8 — blood pressure may be drifting. Re-level and re-zero the line; take a cu
+11:14 A1 send_message B08  undoes=None res=ok | Alert al_cic3cy01615 (DRIFTING, medium) step 1 -> staff:tom; telegram queued
+11:28 RECORD incident inc_cic3cy01596 by A3
+11:28 ALERT al_cic3cy01605 B05 TAMPERING medium step1 acked to=['staff:priya'] acked_by=staff:priya | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+11:28 RECORD incident inc_cic3cy01596 by A3
+11:28 A1 record_ack B05  undoes=None res=ok | Alert al_cic3cy01605 acknowledged by staff:priya via bedside check (patient OK) after 84.3 s (step 1); telegram queued
+11:28 RECORD incident inc_cic3cy01596 by A3
+11:45 RECORD briefing br_cic3cy01611 by A8
+11:45 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01611 (periodic) kept by template; template because: Granite output rejected: mentions MON-11 which is not in the facts
+11:59 RECORD workload wl_cic3cy00001 by A7
+12:04 A1 send_message B11 MON-11 undoes=None res=ok | IT notified: MON-11 DEVICE_ATTACK; telegram IT group queued
+12:04 A2 set_bed_untrusted B11 MON-11 undoes=None res=ok | Bed B11 marked UNTRUSTED (DEVICE_ATTACK (conf 0.95)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once 
+12:04 A1 edit_message B11 MON-11 undoes=None res=ok | IT message updated: Bed marked untrusted (00:54:25); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+12:04 A3 snapshot_files B11 MON-11 undoes=None res=ok | Incident inc_cic3cy01623: froze 366 messages (last 10 min) of B11 into 3 files
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy01623/messages.jsonl: 298897 bytes, sha256 3c364671dce44c6a4420c146fe13f25751a0aa9df2a43b576ded6e5ebf361efc
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy01623/verdicts.jsonl: 45036 bytes, sha256 61b041d3097427b4e0a658d0e3c14e30e311933aabf349a818daf2a9db0f9f0c
+12:04 A3 hash_file B11 MON-11 undoes=None res=ok | inc_cic3cy01623/timeline.json: 694 bytes, sha256 08f3befbf80c7eb0fea65590a735362c00d193a837c750f94e8daf3427a1d464
+12:04 A3 write_timeline B11 MON-11 undoes=None res=ok | Incident inc_cic3cy01623 timeline started with 5 events
+12:04 RECORD incident inc_cic3cy01623 by A3
+12:04 A5 draft_report B11 MON-11 undoes=None res=ok | CERT-In draft rp_cic3cy01629 for incident inc_cic3cy01623; 7 fields need a person; never sent automatically
+12:04 A5 start_clock B11 MON-11 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy01629: deadline 06:54 (2026-10-18T01:24:25.006Z)
+12:04 RECORD report rp_cic3cy01629 by A5
+12:04 RECORD incident inc_cic3cy01623 by A3
+12:39 ALERT al_cic3cy01632 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+12:39 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy01632 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+12:59 RECORD workload wl_cic3cy00001 by A7
+13:19 ALERT al_cic3cy01634 B07 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 7 — readings unclear. Please check by hand.
+13:19 A1 send_message B07  undoes=None res=ok | Alert al_cic3cy01634 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+13:44 ALERT al_cic3cy01632 B12 UNSURE medium step1 closed to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+13:44 A1 edit_message B12  undoes=None res=ok | Alert al_cic3cy01632 closed: bed back to NORMAL; telegram queued
+13:49 A1 send_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 DEVICE_ATTACK; telegram IT group queued
+13:49 A2 set_bed_untrusted B07 MON-07 undoes=None res=ok | Bed B07 marked UNTRUSTED (DEVICE_ATTACK (conf 0.95)); last trusted values stay on screen; device stays connected until the attack holds 20 s (at once 
+13:49 A1 edit_message B07 MON-07 undoes=None res=ok | IT message updated: Bed marked untrusted (00:56:10); device still connected so a real alarm gets through (cut-off if the attack holds 20 s, at once on
+13:49 A3 snapshot_files B07 MON-07 undoes=None res=ok | Incident inc_cic3cy01641: froze 179 messages (last 10 min) of B07 into 3 files
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy01641/messages.jsonl: 131709 bytes, sha256 8db4be5f7c374c47a209f7a0f8d8e156f558da59b58ad4adf422fadd22f5be8a
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy01641/verdicts.jsonl: 22669 bytes, sha256 80346452ebb0845b385c655fd6e2bc6bb193baf8f987bba41d69bc03cf67ea23
+13:49 A3 hash_file B07 MON-07 undoes=None res=ok | inc_cic3cy01641/timeline.json: 817 bytes, sha256 ba4e7c5c507a7bccb92823e56ea02db29a0926d22d76c7038a8fb686a65eafa7
+13:49 A3 write_timeline B07 MON-07 undoes=None res=ok | Incident inc_cic3cy01641 timeline started with 6 events
+13:49 RECORD incident inc_cic3cy01641 by A3
+13:49 A5 draft_report B07 MON-07 undoes=None res=ok | CERT-In draft rp_cic3cy01647 for incident inc_cic3cy01641; 7 fields need a person; never sent automatically
+13:49 A5 start_clock B07 MON-07 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy01647: deadline 06:56 (2026-10-18T01:26:10.026Z)
+13:49 RECORD report rp_cic3cy01647 by A5
+13:49 RECORD incident inc_cic3cy01641 by A3
+13:54 A1 edit_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 TAMPERING; telegram IT group queued
+13:54 RECORD incident inc_cic3cy01641 by A3
+13:54 ALERT al_cic3cy01634 B07 TAMPERING medium step1 open to=['staff:tom'] acked_by=None | Bed 7 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+13:54 RECORD incident inc_cic3cy01641 by A3
+13:54 A1 edit_message B07  undoes=None res=ok | Alert al_cic3cy01634 updated UNSURE -> TAMPERING (medium); telegram queued
+13:54 RECORD incident inc_cic3cy01641 by A3
+13:54 RECORD incident inc_cic3cy01641 by A3
+13:54 RECORD report rp_cic3cy01647 by A5
+13:59 RECORD workload wl_cic3cy00001 by A7
+14:04 A1 edit_message B07 MON-07 undoes=None res=ok | IT notified: MON-07 BOTH; telegram IT group queued
+14:04 RECORD incident inc_cic3cy01641 by A3
+14:04 ALERT al_cic3cy01634 B07 BOTH high step1 open to=['staff:tom'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+14:04 A1 edit_message B07  undoes=None res=ok | Alert al_cic3cy01634 updated TAMPERING -> BOTH (high); telegram queued
+14:04 RECORD incident inc_cic3cy01641 by A3
+14:04 RECORD incident inc_cic3cy01641 by A3
+14:04 RECORD report rp_cic3cy01647 by A5
+14:05 A2 disable_client B07 MON-07 undoes=None res=ok | Cut off MON-07 at the hub after BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once; session wiped
+14:05 RECORD incident inc_cic3cy01641 by A3
+14:05 RECORD report rp_cic3cy01647 by A5
+14:05 A1 edit_message B07 MON-07 undoes=None res=ok | IT message updated: Device cut off 00:56:10; bed marked untrusted.; telegram IT group queued
+14:05 RECORD incident inc_cic3cy01641 by A3
+14:05 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-07 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+14:05 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 01:56 (bookkeeping; IT decides any cut-off)
+14:34 ALERT al_cic3cy01634 B07 BOTH high step2 escalated to=['staff:tom', 'staff:priya'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+14:34 RECORD incident inc_cic3cy01641 by A3
+14:34 A1 escalate B07  undoes=None res=ok | Alert al_cic3cy01634: no acknowledgement for 30 s; step 2 -> staff:priya; telegram queued
+14:34 RECORD incident inc_cic3cy01641 by A3
+15:00 RECORD workload wl_cic3cy00001 by A7
+15:04 ALERT al_cic3cy01634 B07 BOTH high step3 escalated to=['staff:tom', 'staff:priya', 'staff:dr_mehta'] acked_by=None | Bed 7 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+15:04 RECORD incident inc_cic3cy01641 by A3
+15:04 A1 escalate B07  undoes=None res=ok | Alert al_cic3cy01634: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+15:04 RECORD incident inc_cic3cy01641 by A3
+15:28 {"event": "request", "ts": 1792265269390, "request_id": "req_252b29fb44664be8bbb744616761076c", "action": "undo_action", "target_id": "act_cic3cy01607", "by": "staff:sam"}
+15:29 A2 enable_client B05 MON-05 undoes=act_cic3cy01607 res=ok | Re-enabled MON-05 at the hub (undo by staff:sam); bed B05 trusted again
+15:29 RECORD incident inc_cic3cy01596 by A3
+15:29 RECORD report rp_cic3cy01602 by A5
+15:29 A2 enable_client B05 MON-05 undoes=act_cic3cy01594 res=ok | act_cic3cy01594 undone together with act_cic3cy01607 (same release, no second hub change)
+15:29 RECORD incident inc_cic3cy01596 by A3
+15:29 RECORD report rp_cic3cy01602 by A5
+15:29 A1 edit_message B05 MON-05 undoes=None res=ok | IT message updated: Device not cut off.; telegram IT group queued
+15:29 RECORD incident inc_cic3cy01596 by A3
+15:59 A1 send_message B06 MON-06 undoes=None res=ok | IT notified: MON-06 BOTH; telegram IT group queued
+15:59 ALERT al_cic3cy01665 B06 BOTH high step1 open to=['staff:priya'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+15:59 A1 send_message B06  undoes=None res=ok | Alert al_cic3cy01665 (BOTH, high) step 1 -> staff:priya; telegram queued
+15:59 A2 set_bed_untrusted B06 MON-06 undoes=None res=ok | Bed B06 marked UNTRUSTED (BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once); last trusted values stay on screen
+15:59 A3 snapshot_files B06 MON-06 undoes=None res=ok | Incident inc_cic3cy01668: froze 367 messages (last 10 min) of B06 into 3 files
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy01668/messages.jsonl: 291808 bytes, sha256 b2f70db4114ec0b0bdbcd8e358decb5a7120f031141761c1f0afc36961916e1b
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy01668/verdicts.jsonl: 45994 bytes, sha256 9f60d40d3f91f26d20e092bb5fbe1d89e242efe7df33bb140b006a0c0f1b015d
+15:59 A3 hash_file B06 MON-06 undoes=None res=ok | inc_cic3cy01668/timeline.json: 546 bytes, sha256 eed9e4daac417766254ddd530b7dd468b54ec0cf2c34dd4ff98e555578eecf58
+15:59 A3 write_timeline B06 MON-06 undoes=None res=ok | Incident inc_cic3cy01668 timeline started with 5 events
+15:59 RECORD incident inc_cic3cy01668 by A3
+15:59 A5 draft_report B06 MON-06 undoes=None res=ok | CERT-In draft rp_cic3cy01674 for incident inc_cic3cy01668; 7 fields need a person; never sent automatically
+15:59 A5 start_clock B06 MON-06 undoes=None res=ok | CERT-In 6 h clock for rp_cic3cy01674: deadline 06:58 (2026-10-18T01:28:20.008Z)
+15:59 RECORD report rp_cic3cy01674 by A5
+15:59 RECORD incident inc_cic3cy01668 by A3
+16:00 RECORD workload wl_cic3cy00001 by A7
+16:00 A2 disable_client B06 MON-06 undoes=None res=ok | Cut off MON-06 at the hub after BOTH (conf 1.00): possible emergency on an attacked monitor, cut off at once; session wiped
+16:00 RECORD incident inc_cic3cy01668 by A3
+16:00 RECORD report rp_cic3cy01674 by A5
+16:00 A1 edit_message B06 MON-06 undoes=None res=ok | IT message updated: Device cut off 00:58:20; bed marked untrusted.; telegram IT group queued
+16:00 RECORD incident inc_cic3cy01668 by A3
+16:00 A4 list_devices   undoes=None res=ok | Fleet hunt after MON-06 was cut off: model 'demo-monitor': 11 devices (MON-01..MON-12). Check next: MON-03 (UNSURE, trust 0.00), MON-04 (UNSURE, trust
+16:00 A4 set_watch_level   undoes=None res=ok | Watch level HIGH for 11 'demo-monitor' devices until 01:58 (bookkeeping; IT decides any cut-off)
+16:14 A6 update_ticket B08 MON-08 undoes=None res=ok | Ticket tk_cic3cy01613: MON-08 back to NORMAL; stays open until biomed closes it
+16:14 RECORD ticket tk_cic3cy01613 by A6
+16:19 ALERT al_cic3cy01615 B08 DRIFTING medium step1 closed to=['staff:tom'] acked_by=None | Bed 8 — blood pressure may be drifting. Re-level and re-zero the line; take a cu
+16:19 A1 edit_message B08  undoes=None res=ok | Alert al_cic3cy01615 closed: bed back to NORMAL; telegram queued
+16:29 ALERT al_cic3cy01665 B06 BOTH high step2 escalated to=['staff:priya', 'staff:tom'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+16:29 RECORD incident inc_cic3cy01668 by A3
+16:29 A1 escalate B06  undoes=None res=ok | Alert al_cic3cy01665: no acknowledgement for 30 s; step 2 -> staff:tom; telegram queued
+16:29 RECORD incident inc_cic3cy01668 by A3
+16:59 ALERT al_cic3cy01665 B06 BOTH high step3 escalated to=['staff:priya', 'staff:tom', 'staff:dr_mehta'] acked_by=None | Bed 6 — GO NOW. Do not trust the screen numbers. Possible emergency on a monitor
+16:59 RECORD incident inc_cic3cy01668 by A3
+16:59 A1 escalate B06  undoes=None res=ok | Alert al_cic3cy01665: no acknowledgement for 30 s; step 3 -> staff:dr_mehta; telegram queued
+16:59 RECORD incident inc_cic3cy01668 by A3
+17:00 RECORD workload wl_cic3cy00001 by A7
+17:04 ALERT al_cic3cy01605 B05 TAMPERING medium step1 closed to=['staff:priya'] acked_by=staff:priya | Bed 5 — monitor can't be trusted. Check pulse and breathing by hand. Use a porta
+17:04 RECORD incident inc_cic3cy01596 by A3
+17:04 A1 edit_message B05  undoes=None res=ok | Alert al_cic3cy01605 closed: bed back to NORMAL; telegram queued
+17:04 RECORD incident inc_cic3cy01596 by A3
+17:29 ALERT al_cic3cy01686 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+17:29 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy01686 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+17:58 ALERT al_cic3cy01686 B12 UNSURE medium step1 acked to=['staff:tom'] acked_by=staff:tom | Bed 12 — readings unclear. Please check by hand.
+17:58 A1 record_ack B12  undoes=None res=ok | Alert al_cic3cy01686 acknowledged by staff:tom via bedside check (patient OK) after 29.3 s (step 1); telegram queued
+18:00 RECORD workload wl_cic3cy00001 by A7
+18:14 ALERT al_cic3cy01686 B12 UNSURE medium step1 closed to=['staff:tom'] acked_by=staff:tom | Bed 12 — readings unclear. Please check by hand.
+18:14 A1 edit_message B12  undoes=None res=ok | Alert al_cic3cy01686 closed: bed back to NORMAL; telegram queued
+18:58 RECORD briefing br_cic3cy01690 by A8
+18:58 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01690 (ward script T+19:00) written early by IBM Granite in 49.7 s
+19:00 RECORD workload wl_cic3cy00001 by A7
+19:49 RECORD briefing br_cic3cy01690 by A8
+19:49 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01690 (ward script T+19:00) refreshed by IBM Granite in 50.4 s
+20:00 RECORD workload wl_cic3cy00001 by A7
+20:29 ALERT al_cic3cy01693 B01 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 1 — readings unclear. Please check by hand.
+20:29 A1 send_message B01  undoes=None res=ok | Alert al_cic3cy01693 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 ALERT al_cic3cy01695 B02 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 2 — readings unclear. Please check by hand.
+20:29 A1 send_message B02  undoes=None res=ok | Alert al_cic3cy01695 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 ALERT al_cic3cy01697 B05 UNSURE medium step1 open to=['staff:priya'] acked_by=None | Bed 5 — readings unclear. Please check by hand.
+20:29 RECORD incident inc_cic3cy01596 by A3
+20:29 A1 send_message B05  undoes=None res=ok | Alert al_cic3cy01697 (UNSURE, medium) step 1 -> staff:priya; telegram queued
+20:29 RECORD incident inc_cic3cy01596 by A3
+20:29 ALERT al_cic3cy01699 B08 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 8 — readings unclear. Please check by hand.
+20:29 A1 send_message B08  undoes=None res=ok | Alert al_cic3cy01699 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+20:29 ALERT al_cic3cy01701 B11 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 11 — readings unclear. Please check by hand.
+20:29 RECORD incident inc_cic3cy01623 by A3
+20:29 A1 send_message B11  undoes=None res=ok | Alert al_cic3cy01701 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+20:29 RECORD incident inc_cic3cy01623 by A3
+20:59 RECORD briefing br_cic3cy01703 by A8
+20:59 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01703 (periodic) written by template; template because: Granite still writing
+21:00 RECORD workload wl_cic3cy00001 by A7
+21:19 ALERT al_cic3cy01705 B12 UNSURE medium step1 open to=['staff:tom'] acked_by=None | Bed 12 — readings unclear. Please check by hand.
+21:19 A1 send_message B12  undoes=None res=ok | Alert al_cic3cy01705 (UNSURE, medium) step 1 -> staff:tom; telegram queued
+21:49 RECORD briefing br_cic3cy01703 by A8
+21:49 A8 write_briefing   undoes=None res=ok | Briefing br_cic3cy01703 (periodic) refreshed by IBM Granite in 50.7 s
+22:00 RECORD workload wl_cic3cy00001 by A7

@@ -1,0 +1,13 @@
+B01 PASS: non-NORMAL samples 0, alerts 0
+B02 PASS: non-NORMAL samples 5 ['04:24', '05:09', '09:24', '09:29', '09:34'], alerts 0
+B03 PASS: EMERGENCY 05:04, max step 2, acked 05:48
+B04 PASS: EMERGENCY/LOOSE_SENSOR 06:34 (alarm never suppressed)
+B05 PASS: TAMPERING 09:59, cut [620.0], undo enable_client [928.6, 928.6] undoes=['act_cic3cy01607', 'act_cic3cy01594'], NORMAL 16:59
+B06 PASS: BOTH/TAMPERING 15:59, cut [960.0]
+B07 PASS: BOTH 14:04, cut [845.1], BOTH alert closed/cancelled []
+B08 PASS: DRIFTING 11:09, NORMAL 16:14, ticket records 2
+B09 PASS: EMERGENCY 07:54, ever DRIFTING False
+B10 PASS: TAMPERING 05:59, cut [380.0], ever DRIFTING False
+B11 PASS: DEVICE_ATTACK 12:04, attack nurse alerts 0, disable_client [], untrusted [724.1]; UNSURE hand-check pages 0 []
+B12 PASS: UNSURE ('17:04', 'Replay check: Multiple publishers observed; bedside confirmation pending; Network check: Identical live copies; second s'), NORMAL after nurse OK 17:59
+12/12 PASS

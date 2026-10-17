@@ -1,0 +1,9 @@
+chip messages: 3
+M2-scored alarm episodes (first window):
+  B03 T+304s M2=0.271 verdict=EMERGENCY | Monitor alarm remains active
+  B04 T+394s M2=0.009 verdict=EMERGENCY | Monitor alarm remains active
+  B07 T+844s M2=0.928 verdict=BOTH | Monitor alarm remains active; Replay checked from sequence and sender; waveform unusable
+  B06 T+959s M2=0.050 verdict=BOTH | Monitor alarm remains active; Conflicting frame content for the same sequence or timestamp
+chip B03 VTACH alarm T+300s p=0.7694 real device=nnpa:0 lat=4.34ms | M2 match: [(304, 0.271)] | verdicts before ['NORMAL', 'NORMAL', 'NORMAL'] after ['EMERGENCY', 'EMERGENCY', 'EMERGENCY', 'EMERGENCY']
+chip B04 ASYSTOLE alarm T+390s p=0.1659 false device=nnpa:0 lat=4.62ms | M2 match: [(394, 0.009)] | verdicts before ['NORMAL', 'NORMAL', 'UNSURE'] after ['EMERGENCY', 'EMERGENCY', 'EMERGENCY', 'EMERGENCY']
+chip B07 VFIB alarm T+840s p=0.9531 real device=nnpa:0 lat=4.26ms | M2 match: [(844, 0.928)] | verdicts before ['DEVICE_ATTACK', 'TAMPERING', 'TAMPERING'] after ['BOTH', 'BOTH', 'BOTH', 'BOTH']
