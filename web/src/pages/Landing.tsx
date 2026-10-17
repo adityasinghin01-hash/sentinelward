@@ -1,62 +1,195 @@
 import {Link} from 'react-router-dom';
+import {ArrowRight, HeartPulse, Unplug, ShieldAlert, Github, Activity, Lock, FileCheck2, Undo2, Server, Cpu, Boxes, Sparkles, Stethoscope, UserRound, ShieldCheck} from 'lucide-react';
 import {ThemeToggle} from '../components/ThemeToggle';
-import {Activity, HeartPulse, ShieldAlert, Unplug, ArrowDown, Github} from 'lucide-react';
 import {useNow, useResource} from '../lib/hooks';
 import type {Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
+import {StateChip} from '../components/ui';
+import {Hologram, ecgPath} from '../components/landing/Hologram';
+import {useReveal} from '../lib/reveal';
 
-const CASES = [
-  {icon: HeartPulse, title: 'Real emergency', text: 'Heart, pulse and pressure worsen together and the network looks normal. The nurse is sent now, and the alert climbs a ladder until someone answers.'},
-  {icon: Unplug, title: 'Loose or drifting sensor', text: 'The signal breaks but the body does not. The false alarm is silenced, the nurse is asked to refit the clip, and biomed gets a ticket.'},
-  {icon: ShieldAlert, title: 'Hacker', text: 'Numbers look normal but are replayed or injected. The bed turns grey-striped, shows the last trusted values, IT cuts the device off, and the evidence is fingerprinted.'},
+const REPO = 'https://github.com/adityasinghin01-hash/sentinelward';
+
+const TRUTHS = [
+  {icon: HeartPulse, tone: 'emergency', title: 'The patient', text: 'Heart, pulse and pressure change together and the network is clean.', act: 'The nurse is sent now; the alert climbs until someone answers.'},
+  {icon: Unplug, tone: 'check', title: 'The sensor', text: 'The signal breaks but the body does not: a loose clip or a drifting line.', act: 'The false alarm is explained, the clip refitted, biomed gets a ticket.'},
+  {icon: ShieldAlert, tone: 'security', title: 'A hacker', text: 'Numbers look calm but are replayed or injected over the network.', act: 'The bed keeps its last trusted values, IT cuts the monitor off, evidence is sealed.'},
 ];
+
+const CHECKS = [
+  ['Sensor usable', 'Is the signal clean enough to judge?'],
+  ['Real emergency', 'Trained on real ICU alarms (PhysioNet)'],
+  ['Body match', 'Do heart, pulse and pressure agree?'],
+  ['Replay check', 'Is this a copy of older data?'],
+  ['Network check', 'Is the right device sending?'],
+  ['Drift', 'Is the pressure line slowly sliding?'],
+];
+
+const PROOF = [
+  {n: '12 / 12', l: 'beds handled correctly in the final 20-minute ward run, with agents on', s: 'docs/evidence/WARD-RUN.md'},
+  {n: '0.862', l: 'held-out alarm score on PhysioNet CinC 2015 (old rule: 0.391)', s: 'docs/evidence/ML-RESULTS.md'},
+  {n: '85%', l: 'of false alarms marked “likely false” while 2.7% of real ones are missed: advice only, the alarm still sounds', s: 'docs/evidence/raw/fatigue.txt'},
+  {n: '3 s', l: 'median time to cut off a hacked monitor during a real emergency', s: 'docs/evidence/WARD-RUN.md'},
+  {n: '15 / 15', l: 'live security checks pass: per-device accounts, TLS 1.3, no anonymous access', s: 'docs/evidence/SECURITY.md'},
+  {n: '96', l: 'beds judged by one brain on one CPU core, every 5 seconds (22% of the tick)', s: 'docs/evidence/SCALE.md'},
+];
+
+function Section({id, eyebrow, title, lead, children}: {id?: string; eyebrow: string; title: string; lead?: string; children: React.ReactNode}) {
+  return (
+    <section className="l-section" id={id}>
+      <div className="l-wrap">
+        <p className="l-eyebrow" data-reveal>{eyebrow}</p>
+        <h2 className="l-h2" data-reveal>{title}</h2>
+        {lead && <p className="l-lead" data-reveal>{lead}</p>}
+        {children}
+      </div>
+    </section>
+  );
+}
 
 export function LandingPage() {
   const now = useNow();
-  // Public, read-only preview of 4 beds; works without signing in.
   const preview = useResource<{beds: Bed[]}>('/api/ward/preview', 3000);
   const beds = preview.data?.beds ?? [];
+  const root = useReveal<HTMLDivElement>();
   return (
-    <div className="landing">
-      <header className="landing-top">
-        <div className="brand"><Activity size={18} aria-hidden="true" />SentinelWard</div>
-        <div className="landing-account"><ThemeToggle scope="landing"/><Link to="/login" className="button-link">Log in</Link></div>
+    <div className="landing" ref={root}>
+      <a className="skip-link" href="#main">Skip to content</a>
+      <header className="l-nav">
+        <div className="l-wrap l-nav-inner">
+          <Link to="/" className="l-brand" aria-label="SentinelWard home">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2.5 20 5.5v6.2c0 4.9-3.4 8.6-8 9.8-4.6-1.2-8-4.9-8-9.8V5.5z" fill="none" stroke="currentColor" strokeWidth="1.6"/><path d="M6.5 12.2h3l1.4-3 2.2 6 1.5-3h2.9" fill="none" stroke="var(--brand)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            SentinelWard
+          </Link>
+          <nav className="l-links" aria-label="Sections">
+            <a href="#truths">The problem</a><a href="#how">How it works</a><a href="#proof">Proof</a><a href="#ibmz">IBM Z</a><a href="#trust">Security</a>
+          </nav>
+          <div className="l-nav-end">
+            <ThemeToggle scope="landing" />
+            <Link to="/login" className="l-btn l-btn-ghost">Sign in</Link>
+          </div>
+        </div>
       </header>
+
       <main id="main">
-        <section className="hero">
-          <h1>Patient, sensor, or hacker?</h1>
-          <p>Real-time AI on IBM LinuxONE that tells, for every hospital bed, whether a scary reading is real, a faulty sensor, or tampered data. The patient is never shown blank.</p>
-          <div className="row-actions">
-            <Link to="/login?role=nurse" className="button-link primary" title="Sign in as the central nurse and open the live ward.">Open the live ward</Link>
-            <a href="#how" className="button-link ghost"><ArrowDown size={14} aria-hidden="true" /> How it works</a>
+        <section className="l-hero">
+          <div className="l-wrap l-hero-grid">
+            <div className="l-hero-copy">
+              <p className="l-eyebrow">Real-time AI on IBM LinuxONE · IBM Z Datathon 2026</p>
+              <h1 className="l-h1">Patient, sensor,<br />or hacker?</h1>
+              <p className="l-sub">SentinelWard watches every ICU bed and tells the nurse in seconds whether an alarming reading is a real emergency, a faulty sensor or a hacked monitor, and never leaves a patient's screen blank.</p>
+              <div className="l-cta">
+                <Link to="/login?role=nurse" className="l-btn l-btn-primary">Open the live ward <ArrowRight size={16} aria-hidden="true" /></Link>
+                <a href="#how" className="l-btn l-btn-ghost">See how it works</a>
+              </div>
+              <ul className="l-hero-facts">
+                <li><Activity size={14} aria-hidden="true" />12 beds live</li>
+                <li><Server size={14} aria-hidden="true" />Runs on s390x</li>
+                <li><Lock size={14} aria-hidden="true" />TLS 1.3 · per-device accounts</li>
+              </ul>
+            </div>
+            <div className="l-hero-art"><Hologram /></div>
           </div>
         </section>
-        <section className="mini-ward" aria-label="Live preview of four beds">
-          <div className="mini-head">
-            <span className="eyebrow">Live mini-ward</span>
-            <span className="tiny">{preview.data ? 'Beds 1–4 from the demo ward, updated every few seconds. Identities hidden.' : preview.error ? '' : 'Connecting…'}</span>
+
+        <section className="l-live" aria-label="Live ward preview">
+          <div className="l-wrap">
+            <div className="l-live-head" data-reveal>
+              <span className="l-live-dot" aria-hidden="true" />Live from the ward on IBM LinuxONE, right now
+              <span className="l-live-note">Demo environment · synthetic replay of real PhysioNet, MIMIC and VitalDB recordings</span>
+            </div>
+            <div className="l-live-grid" data-reveal>
+              {beds.length ? beds.slice(0, 4).map(b => <BedTile key={b.bed_id} bed={b} now={now} mini />) :
+                Array.from({length: 4}, (_, i) => <div key={i} className="skeleton-tile" />)}
+            </div>
           </div>
-          {preview.error && !beds.length ? (
-            <div className="offline-preview" role="status">
-              <strong>Live demo offline</strong>
-              <span>The ward server is not reachable right now. Sign in once it is back to see the live beds.</span>
-            </div>
-          ) : (
-            <div className="bed-grid mini-grid">
-              {(beds.length ? beds : []).map(b => <BedTile key={b.bed_id} bed={b} now={now} mini />)}
-              {!beds.length && Array.from({length: 4}, (_, i) => <div key={i} className="bed-tile skeleton-tile" aria-hidden="true" />)}
-            </div>
-          )}
         </section>
-        <section id="how" className="cases">
-          {CASES.map(({icon: Icon, title, text}) => (
-            <article key={title} className="case"><Icon size={20} aria-hidden="true" /><h2>{title}</h2><p>{text}</p></article>
-          ))}
+
+        <Section id="truths" eyebrow="The problem" title="One alarming number. Three different truths."
+                 lead="Most monitor alarms are false: studies report 86 to 99.5 per cent. Nurses learn to tune them out, and a hacked monitor can hide a dying patient behind calm numbers.">
+          <div className="l-cards three">
+            {TRUTHS.map((t, i) => (
+              <article key={t.title} className={`l-card truth-${t.tone}`} data-reveal style={{transitionDelay: `${i * 50}ms`}}>
+                <span className="l-card-icon"><t.icon size={20} aria-hidden="true" /></span>
+                <h3>{t.title}</h3>
+                <p>{t.text}</p>
+                <p className="l-card-act">{t.act}</p>
+              </article>
+            ))}
+          </div>
+          <p className="l-cite" data-reveal>Source: Sowan et al., <a href="https://nursing.jmir.org/2021/1/e20584/PDF" target="_blank" rel="noreferrer">JMIR Nursing 2021</a>.</p>
+        </Section>
+
+        <Section id="how" eyebrow="How it works" title="Signal, verify, respond." lead="Every five seconds, for every bed, on one IBM LinuxONE server.">
+          <div className="l-steps">
+            <article className="l-step" data-reveal>
+              <span className="l-step-n">1</span><h3>Signal</h3>
+              <p>Each monitor streams heart, pulse, oxygen and pressure through a locked-down hub. A network witness notes who sent every message.</p>
+              <div className="l-mini l-mini-wave"><svg viewBox="0 0 320 90" preserveAspectRatio="none" aria-hidden="true"><path d={ecgPath()} /></svg></div>
+            </article>
+            <article className="l-step" data-reveal style={{transitionDelay: '50ms'}}>
+              <span className="l-step-n">2</span><h3>Verify</h3>
+              <p>Six independent checks ask whether the alarm is real, whether the body agrees and whether the data can be trusted at all.</p>
+              <ul className="l-mini l-checks">{CHECKS.map(([n, d]) => <li key={n}><b>{n}</b><span>{d}</span></li>)}</ul>
+            </article>
+            <article className="l-step" data-reveal style={{transitionDelay: '100ms'}}>
+              <span className="l-step-n">3</span><h3>Respond</h3>
+              <p>One verdict per bed. Agents page the right nurse, cut off a hacked monitor, seal the evidence and write the shift briefing. Every action can be undone.</p>
+              <div className="l-mini l-respond">
+                <StateChip state="BOTH" />
+                <p>Bed 7 · go now · do not trust the numbers</p>
+                <div className="l-respond-row"><span className="l-fake-btn primary">Acknowledge</span><span className="l-fake-btn"><Undo2 size={13} aria-hidden="true" />Undo cut-off</span></div>
+              </div>
+            </article>
+          </div>
+        </Section>
+
+        <Section id="proof" eyebrow="Proof" title="Measured, not promised." lead="Every number below comes from a file in the repository you can open and rerun.">
+          <div className="l-proof">
+            {PROOF.map((p, i) => (
+              <div key={p.n} className="l-stat" data-reveal style={{transitionDelay: `${(i % 3) * 50}ms`}}>
+                <b>{p.n}</b><p>{p.l}</p><a href={`${REPO}/blob/main/${p.s}`} target="_blank" rel="noreferrer">{p.s.replace('docs/evidence/', '')}</a>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section id="ibmz" eyebrow="IBM Z" title="Built on IBM LinuxONE, end to end." lead="Hospitals need decisions that stay up, stay private and stay on site. Everything that decides runs on the LinuxONE guest.">
+          <div className="l-cards four">
+            <article className="l-card" data-reveal><span className="l-card-icon"><Server size={20} aria-hidden="true" /></span><h3>Native s390x</h3><p>Models trained and served on LinuxONE; one brain judges 96 beds every 5 s.</p></article>
+            <article className="l-card" data-reveal style={{transitionDelay: '50ms'}}><span className="l-card-icon"><Boxes size={20} aria-hidden="true" /></span><h3>Six containers</h3><p>Hub, database, API, brain, simulator and attacks run as a Compose stack.</p></article>
+            <article className="l-card" data-reveal style={{transitionDelay: '100ms'}}><span className="l-card-icon"><Sparkles size={20} aria-hidden="true" /></span><h3>IBM Granite</h3><p>Writes the end-of-shift briefing on the box, fact-checked against the ward's own numbers.</p></article>
+            <article className="l-card" data-reveal style={{transitionDelay: '150ms'}}><span className="l-card-icon"><Cpu size={20} aria-hidden="true" /></span><h3>Telum II on-chip AI</h3><p>A second-opinion model runs on the z17 AI accelerator. Shown only, never used to decide; at our model size it is not faster than a CPU core.</p></article>
+          </div>
+        </Section>
+
+        <Section id="trust" eyebrow="Security and trust" title="Safe to act on. Easy to audit." lead="A trust layer has to be trustworthy itself.">
+          <ul className="l-trust">
+            <li data-reveal><Lock size={18} aria-hidden="true" /><div><b>Locked hub</b><span>Every monitor has its own account and topic; TLS 1.3; anonymous access refused.</span></div></li>
+            <li data-reveal><Undo2 size={18} aria-hidden="true" /><div><b>Undoable actions</b><span>Cut-offs, silences and watch levels are logged with who, when and why, and can be reversed.</span></div></li>
+            <li data-reveal><FileCheck2 size={18} aria-hidden="true" /><div><b>Sealed evidence</b><span>Ten minutes of signal around every incident, fingerprinted with SHA-256 for the CERT-In report.</span></div></li>
+            <li data-reveal><Activity size={18} aria-hidden="true" /><div><b>Speaks hospital</b><span>Verdicts and alerts export as HL7 FHIR R4 for an EHR or central station.</span></div></li>
+          </ul>
+        </Section>
+
+        <section className="l-section l-signin" id="signin">
+          <div className="l-wrap">
+            <h2 className="l-h2" data-reveal>See it working.</h2>
+            <p className="l-lead" data-reveal>Pick a role and open the live ward. No account needed for the demo.</p>
+            <div className="l-roles">
+              <Link to="/login?role=nurse" className="l-role" data-reveal><Stethoscope size={22} aria-hidden="true" /><b>Nurse</b><span>The ward, alerts and bedside checks</span><ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/login?role=doctor" className="l-role" data-reveal style={{transitionDelay: '50ms'}}><UserRound size={22} aria-hidden="true" /><b>Doctor</b><span>Census, trends and the evidence</span><ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link to="/login?role=it" className="l-role" data-reveal style={{transitionDelay: '100ms'}}><ShieldCheck size={22} aria-hidden="true" /><b>IT security</b><span>Devices, cut-offs and incident reports</span><ArrowRight size={16} aria-hidden="true" /></Link>
+            </div>
+          </div>
         </section>
       </main>
-      <footer className="landing-foot">
-        <span>Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM LinuxONE</span>
-        <a href="https://github.com/adityasinghin01-hash/sentinelward" title="Project source code on GitHub"><Github size={14} aria-hidden="true" /> GitHub</a>
+
+      <footer className="l-footer">
+        <div className="l-wrap l-footer-inner">
+          <span>SentinelWard · Team TessNova · IBM Z Datathon 2026</span>
+          <a href={REPO} target="_blank" rel="noreferrer"><Github size={15} aria-hidden="true" />Source and evidence</a>
+        </div>
       </footer>
     </div>
   );
