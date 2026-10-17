@@ -6,7 +6,10 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
+from pydantic import ValidationError
 from sw_common import ALL_SUB, parse_topic, validate
+
+from .chip import CHIP_SUB, ChipOpinion
 
 if TYPE_CHECKING:
     from .app import Runtime
@@ -31,14 +34,18 @@ class Ingest:
 
     def start(self) -> None:
         self.bind(asyncio.get_running_loop())
-        self.runtime.bus.subscribe(ALL_SUB, self.callback)
+        self.runtime.bus.subscribe((*ALL_SUB, CHIP_SUB), self.callback)
         self.runtime.bus.connect(wait_s=0)
 
     def callback(self, message: dict, topic: str) -> None:
         if self.loop is None or not self.accepting:
             return
         generation = self.generation
-        copied = copy.deepcopy(message)
+        try:
+            copied = copy.deepcopy(message)
+        except RecursionError:
+            # Decodable but deeply nested junk must reach validation and its counter.
+            copied = None
         try:
             self.loop.call_soon_threadsafe(self.process, copied, topic, generation)
         except RuntimeError:
@@ -52,6 +59,8 @@ class Ingest:
     def process(self, message: dict, topic: str, generation: int | None = None) -> bool:
         if generation is not None and generation != self.generation:
             return False
+        if topic.startswith("ward/chip/"):
+            return self._chip(message, topic)
         errors = validate(message)
         if not errors:
             try:
@@ -116,4 +125,22 @@ class Ingest:
         state.last_message_ms = self.runtime.clock.ms()
         for affected_id in affected:
             self.runtime.push_bed(affected_id, critical=kind != "vitals")
+        return True
+
+    def _chip(self, message, topic: str) -> bool:
+        """Keep display evidence out of the clinical ingest and persistence paths."""
+        try:
+            opinion = ChipOpinion.model_validate(message)
+            if topic != f"ward/chip/{opinion.bed_id}" or opinion.bed_id not in self.runtime.state.beds:
+                raise ValueError("chip topic does not match bed")
+        except (ValidationError, ValueError):
+            self.invalid += 1
+            return False
+        if self.reset_at is not None and opinion.ts <= self.reset_at:
+            return False
+        bed = self.runtime.state.beds[opinion.bed_id]
+        if bed.chip_opinion is None or opinion.ts > bed.chip_opinion["ts"]:
+            bed.chip_opinion = opinion.model_dump()
+            bed.chip_received_mono = self.runtime.clock.mono()
+            self.runtime.push_bed(opinion.bed_id)
         return True

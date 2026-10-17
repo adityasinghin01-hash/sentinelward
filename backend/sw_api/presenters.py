@@ -31,6 +31,7 @@ def bed(state: WardState, bed_id: str, preview: bool = False) -> dict:
     waiting = "No monitor connected yet" if empty else "Waiting for the first check (about 10 s)"
     payload = {
         "bed_id": bed_id, "device_id": entry.cfg.device_id,
+        "chip_opinion": state.chip_opinion(bed_id),
         "verdict": verdict["verdict"] if verdict else None,
         "priority": verdict["priority"] if verdict else "none",
         "trust_score": 100 * verdict["trust"] if verdict else 0,
