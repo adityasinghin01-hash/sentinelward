@@ -2,7 +2,7 @@ import {useNavigate} from 'react-router-dom';
 import {Eye, EyeOff} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow} from '../lib/hooks';
-import {bedState, displayVitals, staff, time, value} from '../lib/domain';
+import {bedState, displayVitals, isOpenAlert, staff, time, trustView, value} from '../lib/domain';
 import {Badge, BedLink, Empty, PageTitle, Panel, Tip} from '../components/ui';
 
 const ORDER = {high: 0, medium: 1, low: 2, none: 3} as const;
@@ -15,7 +15,7 @@ export function CensusPage() {
   const now = useNow();
   const navigate = useNavigate();
   const rows = beds.map(b => ({b, s: bedState(b, now), v: displayVitals(b)}))
-    .sort((x, y) => ORDER[x.s.tone] - ORDER[y.s.tone] || (x.s.untrusted ? 0 : 1) - (y.s.untrusted ? 0 : 1) || x.b.trust_score - y.b.trust_score);
+    .sort((x, y) => ORDER[x.s.tone] - ORDER[y.s.tone] || (x.s.untrusted ? 0 : 1) - (y.s.untrusted ? 0 : 1) || (trustView(x.b).value ?? -1) - (trustView(y.b).value ?? -1));
   const untrusted = rows.filter(r => r.s.untrusted).length;
   return (
     <div className="page">
@@ -45,7 +45,7 @@ export function CensusPage() {
               </tr></thead>
               <tbody>
                 {rows.map(({b, s, v}) => {
-                  const escalated = alerts.some(a => a.bed_id === b.bed_id && (a.status === 'open' || a.status === 'escalated') && a.ladder_step >= 3);
+                  const escalated = alerts.some(a => a.bed_id === b.bed_id && isOpenAlert(a) && a.ladder_step >= 3);
                   const check = b.last_bedside_check;
                   return (
                     <tr key={b.bed_id} tabIndex={0} className={`row-${s.tone}`} onClick={() => navigate(`/bed/${b.bed_id}`)}
@@ -54,7 +54,7 @@ export function CensusPage() {
                       <td>{!hidden && b.patient ? `${b.patient.initials} · ${b.patient.age ?? '—'} ${b.patient.sex ?? ''}` : 'Hidden'}</td>
                       <td><Badge tone={s.tone} icon={b.verdict === 'NORMAL' ? 'check' : b.verdict === 'DEVICE_ATTACK' ? 'shield' : 'status'}>{s.label}</Badge>
                         {s.offline && <span className="tiny"> · no data</span>}</td>
-                      <td className={`mono ${s.untrusted ? 'striped-cell' : ''}`}>{(b.trust_score / 100).toFixed(2)}{s.untrusted && ' UNTRUSTED'}</td>
+                      <td className={`mono ${s.untrusted || trustView(b).value === null ? 'striped-cell' : ''}`} title={trustView(b).why || undefined}>{trustView(b).value === null ? trustView(b).text : `${trustView(b).text}${s.untrusted ? ' UNTRUSTED' : ''}`}{b.isolated && ' · CUT OFF'}</td>
                       <td className="mono big-cell">{value(v?.hr)}</td>
                       <td className="mono big-cell">{value(v?.spo2)}</td>
                       <td className="mono">{value(v?.systolic)}/{value(v?.diastolic)}</td>

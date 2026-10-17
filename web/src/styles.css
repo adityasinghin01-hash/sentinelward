@@ -464,3 +464,15 @@ textarea { resize: vertical; }
 }
 
 .incident-layout > .panel + .panel { margin-top: 0; }
+
+/* ===== screens3: cut-off badge, IT strip, verdict detail lines ===== */
+.cutoff-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--text); background: var(--stripes); border: 1px solid var(--untrusted); }
+.tile-state { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tile-directive { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.it-strip { display: flex; align-items: center; gap: 10px; padding: 7px 20px; background: var(--elevated); border-bottom: 2px solid var(--accent); color: var(--text); font-size: 13px; }
+.it-strip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.it-strip a { color: var(--text); font-weight: 600; }
+.verdict-lines { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--text-2); }
+.verdict-lines li { margin: 2px 0; }
+.tl-before { opacity: .6; }
+.tl-divider { list-style: none; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-2); border-top: 1px dashed var(--border); padding-top: 4px; margin: 4px 0; }

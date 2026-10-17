@@ -4,7 +4,7 @@ import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Check, ChevronsUp, HeartPulse, Network, PhoneCall, ClipboardCheck, X, Eye, EyeOff} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useCommand, useNow, useResource} from '../lib/hooks';
-import {age, bedState, can, displayVitals, modelChecks, score01, staff, time, value, verdictWords} from '../lib/domain';
+import {age, bedState, can, displayVitals, modelChecks, score01, staff, time, value, verdictTrust, verdictView, verdictWords} from '../lib/domain';
 import type {BedDetail, HistoryPoint, Score} from '../lib/types';
 import {ActionList, Badge, Empty, Feedback, Panel, ResourceState, Tip, Trust} from '../components/ui';
 import {Chip, Fact, Meter} from '../components/extra';
@@ -18,15 +18,24 @@ function num(v: unknown) { return typeof v === 'number' && Number.isFinite(v) ? 
 function WhyPanel({detail}: {detail: BedDetail}) {
   const latest = detail.recent_verdicts[0];
   const reasons = latest?.reasons?.length ? latest.reasons : [detail.reason || 'No reason recorded'];
+  const view = verdictView(detail);
+  const lines = [view.alarm, view.aiCheck, view.why].filter(Boolean) as string[];
   return (
     <Panel title="Why the AI thinks so" caption="The decision layer combines six checks into one verdict.">
       <div className="why-verdict">
         <span className="eyebrow">Verdict</span>
-        <strong>{detail.verdict ? verdictWords[detail.verdict] ?? detail.verdict : detail.reason || 'Awaiting first verdict'}</strong>
-        <Tip text="Confidence of the decision layer in this verdict, 0 to 1. It is not a diagnosis.">
-          <span className="mono muted">confidence {score01(latest?.confidence)}</span>
-        </Tip>
+        <strong>{view.headline}</strong>
+        {view.showConfidence && (
+          <Tip text="Confidence of the decision layer in this verdict, 0 to 1. It is not a diagnosis.">
+            <span className="mono muted">confidence {score01(latest?.confidence)}</span>
+          </Tip>
+        )}
       </div>
+      {lines.length > 0 && (
+        <ul className="verdict-lines" aria-label="What the verdict rests on">
+          {lines.map(l => <li key={l}>{l}</li>)}
+        </ul>
+      )}
       <ul className="reasons">{reasons.map(r => <li key={r}>{r}</li>)}</ul>
       <p className="directive" title="What the system asks staff to do for this bed now.">
         <ClipboardCheck size={14} aria-hidden="true" /> {detail.requested_action || 'Continue monitoring'}
@@ -235,13 +244,13 @@ export function BedPage() {
       </div>
       <Feedback message={alertCmd.feedback || callCmd.feedback} failed={alertCmd.failed || callCmd.failed} />
       <ResourceState loading={false} error={res.error} retry={() => void res.reload()} />
-      {detail.verdict === 'BOTH' && <p className="go-now" role="alert">GO NOW · possible emergency · do not trust the screen numbers</p>}
+      {(detail.verdict === 'BOTH' || (detail.verdict === 'EMERGENCY' && detail.isolated)) && <p className="go-now" role="alert">{verdictView(detail).headline}</p>}
 
       <div className="bed-layout">
         <div className="bed-main">
           <Panel title={state.untrusted ? 'Last trusted signals' : 'Live signals'}
                  caption={state.untrusted ? `Frozen at the newest trusted recording${frozenAt ? ` · ${time(frozenAt, true)}` : ''}` : 'Most recent samples from the monitor, about 25 per second.'}
-                 aside={<Trust score={detail.trust_score || 0} />} className={state.untrusted ? 'striped-panel' : ''}>
+                 aside={<Trust bed={detail} />} className={state.untrusted ? 'striped-panel' : ''}>
             {state.untrusted && (
               <div className="last-good big">▨ UNTRUSTED · {frozenAt ? `last good ${time(frozenAt, true)} · ${age(frozenAt, now)} ago` : 'no trusted reading yet · check by hand'}</div>
             )}
@@ -278,7 +287,7 @@ export function BedPage() {
               <ol className="verdict-list">
                 {detail.recent_verdicts.slice(0, 6).map((r, i) => (
                   <li key={`${r.ts}-${i}`}><time className="mono">{time(r.ts, true)}</time><span>{verdictWords[r.verdict] ?? r.verdict}</span>
-                    <Tip text="Data trust attached to this verdict, 0 to 1."><span className="mono muted">{score01(r.trust)}</span></Tip></li>
+                    <Tip text="Data trust attached to this verdict, 0 to 1. Verdicts made after the monitor was cut off or went silent show “not trusted”."><span className="mono muted">{verdictTrust(r.trust, r.ts, detail)}</span></Tip></li>
                 ))}
               </ol>
             )}

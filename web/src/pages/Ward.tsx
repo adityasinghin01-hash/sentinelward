@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import {Eye, EyeOff, Bell, Check, ExternalLink} from 'lucide-react';
 import {useWard} from '../lib/store';
 import {useNow, useCommand} from '../lib/hooks';
-import {bedState, time, age, staff} from '../lib/domain';
+import {bedState, time, age, staff, openAlerts, trustView} from '../lib/domain';
 import type {Alert, Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
 import {Stats, Panel, Badge, ActionList, Empty, Feedback, BedLink} from '../components/ui';
@@ -16,8 +16,7 @@ function AlertRail({alerts, beds}: {alerts: Alert[]; beds: Bed[]}) {
   const now = useNow();
   const navigate = useNavigate();
   const cmd = useCommand();
-  const open = alerts
-    .filter(a => a.status === 'open' || a.status === 'escalated')
+  const open = openAlerts(alerts)
     .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] || b.ts - a.ts);
   const canAck = role === 'nurse' || role === 'doctor'; // matches the backend: nurses and doctors acknowledge
   return (
@@ -75,12 +74,13 @@ export function WardPage() {
 
   const summary = useMemo(() => {
     const states = beds.map(b => bedState(b, now));
-    const alarming = beds.filter(b => b.priority === 'high' || b.priority === 'medium').length;
+    const open = openAlerts(alerts);
     const untrusted = states.filter(s => s.untrusted).length;
-    const trusts = beds.map(b => b.trust_score).filter(t => typeof t === 'number');
-    const avg = trusts.length ? trusts.reduce((x, y) => x + y, 0) / trusts.length / 100 : null;
-    return {alarming, untrusted, avg, offline: states.filter(s => s.offline).length};
-  }, [beds, now]);
+    const trusts = beds.map(b => trustView(b).value).filter((t): t is number => t !== null);
+    const avg = trusts.length ? trusts.reduce((x, y) => x + y, 0) / trusts.length : null;
+    return {open: open.length, high: open.filter(a => a.priority === 'high').length, untrusted, avg,
+            notTrusted: beds.length - trusts.length, offline: states.filter(s => s.offline).length};
+  }, [beds, alerts, now]);
 
   // Arrow keys move between tiles in reading order; Enter opens the bed (links handle Enter).
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -99,9 +99,9 @@ export function WardPage() {
       <div className="ward-summary">
         <Stats items={[
           {label: 'Beds', value: beds.length, hint: 'Beds this station is watching.', sub: summary.offline ? `${summary.offline} with no data now` : 'all reporting'},
-          {label: 'Alarms now', value: summary.alarming, hint: 'Beds whose current verdict needs a person (high or medium priority).'},
+          {label: 'Open alerts', value: summary.open, hint: 'Alerts nobody has acknowledged and the agents have not closed: the same list as Active alerts on the right and the Open tab on Alerts.', sub: summary.high ? `${summary.high} high priority` : 'none high'},
           {label: 'Untrusted', value: summary.untrusted, hint: 'Beds whose incoming data is not trusted; the screen shows their last trusted values instead.'},
-          {label: 'Average trust', value: summary.avg === null ? '—' : summary.avg.toFixed(2), hint: 'Mean data-trust score across beds, 0 to 1. Higher means the readings are more likely genuine.'},
+          {label: 'Average trust', value: summary.avg === null ? '—' : summary.avg.toFixed(2), hint: 'Mean data-trust score, 0 to 1, over beds with a live checked monitor. Cut-off, offline and not-yet-checked monitors are left out: their data is not trusted.', sub: summary.notTrusted ? `${summary.notTrusted} bed${summary.notTrusted === 1 ? '' : 's'} not scored` : undefined},
         ]} />
         <button className="toggle" onClick={toggleHidden} aria-pressed={!hidden}
                 title={hidden ? 'Show patient initials, age and sex on the tiles.' : 'Hide patient details (privacy default).'}>
