@@ -1,6 +1,7 @@
 """Exercise anonymous MQTT receipts with real, delayed extractor aggregation."""
 from copy import deepcopy
 import json
+import math
 
 import pytest
 
@@ -8,7 +9,57 @@ from sw_brain.decision import decide
 from sw_brain.detectors import ReplayDetector
 from sw_brain.io import MemoryBus, encode
 from sw_brain.service import BrainService
+from sw_attacks.service import AttackService
 from tests_system.attack_replay_eval import LiveInputs
+
+
+@pytest.mark.parametrize('first', [False, True])
+def test_b07_generated_mask_conflicts_without_identity_and_preserves_real_alarm(tmp_path, frame, first):
+    bus = MemoryBus()
+    service = BrainService(bus)
+    live = LiveInputs(service, origin=0, beds=('B07',))
+    attack_bus = MemoryBus()
+    attack = AttackService(attack_bus, runs_dir=tmp_path)
+    attack.receive('ward/demo/control', json.dumps(dict(v=1, type='demo_control', ts=0,
+                   cmd='run', run_id='mask', start_at_s=0)), received_ms=0)
+    topic = 'ward/bed/B07/vitals'
+    verdicts = {}
+    for sec in range(760, 881):
+        if sec in (830, 835, 840, 845, 850, 870, 875, 880):
+            verdicts[sec] = service.tick(sec*1000)[0]
+            if sec in (835, 840, 845):
+                m4 = next(m for _, m, _, _ in reversed(bus.published)
+                          if m.get('model') == 'M4')
+                assert m4['extra']['content_conflict']
+                assert m4['extra']['independent_evidence']
+                assert not m4['extra']['sender_identity_available']
+                assert not m4['extra']['flood_and_paced_sender']
+            bus.published.clear()
+        if sec == 880: break
+        alarm = {'code':'VFIB', 'priority':'high'} if sec == 840 else None
+        real = frame(sec, bed='B07', hr=180 if sec >= 840 else 60, monitor_alarm=alarm)
+        # This fixture otherwise repeats exactly every second: an old loop
+        # would be indistinguishable from the real signal until the alarm.
+        real['ecg'] = [v + .01*math.sin((sec+1)*(i+1)) for i, v in enumerate(real['ecg'])]
+        payload = encode(topic, real)
+        attack.receive(topic, payload, received_ms=sec*1000)
+        live.observe(topic, payload, sec*1000, 'MON-07')
+        if not first:
+            service.receive(topic, payload, received_ms=sec*1000, sender_id=None)
+        for ms in range(0, 1000, 20):
+            now = sec*1000+ms
+            attack.tick(now)
+            for out_topic, forged, _, _ in attack_bus.published:
+                live.receive(out_topic, encode(out_topic, forged), now, 'attacks')
+            attack_bus.published.clear()
+            if first and ms == 0:
+                service.receive(topic, payload, received_ms=now+10, sender_id=None)
+            live.publish_due(now)
+    assert verdicts[830]['verdict'] == 'DEVICE_ATTACK'
+    assert verdicts[835]['verdict'] == verdicts[840]['verdict'] == 'TAMPERING'
+    assert verdicts[845]['verdict'] == 'BOTH'
+    assert all(verdicts[t]['verdict'] in ('BOTH', 'EMERGENCY') for t in (845, 850, 870, 875, 880))
+    assert all(r['sender_id'] is None for r in service.beds['B07'].messages)
 
 
 def live_traffic(frame, kind, first=False, logs=True):

@@ -37,7 +37,7 @@ attacks:
     burst_s: 8
     max_messages: 500
     limits_basis: implementation_default
-    detail: "Bounded flood then a second sender until the recording's documented end; no recording loop."
+    detail: "Bounded flood, then forged loop of its own signal from 60 seconds earlier with current seq/ts; stop at source end."
   - id: drift_B10
     bed_id: B10
     kind: drift

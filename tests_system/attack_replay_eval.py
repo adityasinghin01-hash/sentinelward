@@ -106,6 +106,8 @@ def evaluate(packs_dir, order):
     monitor = Counter()
     blank = invalid = 0
     checkpoints = {}
+    b07_evidence = []
+    b07_monitor_alarms = []
     with tempfile.TemporaryDirectory(prefix='m4-replay-') as logs:
         attack = AttackService(attack_bus, runs_dir=logs)
         attack.receive('ward/demo/control', json.dumps(dict(v=1, type='demo_control', ts=ORIGIN,
@@ -120,6 +122,14 @@ def evaluate(packs_dir, order):
                         timelines[bed].append([sec, label])
                     if sec in (730, 740, 830, 835, 840, 845, 1025, 1045, 1080, 1085, 1090):
                         checkpoints.setdefault(sec, {})[bed] = verdict
+                    if bed == 'B07' and 825 <= sec <= 885:
+                        m4 = next(m for _, m, _, _ in reversed(bus.published)
+                                  if m.get('bed_id') == bed and m.get('model') == 'M4')
+                        state = brain.beds[bed]
+                        b07_evidence.append(dict(t_s=sec, verdict=label, scores=verdict['scores'],
+                                                 m4_reason=m4['reason'], m4_extra=m4['extra'],
+                                                 alarm_active=now <= state.alarm_until_ms,
+                                                 anonymous=all(r['sender_id'] is None for r in state.messages)))
                     blank += brain.display_snapshot(bed) is None
                 bus.published.clear()  # scores are validated by MemoryBus; avoid retaining a run of waveforms
             if sec == 1080:
@@ -131,6 +141,8 @@ def evaluate(packs_dir, order):
             _, batch = run._prepare(sec, now)
             for out in batch:
                 assert out.message is not None, (sec, out.bed.bed_id)
+                if out.bed.bed_id == 'B07' and out.message['monitor_alarm']:
+                    b07_monitor_alarms.append(dict(t_s=sec, alarm=out.message['monitor_alarm']))
                 topic = vitals_topic(out.bed.bed_id)
                 # The attack connection sees the real source independently of brain receipt order.
                 attack.receive(topic, encode(topic, out.message), received_ms=now)
@@ -168,6 +180,7 @@ def evaluate(packs_dir, order):
         return dict(order=order, timelines=timelines, verdict_counts=counts, monitor_frames=monitor,
                     attack_frames=attack_bus.counts, accepted_attack_frames=attack_bus.accepted,
                     net_feature_windows=live.published, checkpoints=checkpoints,
+                    b07_evidence=b07_evidence, b07_monitor_alarms=b07_monitor_alarms,
                     blank_snapshots=blank, invalid_messages=invalid)
 
 

@@ -102,6 +102,21 @@ class AttackService:
             if fixture is None: raise SourceUnavailable('No fresh actual source frame; recording may be offline')
             source=deepcopy(fixture); target_ms=((self.origin_ms+int(script_s)*1000+500)//1000)*1000; shift=target_ms-source['ts']; source['ts']=target_ms
             if source['nibp'] is not None: source['nibp']['ts']+=shift
+        if spec['kind']=='flood_second_sender' and script_s>=spec['start_s']+spec['burst_s']:
+            # Mask the patient with this bed's real signal from one minute ago.
+            # Require a current frame for its envelope; never extend an offline
+            # recording or substitute another bed / invented physiology.
+            older_ms=source['ts']-60000
+            older=self.history.get(bed,{}).get(older_ms)
+            if older is None:
+                source_s=(older_ms-self.origin_ms+500)//1000
+                older=self.fixture_history.get((bed,source_s))
+            if older is None: raise SourceUnavailable('Actual masking-loop source from 60 seconds earlier was not captured; supply original fixtures for seeks')
+            frame=deepcopy(older)
+            shift=source['ts']-frame['ts']
+            frame.update(seq=source['seq'],ts=source['ts'])
+            if frame['nibp'] is not None: frame['nibp']['ts']+=shift
+            return frame
         return source
     def _finish(self,now_ms,state,detail):
         if state['started'] and not state['done']: self._event(now_ms,state,'attack_end',detail)
