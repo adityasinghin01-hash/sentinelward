@@ -4,7 +4,7 @@ import {ThemeToggle} from '../components/ThemeToggle';
 import {useNow, useResource} from '../lib/hooks';
 import type {Bed} from '../lib/types';
 import {BedTile} from '../components/BedTile';
-import {StateChip} from '../components/ui';
+import {StateChip} from '../components/StateChip';
 import {Hologram, ecgPath} from '../components/landing/Hologram';
 import {useReveal} from '../lib/reveal';
 import {RoleViews} from '../components/landing/RoleViews';

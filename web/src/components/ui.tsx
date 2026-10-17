@@ -1,9 +1,9 @@
 import {useId, useRef, useState, createContext, useContext} from 'react';
 import type {ReactNode,ReactElement,ButtonHTMLAttributes,HTMLAttributes,Ref} from 'react';
-import {Activity,AlertTriangle,Shield,Check,Info,Clock,ChevronRight,Undo2,LoaderCircle,Circle,Unplug,Wrench,ShieldAlert,X} from 'lucide-react';
+import {Activity,AlertTriangle,Shield,Check,Info,Clock,ChevronRight,Undo2,LoaderCircle,X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {age,time,trustView} from '../lib/domain';
-import type {Action,Bed,Priority,Verdict} from '../lib/types';
+import type {Action,Bed,Priority} from '../lib/types';
 import {useWard} from '../lib/store';
 import {useCommand} from '../lib/hooks';
 export function Tip({text,children}:{text:string;children:ReactNode}){const id=useId();return <Tooltip text={text}><span className="tip" tabIndex={0} aria-describedby={id}>{children}<span className="sr-only" role="tooltip" id={id}>{text}</span></span></Tooltip>}
@@ -29,31 +29,15 @@ export function ActionList({actions}:{actions:Action[]}){return actions.length?<
 export function BedLink({id}:{id:string}){return <Link className="inline-link" title={`Open live readings and checks for ${id}`} to={`/bed/${id}`}>{id}<ChevronRight size={12}/></Link>}
 export function Stamp({ts}:{ts:number|null}){return <Tip text="Elapsed time since this information was received. All displayed clock times use this device’s local time."><span className="stamp"><Clock size={12}/>{age(ts)} ago</span></Tip>}
 
-export {toast} from 'sonner';
-import {Toaster as SonnerToaster} from 'sonner';
+export {Toaster, toast} from './notifications';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import * as SwitchPrimitive from '@radix-ui/react-switch';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
-import {useTheme} from '../lib/theme';
 
-export const stateChips = {
-  NORMAL: {word:'NORMAL',tone:'ok',icon:Circle},
-  EMERGENCY: {word:'EMERGENCY',tone:'emergency',icon:AlertTriangle},
-  BOTH: {word:'EMERGENCY · MONITOR HACKED',tone:'both',icon:ShieldAlert},
-  TAMPERING: {word:'MONITOR HACKED',tone:'security',icon:ShieldAlert},
-  DEVICE_ATTACK: {word:'MONITOR HACKED',tone:'security',icon:ShieldAlert},
-  UNSURE: {word:'CHECK BY HAND',tone:'check',icon:AlertTriangle},
-  DRIFTING: {word:'SENSOR DRIFT',tone:'maint',icon:Activity},
-  LOOSE_SENSOR: {word:'LOOSE SENSOR',tone:'maint',icon:Wrench},
-  NO_DATA: {word:'NO DATA',tone:'nodata',icon:Unplug},
-} as const;
-export function StateChip({state,className=''}:{state:Verdict|'NO_DATA'|null;className?:string}) {
-  const {word,tone,icon:Icon}=stateChips[state??'NO_DATA'];
-  return <span className={`state-chip state-${tone} ${className}`} data-state={state??'NO_DATA'}><Icon size={14} aria-hidden="true"/>{word}</span>;
-}
+export {StateChip, stateChips} from './StateChip';
 export function Chip({children,className='',...p}:HTMLAttributes<HTMLSpanElement>){return <span {...p} className={`chip ${className}`}>{children}</span>}
 export function Card({children,className='',...p}:HTMLAttributes<HTMLDivElement>){return <div {...p} className={`card ${className}`}>{children}</div>}
 export function SegmentedControl<T extends string>({value,onChange,options,label,disabled=false}:{value:T;onChange:(value:T)=>void;options:{value:T;label:string;disabled?:boolean}[];label:string;disabled?:boolean}) {
@@ -82,7 +66,6 @@ export function ConfirmDialog({open,title,bed,monitor,consequence,onClose,onConf
   const previous=useRef<HTMLElement|null>(null);
   return <AlertDialog.Root open={open} onOpenChange={v=>{if(!v)onClose()}}><AlertDialog.Portal><AlertDialog.Overlay className="dialog-overlay"/><AlertDialog.Content className="dialog confirm-dialog" onCloseAutoFocus={e=>{e.preventDefault();previous.current?.focus()}} onOpenAutoFocus={e=>{previous.current=document.activeElement as HTMLElement;e.preventDefault();cancel.current?.focus()}}><AlertDialog.Title>{title}</AlertDialog.Title><AlertDialog.Description><strong>{bed} · {monitor}</strong><br/>{consequence}</AlertDialog.Description><div className="confirm-actions"><AlertDialog.Cancel asChild><Button ref={cancel} onClick={onClose}>Cancel</Button></AlertDialog.Cancel><AlertDialog.Action asChild><Button variant="danger" pending={pending} onClick={onConfirm}>{actionLabel}</Button></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>;
 }
-export function Toaster(){const theme=useTheme();return <SonnerToaster theme={theme} position="bottom-right" visibleToasts={3} duration={5000} closeButton toastOptions={{className:'sw-toast'}}/>}
 export function EmptyState({title='Awaiting first signal',detail='',children}:{title?:string;detail?:string;children?:ReactNode}){return <Empty title={title} detail={detail}>{children}</Empty>}
 export function Skeleton({className='',label='Awaiting first signal'}:{className?:string;label?:string}){return <div className={`skeleton skeleton-tile ${className}`} role="status" aria-label={label}><span className="sr-only">{label}</span></div>}
 const actorNames:Record<string,string>={A1:'Alert agent',A2:'Network agent',A3:'Evidence agent',A4:'Fleet agent',A5:'Report agent',A6:'Repair agent',A7:'Workload agent',A8:'Briefing agent'};
