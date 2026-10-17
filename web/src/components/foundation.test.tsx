@@ -63,7 +63,7 @@ it('logout clears the session, reaches login and shows Signed out', async () => 
   fireEvent.click(await screen.findByRole('menuitem',{name:/Log out/}));
   await waitFor(()=>expect(useWard.getState().session).toBeNull());
   expect(await screen.findByText('Signed out')).toBeInTheDocument();
-  expect(await screen.findByRole('heading',{name:'Choose your role'})).toBeInTheDocument();
+  expect(await screen.findByRole('heading',{name:'Sign in to SentinelWard'})).toBeInTheDocument();
 });
 
 it('serializes the circular unveil and animates the new root for 260 ms', async () => {
