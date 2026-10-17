@@ -1,0 +1,24 @@
+[Unit]
+Description=SentinelWard simulator demo-control listener
+After=network-online.target mosquitto.service
+Wants=network-online.target mosquitto.service
+
+[Service]
+Type=simple
+User=linux1
+Group=linux1
+WorkingDirectory=/home/linux1/sw/app
+EnvironmentFile=/home/linux1/sw/.env
+Environment=SW_PACKS=/home/linux1/sw/packs
+Environment=SW_RUNS=/home/linux1/sw/runs/simulator
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/linux1/sw/.venv/bin/python -m sw_sim listen --packs /home/linux1/sw/packs --runs /home/linux1/sw/runs/simulator --script /home/linux1/sw/app/simulator/ward_script.yaml
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

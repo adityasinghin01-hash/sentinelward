@@ -1,0 +1,26 @@
+[Unit]
+Description=SentinelWard M1-M6 and decision layer
+After=network-online.target mosquitto.service
+Wants=network-online.target mosquitto.service
+
+[Service]
+Type=simple
+User=linux1
+Group=linux1
+WorkingDirectory=/home/linux1/sw/app
+EnvironmentFile=/home/linux1/sw/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+ExecStart=/home/linux1/sw/.venv/bin/python /home/linux1/sw/app/deploy/service_env.py /home/linux1/sw/.venv/bin/python -m sw_brain
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+KillSignal=SIGINT
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

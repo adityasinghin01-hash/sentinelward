@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.pytest_cache/
+out/
+results/*.json
+results/*.csv
+results/*_results.md
