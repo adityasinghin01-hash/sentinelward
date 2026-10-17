@@ -1,6 +1,7 @@
 """Translate validated screen commands to sw_common publications."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from uuid import uuid4
 from fastapi import HTTPException
 from sw_common import make_action, make_bedside_check, make_demo_control, make_request, validate
@@ -53,8 +54,13 @@ def bedside(runtime, user: UserConfig, bed_id: str, result: str, notes: str) -> 
     return receipt(runtime)
 
 
+def run_identifier(ms: int) -> str:
+    """run_<YYYYMMDD_HHMMSS> in UTC, as doc 00 asks for demo_control."""
+    return "run_" + datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+
 def demo(runtime, cmd: str, scenario: str = "full_ward_script", speed: int = 1, start_at_s: int = 0) -> dict:
-    run_id = identifier("run")
+    run_id = run_identifier(runtime.clock.ms())
     message = make_demo_control(cmd=cmd, run_id=run_id, ts=runtime.clock.ms(), scenario=scenario, speed=speed, start_at_s=start_at_s)
     if cmd == "reset":
         runtime.reset()

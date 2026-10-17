@@ -217,7 +217,7 @@ class WardState:
     def _pin(self, bed: BedState, cutoff: int, inclusive: bool) -> Point | None:
         """Newest point at (or strictly before) cutoff; asks the store when it is older than the buffer."""
         key = (cutoff, inclusive)
-        if bed.pin_key == key and (bed.pin is None or bed.pin.trusted):
+        if bed.pin_key == key and bed.pin is not None and bed.pin.trusted:
             return bed.pin
         pts = bed.points
         if pts:
@@ -227,6 +227,8 @@ class WardState:
                     bed.pin_key, bed.pin = key, pts[i]
                     self._remember_trusted_wave(bed, bed.pin)
                     return bed.pin
+        if bed.pin_key == key:
+            return None  # the database already answered: no trusted point exists
         # Nothing in the buffer is old enough: look it up in the database (done by the ticker).
         lk = (bed.cfg.bed_id, cutoff, inclusive)
         if lk not in self._lookups_in_flight:
@@ -247,7 +249,7 @@ class WardState:
         self._lookups_in_flight.discard((bed_id, cutoff, inclusive))
         bed = self.beds.get(bed_id)
         if bed is not None:
-            if point is not None and (not point.trusted or
+            if point is not None and (not point.trusted or self._timestamp_untrusted(bed, point.ts) or
                     not (point.ts <= cutoff if inclusive else point.ts < cutoff)):
                 point = None
             bed.pin_key, bed.pin = (cutoff, inclusive), point
@@ -510,13 +512,17 @@ class WardState:
         marks: list[TrustMark] = []
         if msg.get("result") in FAILED_RESULTS:
             return True, marks
-        if msg.get("undoes"):
-            self._undo(msg["undoes"])
+        undone_dev = self._undo(msg["undoes"]) if msg.get("undoes") else None
         dev_id = msg.get("device_id")
         if dev_id is None and msg.get("bed_id"):
             dev_id = device_for_bed(msg["bed_id"])
         dev = self.devices.get(dev_id) if dev_id else None
-        if dev is None or msg.get("result") in FAILED_RESULTS:
+        if undone_dev is not None and (dev is None or undone_dev != dev.device_id):
+            # The undo names the original action only: close (or reopen) that bed's trust interval.
+            mark = self._sync_trust_interval(self.beds[self.devices[undone_dev].bed_id], msg["ts"])
+            if mark is not None:
+                marks.append(mark)
+        if dev is None:
             return True, marks
         action = msg["action"]
         if action in ISOLATING_ACTIONS:
@@ -533,14 +539,17 @@ class WardState:
             marks.append(interval_mark)
         return True, marks
 
-    def _undo(self, original_id: str) -> None:
+    def _undo(self, original_id: str) -> str | None:
+        """Reverse an isolation or an enable_client; returns the affected device or None."""
         dev_id = self._iso_device.get(original_id)
         if dev_id is not None:
             self.devices[dev_id].isolations.pop(original_id, None)
-            return
+            return dev_id
         enabled = self._enabled.pop(original_id, None)
         if enabled is not None:  # undoing an enable_client puts its isolations back in force
             self.devices[enabled[0]].isolations.update(enabled[1])
+            return enabled[0]
+        return None
 
     def on_alert(self, msg: dict) -> bool:
         """Keep the latest state of each alert; returns True if this version is now the latest."""

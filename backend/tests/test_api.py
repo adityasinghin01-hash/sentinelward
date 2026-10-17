@@ -184,6 +184,7 @@ def test_demo_control_reset_barrier_outbox_and_health(bus, clock):
         bus.accept = True
         client.portal.call(app.state.runtime.tick)
         assert bus.sent[-1]["scenario"] == "replay_attack" and bus.sent[-1]["speed"] == 2
+        assert response.json()["run_id"] == "run_20261017_160000"
         assert client.post("/api/demo/reset", json={}).status_code == 202
         assert app.state.runtime.state.beds["B05"].last_point is None
         assert not app.state.runtime.ingest.process(old, topic_for(old))
