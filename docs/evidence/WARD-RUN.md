@@ -45,9 +45,13 @@ Time-to-safe uses the scripted attack start (B05 09:58.8, B06 15:58.8, B07 13:43
 
 ## Ward run 4 (history, 17 Oct 14:49 UTC, build before f7fef1c)
 
+*History only: superseded by F1–F3 above. Do not quote these numbers as current.*
+
 Build after the hub-log fix (`fea3a03`) and before the B11 fix. Same sampler and human steps. Beds 11/12 PASS: B12 NOT SHOWN (no UNSURE at 17:00). B11: DEVICE_ATTACK 12:04, but 3 UNSURE hand-check pages (06:09, 10:44, 16:14). Time-to-safe B05 26.4 s, B06 1.2 s, B07 21.2 s, B10 21.2 s. 13 nurse alerts. Briefing by IBM Granite (19:48). Telegram counts were not recorded for this run.
 
 ## Ward run 3 (history, build before the hub-log fix)
+
+*History only: superseded by F1–F3 above. The B12 "re-run pending" below was done in run 4 and F1–F3 (B12 seen in 1 of 3 final runs).*
 
 Run `run_20261017_141851` on the LinuxONE build server, 17 Oct 2026 14:18:53–14:38:53 UTC, speed 1, 12 real patient recordings, the scripted attacks, and four human steps played through the API as the real staff (nurse Tom acks B03 at 05:50, nurse Priya marks B05 "patient OK" at 11:30, IT (Sam) undoes B05's cut-off at 15:30, nurse marks B12 OK at 18:00; all returned 201/202). Raw samples: `.work/wardrun3/` (every 5 s: ward, alerts, actions, health; every 30 s: each bed's six scores). 0 API errors, 0 agent errors.
 

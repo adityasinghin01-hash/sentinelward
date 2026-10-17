@@ -1,6 +1,6 @@
 # SentinelWard architecture
 
-Everything inside the IBM LinuxONE box runs on one IBM LinuxONE guest (IBM z17, s390x; `docs/evidence/PLATFORM.md`).
+Everything that decides runs on one IBM LinuxONE guest, the build guest (IBM z17, s390x; `docs/evidence/PLATFORM.md`). The shown-only AI-chip second opinion (1D-CNN on the Telum II NNPA) runs on a second LinuxONE guest and never changes a decision (`docs/evidence/ML-RESULTS.md`).
 
 ```mermaid
 flowchart LR

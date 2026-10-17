@@ -1,6 +1,6 @@
 # M2 "is this alarm real?" model — results
 
-Every number below is read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/results/heldout2.json` (2-lead, deployed) and `ml_v2/results/cnn_result.json` (NNPA CNN experiment).
+Every number below is read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/results/heldout2.json` (2-lead, deployed) and `ml_v2/results/cnn_result.json` (NNPA CNN, live as a shown-only second opinion).
 
 ## Data and split
 - PhysioNet/CinC Challenge 2015 (all 750 training records) + VTaC (5,037 labelled ventricular-tachycardia alarms).
@@ -16,9 +16,19 @@ Every number below is read from `ml_v2/results/heldout.json` (1-lead), `ml_v2/re
 | Old live rule (baseline) | 0.391 [0.318, 0.484] | 0.459 / 0.895 | 0.677 | 0.336 [0.272, 0.412] | 0.073 / 0.936 | 0.505 |
 | M2 1-lead trees (`M2-gbt-2026-10-17`) | 0.784 [0.690, 0.878] | 0.932 / 0.825 | 0.965 | 0.759 [0.702, 0.813] | 0.971 / 0.710 | 0.942 |
 | **M2 2-lead trees (`M2-gbt2-2026-10-17`, live)** | **0.862 [0.785, 0.931]** | 0.973 / 0.851 | 0.968 | **0.832 [0.775, 0.885]** | 0.956 / 0.841 | 0.964 |
-| 1D-CNN on the z17 NNPA (not deployed) | 0.623 | 0.811 / 0.807 | 0.881 | 0.665 | 0.796 / 0.829 | 0.883 |
+| 1D-CNN on the z17 NNPA (live second opinion, shown only, never decides) | 0.623 | 0.811 / 0.807 | 0.881 | 0.665 | 0.796 / 0.829 | 0.883 |
 
 Per alarm type, 2-lead (CinC held-out, `heldout2.json`): ASYSTOLE 0.714, BRADY 0.778, TACHY 0.943 (TNR 0: the 2 false TACHY alarms were missed), VFIB 0.929, VTACH 0.906.
+
+## Alarm fatigue at the live thresholds (advice only)
+Recomputed from the two JSON files by `ml_v2/results/fatigue.py` (output: `raw/fatigue.txt`; it also checks that the thresholds in the JSON equal the deployed artifacts: `True` for both). M2 never silences anything: the monitor alarm still sounds, nothing is suppressed, delayed or downgraded; M2 only labels the alarm "likely false" or "likely real".
+
+| Live 2-lead trees | False alarms marked likely-false | True alarms missed (marked likely-false) |
+|---|---|---|
+| CinC 2015 held-out (188) | **85.1%** (97/114) | **2.7%** (2/74) |
+| VTaC test (482) | **84.1%** (290/345) | **4.4%** (6/137) |
+
+Per alarm type, CinC held-out, 2-lead: ASYSTOLE 80.0% (20/25) likely-false, 16.7% (1/6) missed; BRADY 90.9% (10/11), 8.3% (1/12); TACHY 0.0% (0/2), 0.0% (0/33); VFIB 92.3% (12/13), 0.0% (0/1); VTACH 87.3% (55/63), 0.0% (0/22). 1-lead fallback: CinC 82.5% (94/114) / 6.8% (5/74), VTaC 71.0% (245/345) / 2.9% (4/137). Counts are small per type; a "missed" true alarm still sounded on the monitor.
 
 Artifact pins: 1-lead SHA-256 `cc59fc61…2348` (97 features, 200 trees); 2-lead `72daa84b…2f75` (134 features, 200 trees). The brain uses the 2-lead model when the second ECG lead is at least half present, else the 1-lead model, else the live rule.
 

@@ -95,7 +95,7 @@ Verdicts, highest precedence first (`brain/README.md`): **BOTH** (real emergency
 Sources: `docs/evidence/ML-RESULTS.md`, `docs/OPEN-SOURCE.md`, `docs/spec/12-ward-script.md`. The simulator replays 12 real patient recordings at 125 Hz on a scripted 20-minute ward (`docs/spec/12-ward-script.md`). This is a lab ward, not a hospital deployment.
 
 ## IBM Z / LinuxONE
-Everything that decides runs natively on s390x on one IBM LinuxONE guest: hub, six checks, decision layer, agents, backend, database, simulator, IBM Granite (`docs/evidence/PLATFORM.md`).
+Everything that decides runs natively on s390x on one IBM LinuxONE guest, the build guest: hub, six checks, decision layer, agents, backend, database, simulator, IBM Granite (`docs/evidence/PLATFORM.md`). The shown-only AI-chip second opinion runs on a second LinuxONE guest (TEST) and never changes a decision (`docs/evidence/ML-RESULTS.md`).
 
 | Area | What we did | Evidence |
 |---|---|---|
@@ -106,7 +106,7 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest: hub, s
 | Security | Mosquitto dynamic security, per-device accounts (each monitor may publish only its own bed), TLS 1.3 on 8883; live test 15/15 PASS; scrypt PINs, lockout, CSRF checks | `docs/evidence/SECURITY.md`, `security_v2/SECURITY.md` |
 | Scale | One brain container (1.0 CPU) kept up with 96 beds: slowest tick 1.12 s of its 5 s budget (22.4%), 0 dropped | `docs/evidence/SCALE.md` |
 | Resources | Whole live 12-bed ward: a few percent of 3 z17 cores (brain 2.2% CPU, 268 MiB) | `docs/evidence/RESOURCES.md` |
-| IBM Granite | A8's shift briefing written by IBM Granite on LinuxONE in IBM's LinuxONE lab image; fact-checked, template fallback not needed in ward run 3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
+| IBM Granite | A8's shift briefing written by IBM Granite (`granite-4.0-h-350m-base`) on LinuxONE in IBM's LinuxONE lab image; every number fact-checked, else the template is used; end-of-shift briefing written by Granite in all three final ward runs F1–F3 | `docs/evidence/WARD-RUN.md`, `agents_v2/REPORT.md` |
 
 ## Results (measured on LinuxONE, 17 Oct 2026)
 **M2 "is this alarm real?"**: held-out sets locked before training (188 CinC records, 482 VTaC events); Challenge 2015 score = (TP+TN)/(TP+TN+FP+5·FN), 95% bootstrap CI (`docs/evidence/ML-RESULTS.md`).
@@ -117,20 +117,23 @@ Everything that decides runs natively on s390x on one IBM LinuxONE guest: hub, s
 | **M2 2-lead trees (live)** | **0.862 [0.785, 0.931]** | 0.968 | **0.832 [0.775, 0.885]** | 0.964 |
 | 1D-CNN on z17 NNPA (live second opinion, shown only) | 0.623 | 0.881 | 0.665 | 0.883 |
 
-**Full 20-minute ward run, agents on** (run `run_20261017_141851`, 12 beds, scripted attacks; `docs/evidence/WARD-RUN.md`):
+**Alarm fatigue, advice only** (the monitor alarm still sounds; nothing is suppressed): at the live thresholds the 2-lead trees mark **85.1%** of false CinC alarms "likely false" (97/114) and miss **2.7%** of true ones (2/74); on VTaC **84.1%** (290/345) and **4.4%** (6/137). Recomputed by `ml_v2/results/fatigue.py` → `docs/evidence/raw/fatigue.txt` (per alarm type in `docs/evidence/ML-RESULTS.md`).
 
-| Measure | Result |
+**Final full 20-minute ward runs, agents on** (three back-to-back runs F1–F3 on build `f7fef1c`, 12 beds, scripted attacks, four human steps; `docs/evidence/WARD-RUN.md`):
+
+| Measure | Result (F1 / F2 / F3) |
 |---|---|
-| Ward-script checks | 12 of 13 PASS; B12 weak attack NOT SHOWN (cause found and fixed) |
-| Event → verdict | +2 s to +3 s for every scripted event (B03, B04, B05, B06, B07, B08, B10, B11) |
-| Time-to-safe (attack start → bed untrusted + nurse told + device cut off) | B06 4.3 s · B07 19.3 s · B05 24.2 s · B10 29.3 s |
-| Real VTACH (B03) | EMERGENCY +2 s, ladder step 2 at 30 s, acked 05:48 |
-| Real VFIB during an attack (B07) | BOTH 14:02: high alert never cancelled, cut off 14:03 |
-| Replay attack (B05) | TAMPERING 10:02, cut off 10:23, IT Undo 15:29, NORMAL 17:02 |
-| Quiet beds B01/B02 | 0 nurse alerts |
-| Nurse alerts | 13 in 20 minutes for 12 beds |
-| Telegram | 24 sent + 27 edited, 0 failed |
-| Errors | 0 API errors, 0 agent errors; no bed lost its values |
+| Ward-script checks | 12/12 · 11/12 · 11/12; the one fail is B12's weak second sender, seen in 1 of 3 runs (F1 only) |
+| Time-to-safe (attack start → bed untrusted + nurse told + device cut off), median of 3 | B06 3.1 s · B07 19.2 s · B05 23.2 s · B10 23.2 s |
+| Real VTACH (B03) | EMERGENCY 05:04 / 05:01 / 05:02 (alarm at 05:00), ladder step 2, acked by the second nurse |
+| Real VFIB during an attack (B07) | BOTH 14:04 / 14:01 / 14:02: high alert never cancelled, cut off 1 s later (14:05 / 14:02 / 14:03) |
+| Replay attack (B05) | TAMPERING 09:59 / 10:01 / 10:02, cut off 10:20 / 10:22 / 10:23, IT Undo 15:29, NORMAL 16:59 / 17:06 / 17:02 |
+| Quiet beds B01/B02 | 0 nurse alerts in every run |
+| Nurse alerts | 11 per 20-minute run for 12 beds |
+| B11 false hand-check pages | 0 / 1 / 1 |
+| Telegram | 22 sent, 25–26 edited, 0 failed per run |
+| IBM Granite briefing | written and fact-checked in all three runs |
+| Errors | every sampled API call 200 (except `/api/briefing` 503 before the first briefing); agents bus 0 invalid, 0 dropped, 0 handler errors |
 
 **Platform** (`docs/evidence/SECURITY.md`, `SCALE.md`, `CONTAINERS.md`): security live test 15/15 PASS · 96 beds per brain container at 22.4% of the tick · container ward runs 0 invalid of 11,790 messages, send lag p99 24.7 ms and 40.3 ms.
 
@@ -157,7 +160,7 @@ flowchart LR
   API -- requests --> A
 ```
 
-All boxes except the monitors' sources, the phones and the screens' browsers run on the LinuxONE guest.
+All boxes except the monitors' sources, the phones and the screens' browsers run on the LinuxONE build guest. The shown-only AI-chip second opinion (not drawn; it never changes a decision) runs on a second LinuxONE guest and reads vitals from the hub over TLS 8883.
 
 ## How to run
 - On LinuxONE as systemd services: `deploy/README.md` (`./deploy/deploy.sh --dry-run`, then `./deploy/deploy.sh`).
@@ -174,7 +177,7 @@ All boxes except the monitors' sources, the phones and the screens' browsers run
 | `simulator/` | Ward simulator (12 monitors, ward script, scale mode) |
 | `attacks/` | Red-team test sender (replay, fake flatline, flood, forged drift) |
 | `brain/` | M1-M6 checks + decision layer, live on MQTT |
-| `ml_v2/` | M2 training, held-out results, artifacts, NNPA CNN experiment |
+| `ml_v2/` | M2 training, held-out results, alarm-fatigue script, artifacts, NNPA CNN (live shown-only second opinion) |
 | `agents_v2/` | Agents A1-A8, Telegram, IBM Granite writer |
 | `security_v2/` | Hub lockdown, containment (cut-off/Undo), network witness, live security test |
 | `backend/` | FastAPI + WebSocket + PostgreSQL, login hardening |
@@ -183,11 +186,32 @@ All boxes except the monitors' sources, the phones and the screens' browsers run
 | `deploy/` | Server deploy, systemd units, containers |
 | `docs/` | Architecture, specs, evidence pack, video script |
 
+## What changed from our abstract, and why
+Abstract: our Unstop submission text of 12 Oct 2026. Each row says what we built instead and where to check.
+
+| Abstract promised | Status | What we built, and why |
+|---|---|---|
+| "A trained model combines six scores into one verdict" | Changed | A fixed safety precedence (BOTH > EMERGENCY > TAMPERING > … > NORMAL) with up to 3 plain reasons (`brain/README.md`). A learned fusion could quietly let an attack score outvote a real emergency; fixed rules make "tampering never cancels an emergency" provable in tests. |
+| Five verdicts (emergency, sensor fault, tampering, both, unsure) | Built, extended | Eight verdicts: sensor fault split into LOOSE_SENSOR and DRIFTING; DEVICE_ATTACK (IT only) and NORMAL added (`brain/README.md`). |
+| Two witnesses: body (M3, M4, M6) and network ("is the right device sending?") | Built, partly | Body checks and M5 flood / sequence-repeat checks work. The per-sender count is not available on the live hub (`sender_identity_available: False` in F1–F3), so the weak second-sender attack (B12) was caught in 1 of 3 final runs (`docs/evidence/WARD-RUN.md`). |
+| IBM Snap ML, XGBoost and PyTorch for the alarm, replay and drift models | Changed | M2 is scikit-learn 1.4.1 gradient-boosted trees trained on s390x, served as hash-pinned numpy trees (`ml_v2/README.md`). Replay (M4) and drift (M6) are explainable rules, not trained models (`brain/README.md`). PyTorch is used only for the NNPA CNN second opinion (`chip/README.md`). Neither Snap ML nor XGBoost is in the build. |
+| NeuroKit2 for ECG signal quality | Changed | M1 is our own numpy check (flat, clipped, noisy, missing; `brain/README.md`). |
+| Nine open datasets (VTaC, CinC 2015 and 2011, SecAlarmBench, MIT-BIH NST, VitalDB, CICIoMT2024, WUSTL-EHMS-2020, MIMIC-III) | Changed: 4 used | PhysioNet/CinC 2015, VTaC, MIMIC-III Waveform Matched Subset, VitalDB (`docs/OPEN-SOURCE.md`). CinC 2011, SecAlarmBench, MIT-BIH NST, CICIoMT2024 and WUSTL-EHMS-2020 are not used: we test the network checks against our own scripted attacks on the live hub (`attacks/`). |
+| Split by patient | Changed | Split by record: CinC 2015 has no patient IDs, so record = group; the held-out set was locked before training (`docs/evidence/ML-RESULTS.md`). |
+| LangGraph agents with a human approval step | Changed | Our own small engine: every action goes through one allow-list, is validated and logged append-only, and has an Undo (`agents_v2/REPORT.md`, `agents_v2/sw_agents/engine.py`). The CERT-In report is only drafted; a person sends it (no send code). The device cut-off is automatic (20 s of evidence, at once on BOTH), limited to our own hub and undoable, not pre-approved. |
+| IBM Granite 1B and 2B write alerts and shift briefings | Changed | IBM Granite `granite-4.0-h-350m-base` from IBM's LinuxONE lab image writes the shift briefing only, and every number is fact-checked, else the template is used (`agents_v2/REPORT.md`). Nurse alerts use fixed wording (`agents_v2/sw_agents/agents/a1_alerts.py`), so a model cannot change what an alert says. |
+| Scapy for our attack scripts | Changed | The red-team sender publishes over MQTT with our shared message code (`attacks/`); no Scapy. |
+| Patient data stays on one secure server | Built, one addition | Every decision runs on the build guest. The shown-only AI-chip second opinion reads vitals over TLS 8883 on a second LinuxONE guest (`docs/evidence/ML-RESULTS.md`). |
+| Measure missed emergencies, false alarms cut, time to safe, Blind Time | Built, changed | Missed / false alarms on held-out data (`docs/evidence/raw/fatigue.txt`), as advice only, because alarms are never suppressed. Time-to-safe in every final ward run (`docs/evidence/WARD-RUN.md`). Blind Time: defined in the system tests (`tests_system/README.md`, `tests_system/results/H6_results.md`) but no measured Blind Time figure is in the evidence pack, so we make no Blind Time claim. |
+| Pre-event tests: Snap ML 6.0 s vs scikit-learn 25.1 s; hub carried 2,000 beds | Not in this repo | Those were pre-event checks and are not re-measured here. The submitted evidence is 96 beds per brain container (`docs/evidence/SCALE.md`). |
+| Safety rules, 8 agents, cut-off at our hub, last trusted values kept, tamper-evident evidence, Telegram, FastAPI, PostgreSQL, React | Built as promised | `docs/evidence/SECURITY.md`, `agents_v2/REPORT.md`, `docs/evidence/WARD-RUN.md`. |
+
 ## Honest limits
 - Lab ward with replayed recordings, not a clinical device; not approved for clinical use.
 - Confidence and trust are uncalibrated heuristic numbers (`brain/README.md`).
+- M2's alarm-fatigue numbers are advice only: the monitor alarm still sounds, so they show how many alarms a nurse could deprioritise, not alarms removed (`docs/evidence/raw/fatigue.txt`).
 - M2: small per-type held-out sets (VFIB has 1 true alarm), wide intervals; thresholds tuned for the Challenge's 5× cost on missed alarms, so specificity is modest; not directly comparable with the 2015 winners' hidden test set (`docs/evidence/ML-RESULTS.md`).
-- Ward run 3: B12's weak second-sender attack did not surface (the network witness could not read the hub log; fixed, re-run pending); B05 took 92 s to return to NORMAL after Undo; B11 had 3 UNSURE hand-check pages from a clipped pulse (`docs/evidence/WARD-RUN.md`).
+- Final ward runs F1–F3: B12's weak second-sender attack surfaced in 1 of 3 runs (F1). The network witness reports no per-sender count (`sender_identity_available: False` in all three), so only the duplicate-copy count can catch it and that depends on timing. B05 returned to NORMAL at 16:59–17:06 after the 15:29 Undo (the tampering latch waits for clean data). B11 had 0 / 1 / 1 UNSURE hand-check pages, which closed on their own (`docs/evidence/WARD-RUN.md`).
 - Because alarms are never suppressed, B04's false asystole and B06's faked flatline show EMERGENCY / BOTH while their alarm is held, not the LOOSE_SENSOR / TAMPERING the script expected (`brain/README.md`).
 - Scale: 96 beds was the largest test, 3-minute runs; a 96-bed soak was not run (`docs/evidence/SCALE.md`).
 - Security: a valid stolen device password can still forge its own bed; the demo attack account is exempt from cut-off; all services share one Unix user; no packet-level capture (`security_v2/SECURITY.md`).
