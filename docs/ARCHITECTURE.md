@@ -1,6 +1,6 @@
 # SentinelWard architecture
 
-Everything below the dotted line runs on one IBM LinuxONE server (IBM z17, s390x).
+Everything inside the IBM LinuxONE box runs on one IBM LinuxONE guest (IBM z17, s390x; `docs/evidence/PLATFORM.md`).
 
 ```mermaid
 flowchart LR
@@ -10,12 +10,12 @@ flowchart LR
   end
 
   subgraph L1["IBM LinuxONE (z17, s390x)"]
-    H["Message hub<br/>Mosquitto + Dynamic Security<br/>per-device accounts, TLS"]
+    H["Message hub<br/>Mosquitto + Dynamic Security<br/>per-device accounts, TLS 1.3"]
     E["Network witness<br/>features per device / 5 s"]
     B["Brain: six AI checks every 5 s<br/>M1 sensor · M2 real alarm · M3 body match<br/>M4 replay · M5 network · M6 drift"]
     D["Decision layer + safety rule<br/>8 verdicts, trust, reasons"]
     A["Agents A1-A8<br/>alerts + ladder · cut-off/undo · evidence<br/>CERT-In draft · tickets · workload · briefing (IBM Granite)"]
-    API["Backend API + live feed<br/>PostgreSQL"]
+    API["Backend API + live feed<br/>PostgreSQL 16"]
   end
 
   N["Central-station screens<br/>nurse · doctor · IT · biomed"]
@@ -44,14 +44,14 @@ flowchart LR
 4. Nothing automatic touches treatment.
 5. Official reports are drafted by an agent and sent by a person.
 
-## Verdicts
+## Verdicts (precedence BOTH > EMERGENCY > TAMPERING > DRIFTING > LOOSE_SENSOR > DEVICE_ATTACK > UNSURE > NORMAL; `brain/README.md`)
 | Verdict | Priority | Who hears |
 |---|---|---|
 | NORMAL | none | nobody |
 | EMERGENCY | high | nurse now, escalation ladder |
-| BOTH | high | nurse now **and** device cut off |
-| TAMPERING | medium | bedside hand-check; IT |
+| BOTH | high | nurse now **and** device cut off at once |
+| TAMPERING | medium | bed untrusted + bedside hand-check at once; IT; device cut off after 20 s of sustained evidence |
 | UNSURE | medium | bedside hand-check |
 | DRIFTING | medium | bedside nurse + biomed ticket |
-| LOOSE_SENSOR | low | bedside nurse: refit; false alarm silenced |
+| LOOSE_SENSOR | low | bedside nurse: refit the sensor (the monitor alarm itself is never suppressed) |
 | DEVICE_ATTACK | none for nurses | IT only |
