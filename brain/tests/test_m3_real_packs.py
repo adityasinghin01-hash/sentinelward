@@ -108,6 +108,7 @@ def test_irregular_donor_pulse_does_not_establish_normal(packs):
         observe(model,packs,'B01',sec)
     values = [observe(model,packs,'B01',sec,pulse_bed='B02') for sec in range(120,150,5)]
     assert any(r['score'] is None or r['score'] >= .8 for r in values[1:]), values
+    assert all(not r['extra'].get('not_applicable', False) for r in values)
 
 
 def test_real_b11_nonharmonic_rate_disagreement_is_preserved(packs):
@@ -132,3 +133,38 @@ def test_sustained_pulse_shift_cannot_train_itself_away(packs, shift):
         observe(model,packs,'B01',sec)
     values = [observe(model,packs,'B01',sec,pulse_sec=sec-shift) for sec in range(90,1190,5)]
     assert all((r['score'] or 0.) >= .8 for r in values[2:]), values
+
+
+@pytest.mark.parametrize('sec', [65, 85, 225, 635])
+def test_observed_low_amplitude_pulses_can_resolve_missed_peak_rate(packs, sec):
+    model = BodyMismatch()
+    observation = observe(model, packs, 'B02', sec)
+    assert observation['score'] is not None and observation['score'] < .5, observation
+    assert observation['extra'].get('pulse_peak_agreement', 0) >= .7
+
+
+@pytest.mark.parametrize('bed,sec', [('B04',280), ('B09',50), ('B12',620),
+                                  ('B04',185), ('B07',165)])
+def test_usable_but_unpairable_ecg_pauses_in_real_clinical_windows(packs, bed, sec):
+    from sw_brain.detectors import QualityDetector
+    data = packs[bed]
+    w = dict(ecg=data['ecg'][sec*125:(sec+10)*125], ppg=data['ppg'][sec*125:(sec+10)*125])
+    assert QualityDetector().evaluate(w, None, 0)['score'] < .5
+    observation = observe(BodyMismatch(), packs, bed, sec)
+    assert observation['score'] is None
+    assert observation['extra']['not_applicable'] is True
+
+
+def test_known_pulse_replay_cannot_be_erased_by_irregular_ecg(packs):
+    model = BodyMismatch()
+    for sec in range(30,90,5):
+        observe(model,packs,'B01',sec)
+    for sec in range(90,120,5):
+        replay = observe(model,packs,'B01',sec,pulse_sec=80)
+    assert replay['score'] >= .8
+    changed = {**packs, 'B01': dict(packs['B01'])}
+    changed['B01']['ecg'] = packs['B01']['ecg'].copy()
+    changed['B01']['ecg'][120*125:130*125] = packs['B04']['ecg'][30*125:40*125]
+    observation = observe(model,changed,'B01',120,pulse_sec=80)
+    assert observation['score'] >= .8
+    assert not observation['extra'].get('not_applicable', False)
