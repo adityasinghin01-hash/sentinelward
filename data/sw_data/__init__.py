@@ -1,7 +1,7 @@
 """sw_data: turn PhysioNet/CinC 2015, MIMIC-III and VitalDB recordings into SentinelWard bed packs."""
 from __future__ import annotations
 
-LOADER_VERSION = "1.0.0"
+LOADER_VERSION = "1.3.0"   # 1.3.0: optional second ECG lead (ecg2)
 
 #: Output sample rate of every waveform in a pack.
 FS_OUT = 125

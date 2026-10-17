@@ -167,6 +167,9 @@ def build_source(spec: BedSpec, paths: Paths) -> SourceData:
         raise BedError(spec.bed_id, str(exc)) from exc
     found = set(vf.get_track_names())
     wave_names = {k: _first(found, TRACKS[k]) for k in ("ecg", "ppg", "abp")}
+    # v1.3: optional second ECG lead = the other SNUADC ECG track (V5 when the main lead is II).
+    wave_names["ecg2"] = next((t for t in TRACKS["ecg"] if t in found and t != wave_names["ecg"]), None) \
+        if wave_names["ecg"] is not None else None
     lacking = [k for k in ("ecg", "ppg", "abp") if spec.wants(k) and wave_names[k] is None]
     if lacking:
         raise BedError(spec.bed_id, f"case {spec.case} lacks required track(s) "
@@ -189,9 +192,14 @@ def build_source(spec: BedSpec, paths: Paths) -> SourceData:
         if n0 + n > x.size:
             raise BedError(spec.bed_id, f"case {spec.case} is {x.size / fs / 60:.1f} min long; "
                                         f"window {start_s / 60:.1f}+{dur / 60:.1f} min does not fit")
-        if key == "ecg":
-            if name != TRACKS["ecg"][0]:
+        if key == "ecg2" and not np.isfinite(x[n0:n0 + n]).any():
+            notes.append(f"second ECG lead {name} is empty in the window; ecg2 left out")
+            continue
+        if key in ("ecg", "ecg2"):
+            if key == "ecg" and name != TRACKS["ecg"][0]:
                 notes.append(f"ECG lead II absent; used {name}")
+            if key == "ecg2":
+                notes.append(f"second ECG lead {name}")
             x, note, _warn = ecg_to_mv(x, unit or "mV")
             if note:
                 notes.append(note)

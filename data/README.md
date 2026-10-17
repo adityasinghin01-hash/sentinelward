@@ -76,6 +76,7 @@ YAML reads an unquoted `3346682_0014` as the number 33466820014, so `sw_data` re
 | array | rate | shape | content |
 |---|---|---|---|
 | `ecg` | 125 Hz | `duration_s × 125` | lead II, otherwise the first ECG lead, in mV |
+| `ecg2` | 125 Hz | `duration_s × 125` | v1.3, optional: a second ECG lead, in mV: lead `V` if present, else the next ECG lead in channel order (`sw_data.dsp.pick_ecg2`; VitalDB: the other SNUADC ECG track). Left out when the source has one lead or the second lead is empty in the window |
 | `ppg` | 125 Hz | `duration_s × 125` | PLETH, units as stored |
 | `abp` | 125 Hz | `duration_s × 125` | ABP / ART, mmHg |
 | `resp` | 125 Hz | `duration_s × 125` | RESP waveform, only for beds that ask for `resp` |
@@ -109,6 +110,9 @@ A waveform is left out when the source has none. `hr`, `spo2`, `rr` and `nibp` a
   was missing. A gap therefore grows by at most one output sample on each side.
   One second of real signal on each side of the window (where available) feeds the filter and is
   cropped off afterwards.
+* **Second ECG lead (v1.3).** Same cleaning, unit conversion and resampling as `ecg`. It is never
+  required, so it never fails a bed; `source.channels.ecg2` names it. The same rule
+  (`pick_ecg2`) builds the training table of the 2-lead M2 model (`ml_v2/m2gbt/prep.py`).
 * **Missing values.** wfdb's missing marker is already NaN; the constant −32768 is turned into
   NaN in every channel.
 * **Units** come from wfdb/vitaldb physical values, never from rescaled raw integers. ECG in `uV`

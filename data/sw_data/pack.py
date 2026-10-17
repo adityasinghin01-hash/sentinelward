@@ -14,7 +14,7 @@ import numpy as np
 from sw_data import FS_OUT, LOADER_VERSION, PACK_DTYPE
 from sw_data.dsp import pct_missing
 
-WAVES = ("ecg", "ppg", "abp", "resp")
+WAVES = ("ecg", "ecg2", "ppg", "abp", "resp")   # ecg2: optional second ECG lead (v1.3)
 SECONDS = ("hr", "spo2", "rr")
 ALL_ARRAYS = WAVES + SECONDS + ("nibp",)
 MISSING_TOL_PCT = 0.01

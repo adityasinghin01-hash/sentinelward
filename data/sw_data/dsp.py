@@ -294,6 +294,28 @@ def pick_ecg(names: Sequence[str]) -> tuple[Optional[int], str]:
     return None, "no ECG lead"
 
 
+def is_ecg_name(name: str) -> bool:
+    """True for a channel name that is an ECG lead (see ``ECG_LEADS``) or starts with ``ECG``."""
+    return _norm(name) in {_norm(e) for e in ECG_LEADS} or _norm(name).startswith("ECG")
+
+
+def pick_ecg2(names: Sequence[str], first: Optional[int]) -> tuple[Optional[int], str]:
+    """Second ECG lead (v1.3): lead ``V`` if present, else the next ECG lead in channel order.
+
+    ``first`` is the index of the main lead (``pick_ecg``); the second lead is never the same
+    channel. The same rule is used to train the 2-lead M2 model (``ml_v2/m2gbt/prep.py``).
+    """
+    if first is None:
+        return None, "no main ECG lead, so no second lead"
+    for i, n in enumerate(names):
+        if i != first and _norm(n) == "V":
+            return i, f"second ECG lead {n}"
+    for i, n in enumerate(names):
+        if i != first and is_ecg_name(n):
+            return i, f"second ECG lead {n} (no lead V; next ECG lead)"
+    return None, "no second ECG lead"
+
+
 def ecg_to_mv(x: np.ndarray, units: str) -> tuple[np.ndarray, Optional[str], bool]:
     """Bring an ECG to mV from its stated units.
 
