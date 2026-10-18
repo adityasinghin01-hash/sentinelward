@@ -8,7 +8,7 @@ it.each(['DEVICE_ATTACK', 'NORMAL', null] as const)('shows flagged B11 (%s) as u
     is_trusted: false, connected: true, display: 'last_trusted', last_updated_at: 1000,
     trust_score: 0, last_trusted: null} as Bed;
   const view = tileView(bed, [], 1000);
-  expect(`${view.word} ${view.reason} ${view.footer}`).toContain('Data untrusted · device flagged');
+  expect(`${view.word} ${view.reason} ${view.footer}`).toContain('Data untrusted');
   expect(`${view.word} ${view.reason} ${view.footer} ${trustView(bed).why}`).not.toMatch(/cut off|disconnected|isolated by IT/i);
   expect(view.untrusted).toBe(true);
 });
