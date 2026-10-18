@@ -13,7 +13,7 @@ Team TessNova · IBM Z Datathon 2026 · Theme 1: real-time AI decisions on IBM L
 
 **Title:** `[TessNova_IBM Z Datathon 2026 Project]`
 
-Video: VIDEO_URL_TBD
+**Video (2:40):** https://youtu.be/JEtgz6hSekM
 
 [Submission copy sheet](docs/submission/SUBMISSION.md) · [Judge guide](docs/submission/JUDGE-GUIDE.md)
 

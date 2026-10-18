@@ -6,7 +6,7 @@
 
 **Repository (public submission URL):** https://github.com/adityasinghin01-hash/sentinelward · [MIT License](../../LICENSE) (team code; upstream terms remain separate).
 
-**Video:** VIDEO_URL_TBD
+**Video (2:40):** https://youtu.be/JEtgz6hSekM
 
 **Optional flowcharts:** [System](../flowchart/flowchart.png) · [Decision](../flowchart/decision.png).
 
