@@ -11,9 +11,9 @@ it('shows the flagged reason exactly once in a rendered tile', () => {
   render(<MemoryRouter><BedTile bed={bed} now={4000} /></MemoryRouter>);
   expect(screen.getAllByText('Data untrusted · device flagged')).toHaveLength(1);
 });
-it('explains unknown BP channel availability without presenting an empty fraction', () => {
+it('omits the BP slot when no blood pressure is supplied', () => {
   render(<MemoryRouter><BedTile bed={bed} now={4000} /></MemoryRouter>);
-  expect(screen.getByText('Not supplied')).toBeInTheDocument();
+  expect(screen.queryByText('BP')).not.toBeInTheDocument();
   expect(screen.queryByText('/')).not.toBeInTheDocument();
 });
 it('keeps pressure numbers when either current or last-trusted pressure exists', () => {

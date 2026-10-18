@@ -6,16 +6,17 @@ import {ChipOpinionPanel} from '../ChipOpinion';
 import {plainEvidence} from './copy';
 
 const checkNames: Record<string, {name: string; scale: string}> = {
-  M1: {name: 'Sensor usable', scale: 'Unusable signal likelihood'},
+  M1: {name: 'Sensor fault', scale: 'Unusable signal likelihood'},
   M2: {name: 'Real emergency', scale: 'Real alarm likelihood'},
-  M3: {name: 'Body match', scale: 'Signal mismatch likelihood'},
-  M4: {name: 'Replay check', scale: 'Replayed data likelihood'},
-  M5: {name: 'Network check', scale: 'Network attack likelihood'},
-  M6: {name: 'Drift', scale: 'Pressure drift likelihood'},
+  M3: {name: 'Body mismatch', scale: 'Signal mismatch likelihood'},
+  M4: {name: 'Replay attack', scale: 'Replayed data likelihood'},
+  M5: {name: 'Network attack', scale: 'Network attack likelihood'},
+  M6: {name: 'Pressure drift', scale: 'Pressure drift likelihood'},
 };
 
 export function BedDirective({detail}: {detail: BedDetail}) {
-  return <p className="bed-directive"><ClipboardCheck size={16} aria-hidden="true" />{plainEvidence(detail.requested_action || 'Continue monitoring')}</p>;
+  const action = detail.requested_action && !/^none$/i.test(detail.requested_action.trim()) ? detail.requested_action : '';
+  return <p className="bed-directive"><ClipboardCheck size={16} aria-hidden="true" />{plainEvidence(action || 'Nothing needed right now. Keep monitoring.')}</p>;
 }
 
 export function WhyPanel({detail, now, explanation}: {detail: BedDetail; now: number; explanation?: string}) {

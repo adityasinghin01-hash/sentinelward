@@ -50,9 +50,9 @@ export function BedTile({bed, hidden = true, now, mini = false, alerts = []}: {b
           <div className="tile-vitals mono" aria-label="Vital signs">
             <span className={`tv tv-hr ${f.hr ? 'out' : ''}`}><small>HR</small><b>{value(v?.hr)}</b><Flag dir={f.hr} /></span>
             <span className={`tv tv-spo2 ${f.spo2 ? 'out' : ''}`}><small>SpO₂</small><b>{value(v?.spo2)}</b><Flag dir={f.spo2} /></span>
-            <span className={`tv tv-bp ${f.sys ? 'out' : ''}`} title={!hasPressure ? 'No blood pressure reading supplied. This monitor’s available channels are not reported.' : undefined}>
-              <small>BP</small>{hasPressure ? <><b>{value(v?.systolic)}<i>/</i>{value(v?.diastolic)}</b><Flag dir={f.sys} /></> : <span className="tv-unavailable">Not supplied</span>}
-            </span>
+            {hasPressure && <span className={`tv tv-bp ${f.sys ? 'out' : ''}`}>
+              <small>BP</small><b>{value(v?.systolic)}<i>/</i>{value(v?.diastolic)}</b><Flag dir={f.sys} />
+            </span>}
           </div>
           {t.reason && <p className="tile-reason">{t.reason}</p>}
           {t.footer && <p className="tile-footer">{t.footer}</p>}</>}

@@ -410,3 +410,6 @@ tr.row-tone-check td:first-child { box-shadow: inset 3px 0 0 var(--st-check); }
 .record-details[open] .record-original { position: relative; z-index: 2; min-width: min(520px, 70vw); }
 
 .census-reading-age { display: block; margin-top: 4px; font-family: var(--font-sans); font-size: 13px; line-height: 18px; color: var(--text-3); white-space: nowrap; }
+
+/* Record buttons never wrap mid-word */
+.log-table td:last-child, .log-table td:last-child button { white-space: nowrap; }
